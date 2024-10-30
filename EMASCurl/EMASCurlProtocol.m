@@ -71,12 +71,8 @@ static NSString *httpsProxy;
     } else {
         enableHttp3 = NO;
     }
-    // 假如runtime 的libcurl xcframework支持HTTP2，则开启HTTP2
-    if (curlFeatureHttp2) {
-        enableHttp2 = YES;
-    } else {
-        enableHttp2 = NO;
-    }
+
+    [self activateHttp2];
 }
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
