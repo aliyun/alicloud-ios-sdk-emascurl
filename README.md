@@ -1,15 +1,16 @@
-# EMASNet Project
+# EMASCurl Project
+This repository aims to build xcframework for EMASCurl.
 
 ## Clone from Git
 
 1. Clone the repository:
     ```bash
-    git clone http://gitlab.alibaba-inc.com/alicloud-ams/alicloud-ios-sdk-emasnet.git
+    git clone http://gitlab.alibaba-inc.com/alicloud-ams/alicloud-ios-sdk-emascurl.git
     ```
    
 2. Change to the project directory:
     ```bash
-    cd alicloud-ios-sdk-emasnet
+    cd alicloud-ios-sdk-emascurl
     ```
 
 3. Install dependencies:
@@ -17,43 +18,32 @@
     pod install
     ```
 
-## Build and Run EMASNetDemo
+## Build libcurl xcframework
+Make sure you have installed `automake, autoconf, libtool, pkg-config` before.
 
-1. Open EMASNet.xcworkspace
+1. get submodule reposity
+    ```bash
+    git submodule update --init --recursive --progress
+    ```
 
-2. Choose the scheme `EMASNet`
+2. Run build script
+    ```bash
+    ./build_libcurl_xcframework.sh
+    ```
 
-3. Click the run button
+3. Results will be in the `out` folder
+   - **libcurl-HTTP2.xcframework**: Supports HTTP1/HTTP2. Build with Secure Transport and nghttp2.
+   - **libcurl-HTTP3.xcframework**: Supports HTTP1/HTTP2/HTTP3. Build with BoringSSL, nghttp2, nghttp3, and ngtcp2.
 
-## Script to Build EMASNet.xcframework
+## Build EMASCurl xcframework
 
-If you want to build an EMASNet.xcframework, run the script below:
+Make sure you have installed `gem, ruby, xcodeproj` before.
 
-   ```bash
-   ./create_xcframework.sh
-   ```
+1. Run build script
+    ```bash
+    ./build_emascurl_xcframework.sh
+    ```
 
-   an EMASNet.xcframework will be created in the `build` folder.
-
-## (Optional) Link with your desired libcurl xcframework
-
-Depending on your requirements, choose an appropriate `libcurl xcframework` to link. Default we link a libcurl-HTTP2.xcframework in this reposity. These frameworks can be built from the [alicloud-ios-sdk-curl](http://gitlab.alibaba-inc.com/alicloud-ams/alicloud-ios-sdk-curl.git) repository.
-
-**Important:** Ensure that you link the `libcurl xcframework` with the `EMASNetDemo` target, not the `EMASNet` target.
-
-### Steps to Link the libcurl xcframework
-
-1. **Open the project:**
-   - Select `PROJECT` > `EMASNet`.
-
-2. **Choose the appropriate target:**
-   - Select `TARGETS` > `EMASNetDemo`.
-
-3. **Go to the build settings:**
-   - Select the `Build Phases` tab.
-
-4. **Add the library:**
-   - Under `Link Binary With Libraries`, click the `+` button.
-   - Add the desired `libcurl xcframework`, for example, `libcurl-HTTP2.xcframework`.
-
-Once linked, you are ready to run the project with certain libcurl version.
+2. Results will be in the `Build` folder
+   - **Build/http2**: the folder contains http2 version EMASCurl xcframework, zip file and podspec
+   - **Build/http3**: the folder contains http3 version EMASCurl xcframework, zip file and podspec

@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		06775603398D8A859D2A87ED /* libcurl-HTTP3.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC2F47226B83E18BD5D82ECA /* libcurl-HTTP3.xcframework */; };
 		2689848F829331F121A85036 /* libPods-EMASCurlTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F38E3FE6C69573CEDA87BA1 /* libPods-EMASCurlTests.a */; };
 		5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */; };
 		6F3F5FED2CD0DB520014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
@@ -29,8 +28,6 @@
 		6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60312CD0E0890014025B /* Main.storyboard */; };
 		6F3F60412CD0F7420014025B /* GCDWebServerManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60402CD0F7420014025B /* GCDWebServerManager.m */; };
 		6F3F60432CD0F82A0014025B /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60422CD0F82A0014025B /* test.txt */; };
-		94BDCCEA6D48B2062D82E733 /* EMCAResource.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3B68D972A365183F03F755BE /* EMCAResource.bundle */; };
-		B51E77223648810BAD8E0BAC /* EMCAResource.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3B68D972A365183F03F755BE /* EMCAResource.bundle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,8 +42,6 @@
 
 /* Begin PBXFileReference section */
 		226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_EMASCurlDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		3B68D972A365183F03F755BE /* EMCAResource.bundle */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = "wrapper.plug-in"; name = EMCAResource.bundle; path = ./out/EMCAResource.bundle; sourceTree = "<group>"; };
-		4CDDE90E562620A9F8D1C3DC /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "./out/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
 		4F38E3FE6C69573CEDA87BA1 /* libPods-EMASCurlTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-EMASCurlTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EMASCurl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F3F5FE92CD0DB520014025B /* EMASCurlTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EMASCurlTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -74,7 +69,6 @@
 		73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		80EA0CB208EDD3FA81140A4E /* Pods-EMASCurlTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlTests.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlTests/Pods-EMASCurlTests.debug.xcconfig"; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
-		CC2F47226B83E18BD5D82ECA /* libcurl-HTTP3.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP3.xcframework"; path = "./out/libcurl-HTTP3.xcframework"; sourceTree = "<group>"; };
 		ED34BF3164EE9802D9AB9B8A /* Pods-EMASCurlTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlTests.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlTests/Pods-EMASCurlTests.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -83,7 +77,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				06775603398D8A859D2A87ED /* libcurl-HTTP3.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -120,7 +113,6 @@
 				6F3F60112CD0DB7D0014025B /* Frameworks */,
 				6F3F5FDB2CD0DB200014025B /* Products */,
 				F020AA635FEA508BFC2214FC /* Pods */,
-				3B68D972A365183F03F755BE /* EMCAResource.bundle */,
 			);
 			sourceTree = "<group>";
 		};
@@ -139,8 +131,6 @@
 			children = (
 				226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */,
 				4F38E3FE6C69573CEDA87BA1 /* libPods-EMASCurlTests.a */,
-				CC2F47226B83E18BD5D82ECA /* libcurl-HTTP3.xcframework */,
-				4CDDE90E562620A9F8D1C3DC /* libcurl-HTTP2.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -321,7 +311,6 @@
 			files = (
 				6F3F60432CD0F82A0014025B /* test.txt in Resources */,
 				6F3F601D2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */,
-				94BDCCEA6D48B2062D82E733 /* EMCAResource.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -334,7 +323,6 @@
 				6F3F603D2CD0E0890014025B /* LaunchScreen.storyboard in Resources */,
 				6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */,
 				6F3F601E2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */,
-				B51E77223648810BAD8E0BAC /* EMCAResource.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -55,7 +55,7 @@ SIMULATOR_FRAMEWORK=$(eval echo \$FRAMEWORK_PATH_iphonesimulator)
 SUB_PATH="${BUILD_DIR}/${SUB_DIR}"
 XCFRAME_PATH="${SUB_PATH}/${FRAMEWORK_ID}"
 
-rm -rf SUB_PATH && mkdir -p XCFRAME_PATH
+rm -rf "${SUB_PATH}" && mkdir -p "${XCFRAME_PATH}"
 
 # Create xcframework
 xcodebuild -create-xcframework -framework "$DEVICE_FRAMEWORK" -framework "$SIMULATOR_FRAMEWORK" -output "${XCFRAME_PATH}/${FRAMEWORK_NAME}.xcframework"
@@ -66,10 +66,11 @@ find "${XCFRAME_PATH}/${FRAMEWORK_NAME}.xcframework" -name '_CodeSignature' -typ
 
 if [ "$SUB_DIR" = "http3" ]; then
   echo "SUB_DIR is http3, copy EMASCAResource.bundle."
-  cp -r "./out/EMASCAResource.bundle" "${XCFRAME_PATH}/EMASCAResource.bundle"
+  cp "cacert.pem" "${XCFRAME_PATH}/cacert.pem"
+  cp "EMASCurlHttp3.podspec" "${SUB_PATH}/EMASCurl.podspec"
 else
   echo "SUB_DIR is http2"
-  # cp -r "${XCFRAME_PATH}/${FRAMEWORK_NAME}.xcframework" "${XCFRAME_PATH}/"
+  cp "EMASCurlHttp2.podspec" "${SUB_PATH}/EMASCurl.podspec"
 fi
 
 PATH_PROJECT="$(pwd)"
