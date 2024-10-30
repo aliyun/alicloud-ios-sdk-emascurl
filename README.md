@@ -5,7 +5,7 @@ This repository aims to build xcframework for EMASCurl.
 
 1. Clone the repository:
     ```bash
-    git clone http://gitlab.alibaba-inc.com/alicloud-ams/alicloud-ios-sdk-emascurl.git
+    git clone repo_url
     ```
    
 2. Change to the project directory:
