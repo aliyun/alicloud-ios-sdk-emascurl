@@ -5,6 +5,7 @@ set -ex
 # check parameters, usage: ./build.sh framework_id framework_name build_config build_dir
 if [ $# -lt 5 ]; then
   echo "Usage: $0 framework_id framework_name build_config build_dir sub_dir"
+  ehco "sub_dir use 'http2' or 'http3'"
   exit 1
 fi
 
@@ -52,7 +53,7 @@ SIMULATOR_FRAMEWORK=$(eval echo \$FRAMEWORK_PATH_iphonesimulator)
 # mkdir ${FRAMEWORK_ID}
 
 SUB_PATH="${BUILD_DIR}/${SUB_DIR}"
-XCFRAME_PATH="${SUB_PATH/${FRAMEWORK_ID}}"
+XCFRAME_PATH="${SUB_PATH}/${FRAMEWORK_ID}"
 
 rm -rf SUB_PATH && mkdir -p XCFRAME_PATH
 
@@ -63,6 +64,20 @@ xcodebuild -create-xcframework -framework "$DEVICE_FRAMEWORK" -framework "$SIMUL
 echo "Removing _CodeSignature directories."
 find "${XCFRAME_PATH}/${FRAMEWORK_NAME}.xcframework" -name '_CodeSignature' -type d -exec rm -rf {} +
 
-zip -r ${XCFRAME_PATH}.zip ${XCFRAME_PATH}
+if [ "$SUB_DIR" = "http3" ]; then
+  echo "SUB_DIR is http3, copy EMASCAResource.bundle."
+  cp -r "./out/EMASCAResource.bundle" "${XCFRAME_PATH}/EMASCAResource.bundle"
+else
+  echo "SUB_DIR is http2"
+  # cp -r "${XCFRAME_PATH}/${FRAMEWORK_NAME}.xcframework" "${XCFRAME_PATH}/"
+fi
+
+PATH_PROJECT="$(pwd)"
+
+cd "${SUB_PATH}"
+
+zip -r ${FRAMEWORK_ID}.zip ${FRAMEWORK_ID}
+
+cd "${PATH_PROJECT}"
 
 echo -e "\nBUILD FINISH."

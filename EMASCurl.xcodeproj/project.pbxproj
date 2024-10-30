@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0C366D6794C902EA11F24406 /* libcurl-HTTP3.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC2F47226B83E18BD5D82ECA /* libcurl-HTTP3.xcframework */; };
+		06775603398D8A859D2A87ED /* libcurl-HTTP3.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC2F47226B83E18BD5D82ECA /* libcurl-HTTP3.xcframework */; };
 		2689848F829331F121A85036 /* libPods-EMASCurlTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F38E3FE6C69573CEDA87BA1 /* libPods-EMASCurlTests.a */; };
 		5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */; };
 		6F3F5FED2CD0DB520014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
@@ -83,7 +83,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0C366D6794C902EA11F24406 /* libcurl-HTTP3.xcframework in Frameworks */,
+				06775603398D8A859D2A87ED /* libcurl-HTTP3.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

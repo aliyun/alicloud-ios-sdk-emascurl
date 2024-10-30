@@ -1,7 +1,7 @@
 require 'xcodeproj'
 
 project_path = './EMASCurl.xcodeproj'
-bundle_path = './out/EMCAResource.bundle'
+bundle_path = './out/EMASCAResource.bundle'
 targets_to_update = ['EMASCurlTests', 'EMASCurlDemo']
 
 # 打开 Xcode 项目
