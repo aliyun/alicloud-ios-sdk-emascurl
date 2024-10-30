@@ -1,0 +1,816 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 63;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0C366D6794C902EA11F24406 /* libcurl-HTTP3.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC2F47226B83E18BD5D82ECA /* libcurl-HTTP3.xcframework */; };
+		2689848F829331F121A85036 /* libPods-EMASCurlTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F38E3FE6C69573CEDA87BA1 /* libPods-EMASCurlTests.a */; };
+		5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */; };
+		6F3F5FED2CD0DB520014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
+		6F3F60122CD0DB7D0014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
+		6F3F601A2CD0DF2C0014025B /* AliyunEmasServices-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60192CD0DF2C0014025B /* AliyunEmasServices-Info.plist */; };
+		6F3F601C2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F601B2CD0DF5E0014025B /* PrivacyInfo.xcprivacy */; };
+		6F3F601D2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F601B2CD0DF5E0014025B /* PrivacyInfo.xcprivacy */; };
+		6F3F601E2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F601B2CD0DF5E0014025B /* PrivacyInfo.xcprivacy */; };
+		6F3F60232CD0E07F0014025B /* EMASCurl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6F3F601F2CD0E07F0014025B /* EMASCurl.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		6F3F60242CD0E07F0014025B /* EMASCurlProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 6F3F60202CD0E07F0014025B /* EMASCurlProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		6F3F60252CD0E07F0014025B /* EMASCurlProtocol.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60212CD0E07F0014025B /* EMASCurlProtocol.m */; };
+		6F3F60282CD0E0860014025B /* EMASCurlTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60262CD0E0860014025B /* EMASCurlTests.m */; };
+		6F3F60372CD0E0890014025B /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F602A2CD0E0890014025B /* AppDelegate.m */; };
+		6F3F60382CD0E0890014025B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F602F2CD0E0890014025B /* main.m */; };
+		6F3F60392CD0E0890014025B /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60332CD0E0890014025B /* SceneDelegate.m */; };
+		6F3F603A2CD0E0890014025B /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60352CD0E0890014025B /* ViewController.m */; };
+		6F3F603B2CD0E0890014025B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F602B2CD0E0890014025B /* Assets.xcassets */; };
+		6F3F603D2CD0E0890014025B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F602E2CD0E0890014025B /* LaunchScreen.storyboard */; };
+		6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60312CD0E0890014025B /* Main.storyboard */; };
+		6F3F60412CD0F7420014025B /* GCDWebServerManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60402CD0F7420014025B /* GCDWebServerManager.m */; };
+		6F3F60432CD0F82A0014025B /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60422CD0F82A0014025B /* test.txt */; };
+		94BDCCEA6D48B2062D82E733 /* EMCAResource.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3B68D972A365183F03F755BE /* EMCAResource.bundle */; };
+		B51E77223648810BAD8E0BAC /* EMCAResource.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3B68D972A365183F03F755BE /* EMCAResource.bundle */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6F3F5FEE2CD0DB520014025B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6F3F5FD12CD0DB200014025B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6F3F5FD92CD0DB200014025B;
+			remoteInfo = EMASCurl;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_EMASCurlDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		3B68D972A365183F03F755BE /* EMCAResource.bundle */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = "wrapper.plug-in"; name = EMCAResource.bundle; path = ./out/EMCAResource.bundle; sourceTree = "<group>"; };
+		4CDDE90E562620A9F8D1C3DC /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "./out/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
+		4F38E3FE6C69573CEDA87BA1 /* libPods-EMASCurlTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-EMASCurlTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EMASCurl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F3F5FE92CD0DB520014025B /* EMASCurlTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EMASCurlTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F3F5FF72CD0DB6E0014025B /* EMASCurlDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EMASCurlDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F3F60192CD0DF2C0014025B /* AliyunEmasServices-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "AliyunEmasServices-Info.plist"; sourceTree = "<group>"; };
+		6F3F601B2CD0DF5E0014025B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		6F3F601F2CD0E07F0014025B /* EMASCurl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurl.h; sourceTree = "<group>"; };
+		6F3F60202CD0E07F0014025B /* EMASCurlProtocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlProtocol.h; sourceTree = "<group>"; };
+		6F3F60212CD0E07F0014025B /* EMASCurlProtocol.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlProtocol.m; sourceTree = "<group>"; };
+		6F3F60262CD0E0860014025B /* EMASCurlTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlTests.m; sourceTree = "<group>"; };
+		6F3F60292CD0E0890014025B /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		6F3F602A2CD0E0890014025B /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		6F3F602B2CD0E0890014025B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6F3F602C2CD0E0890014025B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6F3F602D2CD0E0890014025B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		6F3F602F2CD0E0890014025B /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		6F3F60302CD0E0890014025B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		6F3F60322CD0E0890014025B /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
+		6F3F60332CD0E0890014025B /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
+		6F3F60342CD0E0890014025B /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		6F3F60352CD0E0890014025B /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		6F3F603F2CD0F72F0014025B /* GCDWebServerManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GCDWebServerManager.h; sourceTree = "<group>"; };
+		6F3F60402CD0F7420014025B /* GCDWebServerManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerManager.m; sourceTree = "<group>"; };
+		6F3F60422CD0F82A0014025B /* test.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.txt; sourceTree = "<group>"; };
+		73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		80EA0CB208EDD3FA81140A4E /* Pods-EMASCurlTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlTests.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlTests/Pods-EMASCurlTests.debug.xcconfig"; sourceTree = "<group>"; };
+		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
+		CC2F47226B83E18BD5D82ECA /* libcurl-HTTP3.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP3.xcframework"; path = "./out/libcurl-HTTP3.xcframework"; sourceTree = "<group>"; };
+		ED34BF3164EE9802D9AB9B8A /* Pods-EMASCurlTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlTests.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlTests/Pods-EMASCurlTests.release.xcconfig"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		6F3F5FD72CD0DB200014025B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0C366D6794C902EA11F24406 /* libcurl-HTTP3.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F3F5FE62CD0DB520014025B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F3F5FED2CD0DB520014025B /* EMASCurl.framework in Frameworks */,
+				2689848F829331F121A85036 /* libPods-EMASCurlTests.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F3F5FF42CD0DB6E0014025B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F3F60122CD0DB7D0014025B /* EMASCurl.framework in Frameworks */,
+				5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		6F3F5FD02CD0DB200014025B = {
+			isa = PBXGroup;
+			children = (
+				6F3F60422CD0F82A0014025B /* test.txt */,
+				6F3F60192CD0DF2C0014025B /* AliyunEmasServices-Info.plist */,
+				6F3F601B2CD0DF5E0014025B /* PrivacyInfo.xcprivacy */,
+				6F3F60222CD0E07F0014025B /* EMASCurl */,
+				6F3F60272CD0E0860014025B /* EMASCurlTests */,
+				6F3F60362CD0E0890014025B /* EMASCurlDemo */,
+				6F3F60112CD0DB7D0014025B /* Frameworks */,
+				6F3F5FDB2CD0DB200014025B /* Products */,
+				F020AA635FEA508BFC2214FC /* Pods */,
+				3B68D972A365183F03F755BE /* EMCAResource.bundle */,
+			);
+			sourceTree = "<group>";
+		};
+		6F3F5FDB2CD0DB200014025B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */,
+				6F3F5FE92CD0DB520014025B /* EMASCurlTests.xctest */,
+				6F3F5FF72CD0DB6E0014025B /* EMASCurlDemo.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6F3F60112CD0DB7D0014025B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */,
+				4F38E3FE6C69573CEDA87BA1 /* libPods-EMASCurlTests.a */,
+				CC2F47226B83E18BD5D82ECA /* libcurl-HTTP3.xcframework */,
+				4CDDE90E562620A9F8D1C3DC /* libcurl-HTTP2.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6F3F60222CD0E07F0014025B /* EMASCurl */ = {
+			isa = PBXGroup;
+			children = (
+				6F3F601F2CD0E07F0014025B /* EMASCurl.h */,
+				6F3F60202CD0E07F0014025B /* EMASCurlProtocol.h */,
+				6F3F60212CD0E07F0014025B /* EMASCurlProtocol.m */,
+			);
+			path = EMASCurl;
+			sourceTree = "<group>";
+		};
+		6F3F60272CD0E0860014025B /* EMASCurlTests */ = {
+			isa = PBXGroup;
+			children = (
+				6F3F60262CD0E0860014025B /* EMASCurlTests.m */,
+				6F3F603F2CD0F72F0014025B /* GCDWebServerManager.h */,
+				6F3F60402CD0F7420014025B /* GCDWebServerManager.m */,
+			);
+			path = EMASCurlTests;
+			sourceTree = "<group>";
+		};
+		6F3F60362CD0E0890014025B /* EMASCurlDemo */ = {
+			isa = PBXGroup;
+			children = (
+				6F3F60292CD0E0890014025B /* AppDelegate.h */,
+				6F3F602A2CD0E0890014025B /* AppDelegate.m */,
+				6F3F602B2CD0E0890014025B /* Assets.xcassets */,
+				6F3F602C2CD0E0890014025B /* Info.plist */,
+				6F3F602E2CD0E0890014025B /* LaunchScreen.storyboard */,
+				6F3F602F2CD0E0890014025B /* main.m */,
+				6F3F60312CD0E0890014025B /* Main.storyboard */,
+				6F3F60322CD0E0890014025B /* SceneDelegate.h */,
+				6F3F60332CD0E0890014025B /* SceneDelegate.m */,
+				6F3F60342CD0E0890014025B /* ViewController.h */,
+				6F3F60352CD0E0890014025B /* ViewController.m */,
+			);
+			path = EMASCurlDemo;
+			sourceTree = "<group>";
+		};
+		F020AA635FEA508BFC2214FC /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */,
+				A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */,
+				80EA0CB208EDD3FA81140A4E /* Pods-EMASCurlTests.debug.xcconfig */,
+				ED34BF3164EE9802D9AB9B8A /* Pods-EMASCurlTests.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		6F3F5FD52CD0DB200014025B /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F3F60232CD0E07F0014025B /* EMASCurl.h in Headers */,
+				6F3F60242CD0E07F0014025B /* EMASCurlProtocol.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		6F3F5FD92CD0DB200014025B /* EMASCurl */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6F3F5FE02CD0DB200014025B /* Build configuration list for PBXNativeTarget "EMASCurl" */;
+			buildPhases = (
+				6F3F5FD52CD0DB200014025B /* Headers */,
+				6F3F5FD62CD0DB200014025B /* Sources */,
+				6F3F5FD72CD0DB200014025B /* Frameworks */,
+				6F3F5FD82CD0DB200014025B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = EMASCurl;
+			productName = EMASCurl;
+			productReference = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		6F3F5FE82CD0DB520014025B /* EMASCurlTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6F3F5FF02CD0DB520014025B /* Build configuration list for PBXNativeTarget "EMASCurlTests" */;
+			buildPhases = (
+				8AD156147EF6765FBE9F9FF1 /* [CP] Check Pods Manifest.lock */,
+				6F3F5FE52CD0DB520014025B /* Sources */,
+				6F3F5FE62CD0DB520014025B /* Frameworks */,
+				6F3F5FE72CD0DB520014025B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6F3F5FEF2CD0DB520014025B /* PBXTargetDependency */,
+			);
+			name = EMASCurlTests;
+			productName = EMASCurlTests;
+			productReference = 6F3F5FE92CD0DB520014025B /* EMASCurlTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		6F3F5FF62CD0DB6E0014025B /* EMASCurlDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6F3F600E2CD0DB6F0014025B /* Build configuration list for PBXNativeTarget "EMASCurlDemo" */;
+			buildPhases = (
+				E47199EE6DAF4B10E966261D /* [CP] Check Pods Manifest.lock */,
+				6F3F5FF32CD0DB6E0014025B /* Sources */,
+				6F3F5FF42CD0DB6E0014025B /* Frameworks */,
+				6F3F5FF52CD0DB6E0014025B /* Resources */,
+				5C8B8DEB74BA3F3AB1ED3225 /* [CP] Embed Pods Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = EMASCurlDemo;
+			productName = EMASCurlDemo;
+			productReference = 6F3F5FF72CD0DB6E0014025B /* EMASCurlDemo.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6F3F5FD12CD0DB200014025B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					6F3F5FD92CD0DB200014025B = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					6F3F5FE82CD0DB520014025B = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					6F3F5FF62CD0DB6E0014025B = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = 6F3F5FD42CD0DB200014025B /* Build configuration list for PBXProject "EMASCurl" */;
+			compatibilityVersion = "Xcode 15.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 6F3F5FD02CD0DB200014025B;
+			minimizedProjectReferenceProxies = 1;
+			productRefGroup = 6F3F5FDB2CD0DB200014025B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6F3F5FD92CD0DB200014025B /* EMASCurl */,
+				6F3F5FE82CD0DB520014025B /* EMASCurlTests */,
+				6F3F5FF62CD0DB6E0014025B /* EMASCurlDemo */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6F3F5FD82CD0DB200014025B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F3F601C2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F3F5FE72CD0DB520014025B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F3F60432CD0F82A0014025B /* test.txt in Resources */,
+				6F3F601D2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */,
+				94BDCCEA6D48B2062D82E733 /* EMCAResource.bundle in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F3F5FF52CD0DB6E0014025B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F3F601A2CD0DF2C0014025B /* AliyunEmasServices-Info.plist in Resources */,
+				6F3F603B2CD0E0890014025B /* Assets.xcassets in Resources */,
+				6F3F603D2CD0E0890014025B /* LaunchScreen.storyboard in Resources */,
+				6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */,
+				6F3F601E2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */,
+				B51E77223648810BAD8E0BAC /* EMCAResource.bundle in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		5C8B8DEB74BA3F3AB1ED3225 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		8AD156147EF6765FBE9F9FF1 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-EMASCurlTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		E47199EE6DAF4B10E966261D /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-EMASCurlDemo-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6F3F5FD62CD0DB200014025B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F3F60252CD0E07F0014025B /* EMASCurlProtocol.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F3F5FE52CD0DB520014025B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F3F60412CD0F7420014025B /* GCDWebServerManager.m in Sources */,
+				6F3F60282CD0E0860014025B /* EMASCurlTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F3F5FF32CD0DB6E0014025B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F3F60372CD0E0890014025B /* AppDelegate.m in Sources */,
+				6F3F60382CD0E0890014025B /* main.m in Sources */,
+				6F3F60392CD0E0890014025B /* SceneDelegate.m in Sources */,
+				6F3F603A2CD0E0890014025B /* ViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6F3F5FEF2CD0DB520014025B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6F3F5FD92CD0DB200014025B /* EMASCurl */;
+			targetProxy = 6F3F5FEE2CD0DB520014025B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		6F3F602E2CD0E0890014025B /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6F3F602D2CD0E0890014025B /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		6F3F60312CD0E0890014025B /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6F3F60302CD0E0890014025B /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		6F3F5FE12CD0DB200014025B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				OTHER_LDFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.aliyun.emas.EMASCurl;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6F3F5FE22CD0DB200014025B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				OTHER_LDFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.aliyun.emas.EMASCurl;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6F3F5FE32CD0DB200014025B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		6F3F5FE42CD0DB200014025B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		6F3F5FF12CD0DB520014025B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 80EA0CB208EDD3FA81140A4E /* Pods-EMASCurlTests.debug.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-l\"GCDWebServer\"",
+					"-l\"z\"",
+					"-framework",
+					"\"CFNetwork\"",
+					"-framework",
+					"\"MobileCoreServices\"",
+					"-lc++",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aliyun.emas.EMASCurlTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6F3F5FF22CD0DB520014025B /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = ED34BF3164EE9802D9AB9B8A /* Pods-EMASCurlTests.release.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-l\"GCDWebServer\"",
+					"-l\"z\"",
+					"-framework",
+					"\"CFNetwork\"",
+					"-framework",
+					"\"MobileCoreServices\"",
+					"-lc++",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aliyun.emas.EMASCurlTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6F3F600F2CD0DB6F0014025B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EMASCurlDemo/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lc++",
+					"-lz",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aliyun.emas.EMASCurlDemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6F3F60102CD0DB6F0014025B /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EMASCurlDemo/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lc++",
+					"-lz",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aliyun.emas.EMASCurlDemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6F3F5FD42CD0DB200014025B /* Build configuration list for PBXProject "EMASCurl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6F3F5FE32CD0DB200014025B /* Debug */,
+				6F3F5FE42CD0DB200014025B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6F3F5FE02CD0DB200014025B /* Build configuration list for PBXNativeTarget "EMASCurl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6F3F5FE12CD0DB200014025B /* Debug */,
+				6F3F5FE22CD0DB200014025B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6F3F5FF02CD0DB520014025B /* Build configuration list for PBXNativeTarget "EMASCurlTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6F3F5FF12CD0DB520014025B /* Debug */,
+				6F3F5FF22CD0DB520014025B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6F3F600E2CD0DB6F0014025B /* Build configuration list for PBXNativeTarget "EMASCurlDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6F3F600F2CD0DB6F0014025B /* Debug */,
+				6F3F60102CD0DB6F0014025B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6F3F5FD12CD0DB200014025B /* Project object */;
+}

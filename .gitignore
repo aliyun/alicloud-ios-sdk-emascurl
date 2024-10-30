@@ -1,0 +1,242 @@
+# Xcode
+#
+# Xcode 8 and earlier
+build/
+out/
+DerivedData/
+#
+# Xcode 9 and later
+DerivedData
+*.xcworkspace
+*.xcuserdata
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/xcshareddata/.*
+
+# Swift Package Manager
+#
+# Add this line if you want to avoid checking in source code from Swift Package Manager dependencies.
+# Packages/
+#
+# Add this line if you want to avoid checking in Xcode build output of Swift Package Manager dependencies.
+.build/
+
+# CocoaPods
+#
+# We recommend against adding the Pods directory to your .gitignore. However
+# you should judge for yourself, the pros and cons are mentioned at:
+# https://guides.cocoapods.org/using/using-cocoapods.html#source-control
+#
+# Pods/
+# Add this line if you want to avoid checking in source code from Pod dependencies.
+# Pods/
+#
+# Add this line if you want to avoid checking in source code from Carthage dependencies.
+Carthage/Checkouts
+Carthage/Build
+# Cartfile.resolved
+# Cartfile.private
+
+# Accio dependency management
+Dependencies/
+.accio/
+
+# fastlane
+#
+# It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
+# screenshots whenever they are needed.
+#
+# **/fastlane/screenshots
+# **/fastlane/test_output
+# **/fastlane/report.xml
+
+# Code Injection
+#
+# Avoid storing code injection intermediate files
+#
+# **/*.hmap
+# **/*.gch
+
+# AppCode
+#
+# JetBrains AppCode IDE
+#
+# .idea/
+# .idea_modules/
+
+# Xcode automatically generated files
+#
+# .DS_Store
+
+# User-specific files
+#
+# xcuserdata
+
+# Playground specific
+#
+timeline.xctimeline
+playground.xcworkspace
+
+# SwiftPM
+#
+# Packages/
+# .build/
+
+# CocoaPods
+#
+# We recommend against adding the Pods directory to your .gitignore. However
+# you should judge for yourself, the pros and cons are mentioned at:
+# https://guides.cocoapods.org/using/using-cocoapods.html#source-control
+#
+Pods/
+Podfile.lock
+# .bundle
+
+# fastlane
+#
+# It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
+# screenshots whenever they are needed.
+#
+**/fastlane/screenshots
+**/fastlane/test_output
+**/fastlane/report.xml
+
+# Realm
+#
+# .realm
+# .realm.lock
+# .realm.management
+# .realm.note
+
+# Xcode automatically generated files
+#
+*.moved-aside
+*.xcuserstate
+
+# Temporary files
+#
+*.swp
+*.swo
+
+# Buck build system
+#
+buck-out/
+\.buckd/
+*.keystore
+
+# Build generated files
+#
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# xcpretty generated files
+#
+*.xcactivitylog
+*.log
+
+# Coverage
+#
+# DerivedData/Build/ProfileData
+# DerivedData/Build/Intermediates.noindex
+
+# Other
+#
+*.orig
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcdebugger/
+profile
+
+# Archives
+#
+*.xcarchive
+
+# CocoaPods specific
+#
+.cocoapods/
+
+# Carthage specific
+#
+Carthage/
+
+# swiftpm specific
+#
+.build/
+.swiftpm/xcode/package.pins
+
+# Other Xcode specific
+#
+*.xccheckout
+*.xccheckout.lock
+*.xcodeproj/project.xcworkspace
+*.xcworkspace/xcshareddata
+*.xcworkspace/xcuserdata
+
+# Generated files
+#
+*.gch
+*.pch
+*.pch++
+
+# Temporary files
+#
+*.moved-aside
+
+# Obj-C/Swift generated interface files
+#
+*.swiftdoc
+*.swiftsourceinfo
+
+# DerivedData for Xcode 8 and earlier
+#
+DerivedData/
+
+# Realm specific
+#
+*.realm
+*.realm.lock
+
+# SwiftLint
+#
+.swiftlint.yml
+
+# SwiftPM
+#
+.build/
+
+# Dependency manager configuration files
+#
+Cartfile.resolved
+
+# Dependency manager configuration files
+#
+Cartfile.private
+
+# AppCode
+#
+.idea/
+
+# AppCode
+#
+.idea_modules/
+
+# AppCode
+#
+.idea_modules/
+
+# User-specific files
+#
+*.xcuserstate
+*.xcworkspace
+
+# Temporary files
+#
+*.swp
+*.swo
+.DS_Store
+**/.DS_Store
