@@ -57,9 +57,8 @@
     [EMASCurlProtocol setDNSResolver:[MyDNSResolver class]];
     [EMASCurlProtocol setDebugLogEnabled:YES];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
-    // "User-Agent": "EMASCurlDemo/1 CFNetwork/1568.100.1 Darwin/24.0.0"
-    // [EMCurlProtocol setHttp2Enabled:NO];
-    // [EMCurlProtocol setHttp3Enabled:NO];
+    // [EMASCurlProtocol activateHttp2];
+    // [EMASCurlProtocol activateHttp3];
 
     _session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:[NSOperationQueue mainQueue]];
 }
