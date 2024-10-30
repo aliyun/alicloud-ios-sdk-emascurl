@@ -56,7 +56,7 @@ static NSString *httpsProxy;
 }
 
 + (void)activateHttp2 {
-    // 假如runtime 的libcurl xcframework支持HTTP2，且用户设置为真，则开启HTTP2
+    // 假如runtime 的libcurl xcframework支持HTTP2，则开启HTTP2
     if (curlFeatureHttp2) {
         enableHttp2 = YES;
     } else {
@@ -65,11 +65,17 @@ static NSString *httpsProxy;
 }
 
 + (void)activateHttp3 {
-    // 假如runtime 的libcurl xcframework支持HTTP3，且用户设置为真，则开启HTTP3
+    // 假如runtime 的libcurl xcframework支持HTTP3，则开启HTTP3
     if (curlFeatureHttp3) {
         enableHttp3 = YES;
     } else {
         enableHttp3 = NO;
+    }
+    // 假如runtime 的libcurl xcframework支持HTTP2，则开启HTTP2
+    if (curlFeatureHttp2) {
+        enableHttp2 = YES;
+    } else {
+        enableHttp2 = NO;
     }
 }
 
