@@ -9,12 +9,6 @@ target 'EMASCurlDemo' do
   use_frameworks!
 
   pod 'AlicloudHTTPDNS'
-
-  pod 'AFNetworking'
-  pod 'Alamofire'
-
-  # Pods for httpdns_ios_demo
-
 end
 
 target 'EMASCurlTests' do
