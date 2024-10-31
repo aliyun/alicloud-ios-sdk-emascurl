@@ -14,6 +14,6 @@ Pod::Spec.new do |s|
     s.platform     = :ios
     s.ios.deployment_target = '12.0'
   
-    s.xcconfig = { 'OTHER_LDFLAGS' => '$(inherited) -lc++ -lz' }
+    s.xcconfig = { 'OTHER_LDFLAGS' => '$(inherited) -ObjC -lc++ -lz' }
   
   end

@@ -21,9 +21,7 @@
 
 static Class<EMASCurlProtocolDNSResolver> dnsResolver;
 
-static bool enableHttp2;
-
-static bool enableHttp3;
+static HTTPVersion httpVersion;
 
 // runtime 的libcurl xcframework是否支持HTTP2
 static bool curlFeatureHttp2;
@@ -33,9 +31,6 @@ static bool curlFeatureHttp3;
 
 static bool enableDebugLog;
 
-static NSString *httpProxy;
-
-static NSString *httpsProxy;
 
 #pragma mark * user API
 
@@ -55,24 +50,8 @@ static NSString *httpsProxy;
     [NSURLProtocol unregisterClass:self];
 }
 
-+ (void)activateHttp2 {
-    // 假如runtime 的libcurl xcframework支持HTTP2，则开启HTTP2
-    if (curlFeatureHttp2) {
-        enableHttp2 = YES;
-    } else {
-        enableHttp2 = NO;
-    }
-}
-
-+ (void)activateHttp3 {
-    // 假如runtime 的libcurl xcframework支持HTTP3，则开启HTTP3
-    if (curlFeatureHttp3) {
-        enableHttp3 = YES;
-    } else {
-        enableHttp3 = NO;
-    }
-
-    [self activateHttp2];
++ (void)setHTTPVersion:(HTTPVersion)version {
+    httpVersion = version;
 }
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
@@ -94,8 +73,7 @@ static NSString *httpsProxy;
     curlFeatureHttp2 = (version_info->features & CURL_VERSION_HTTP2) ? YES : NO;
     curlFeatureHttp3 = (version_info->features & CURL_VERSION_HTTP3) ? YES : NO;
 
-    enableHttp2 = NO;
-    enableHttp3 = NO;
+    httpVersion = HTTP1;
     enableDebugLog = NO;
 }
 
@@ -181,16 +159,30 @@ static NSString *httpsProxy;
     curl_easy_setopt(easyHandle, CURLOPT_URL, request.URL.absoluteString.UTF8String);
 
     // 配置 http version
-    // 仅https url能使用quic
-    if (enableHttp3 && [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame) {
-        // Use HTTP/3, fallback to HTTP/2 or HTTP/1 if needed. For HTTPS only. For HTTP, this option makes libcurl return error.
-        curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_3);
-    } else if (enableHttp2) {
-        // Attempt HTTP 2 requests. libcurl falls back to HTTP 1.1 if HTTP 2 cannot be negotiated with the server.
-        curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
-    } else {
-        // 仅使用http1.1
-        curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+    switch (httpVersion) {
+        case HTTP3:
+            // 仅https url能使用quic
+            if (curlFeatureHttp3 && [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame) {
+                // Use HTTP/3, fallback to HTTP/2 or HTTP/1 if needed. For HTTPS only. For HTTP, this option makes libcurl return error.
+                curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_3);
+            } else if (curlFeatureHttp2) {
+                // Attempt HTTP 2 requests. libcurl falls back to HTTP 1.1 if HTTP 2 cannot be negotiated with the server.
+                curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
+            } else {
+                // 仅使用http1.1
+                curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+            }
+            break;
+        case HTTP2:
+            if (curlFeatureHttp2) {
+                curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
+            } else {
+                curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+            }
+            break;
+        default:
+            curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+            break;
     }
 
     // 配置支持的HTTP压缩算法，""代表自动检测内置的算法，目前zlib支持deflate与gzip

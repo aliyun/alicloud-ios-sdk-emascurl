@@ -11,7 +11,7 @@
 #import <Foundation/Foundation.h>
 
 #define EMASCURL_TESTPORT @"12345"
-#define EMASCURL_TESTDATA @"a=1&b=2"
+#define EMASCURL_TESTDATA @"emascurl test"
 #define EMASCURL_TESTHTML @"<html><body><h1>Hello, World!</h1></body></html>"
 
 @interface GCDWebServerManager : NSObject

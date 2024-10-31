@@ -57,8 +57,8 @@
     [EMASCurlProtocol setDNSResolver:[MyDNSResolver class]];
     [EMASCurlProtocol setDebugLogEnabled:YES];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
-    // [EMASCurlProtocol activateHttp2];
-    // [EMASCurlProtocol activateHttp3];
+    // [EMASCurlProtocol setHTTPVersion:HTTP2];
+    // [EMASCurlProtocol setHTTPVersion:HTTP3];
 
     _session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:[NSOperationQueue mainQueue]];
 }

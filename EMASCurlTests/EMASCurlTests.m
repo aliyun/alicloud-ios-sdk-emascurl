@@ -19,7 +19,7 @@ static id _mockNSBundle;
 @implementation EMASNetTests
 
 + (void)setUp {
-    // Put setup code here. This method is called before the invocation of each test method in the class.
+    // Suite-level setup method called before the class begins to run any of its test methods or their associated per-instance setUp methods.
     [super setUp];
     [[GCDWebServerManager sharedManager] startServer];
     [NSThread sleepForTimeInterval:5.0];
@@ -27,21 +27,22 @@ static id _mockNSBundle;
     _mockNSBundle = [OCMockObject niceMockForClass:[NSBundle class]];
     NSBundle *correctMainBundle = [NSBundle bundleForClass:self.class];
     [[[[_mockNSBundle stub] classMethod] andReturn:correctMainBundle] mainBundle];
-    // [EMASCurlProtocol setHttp2Enabled:NO];
-    // [EMASCurlProtocol setHttp3Enabled:NO];
 }
 
 + (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
+    // Suite-level teardown method called after the class has finished running all of its test methods and their associated per-instance tearDown methods and teardown blocks.
     [[GCDWebServerManager sharedManager] stopServer];
     [super tearDown];
 }
 
+#pragma mark ===================== HTTP/1.1 test =====================
+
 #pragma mark * NSURLSessionDataTask test
 
-- (void)testDataTaskGet {
+- (void)testHttp1DataTaskGet {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/hello", EMASCURL_TESTPORT]];
@@ -64,9 +65,10 @@ static id _mockNSBundle;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)testDataTaskHead {
+- (void)testHttp1DataTaskHead {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/hello", EMASCURL_TESTPORT]];
@@ -90,9 +92,10 @@ static id _mockNSBundle;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)testDataTaskPostWithBody {
+- (void)testHttp1DataTaskPostWithBody {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/post", EMASCURL_TESTPORT]];
@@ -117,9 +120,10 @@ static id _mockNSBundle;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)testDataTaskPostWithBodyStream {
+- (void)testHttp1DataTaskPostWithBodyStream {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/post", EMASCURL_TESTPORT]];
@@ -144,9 +148,10 @@ static id _mockNSBundle;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)testDataTaskPostWithNoBody {
+- (void)testHttp1DataTaskPostWithNoBody {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/post", EMASCURL_TESTPORT]];
@@ -170,9 +175,10 @@ static id _mockNSBundle;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)testDataTaskPUTWithBody {
+- (void)testHttp1DataTaskPUTWithBody {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/put", EMASCURL_TESTPORT]];
@@ -197,9 +203,10 @@ static id _mockNSBundle;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)testDataTaskPUTWithBodyStream {
+- (void)testHttp1DataTaskPUTWithBodyStream {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/put", EMASCURL_TESTPORT]];
@@ -224,9 +231,10 @@ static id _mockNSBundle;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)testDataTaskPUTWithNoBody {
+- (void)testHttp1DataTaskPUTWithNoBody {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/put", EMASCURL_TESTPORT]];
@@ -250,9 +258,10 @@ static id _mockNSBundle;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)testDataTaskRedirect {
+- (void)testHttp1DataTaskRedirect {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/redirect", EMASCURL_TESTPORT]];
@@ -275,9 +284,10 @@ static id _mockNSBundle;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)testDataTaskGzip {
+- (void)testHttp1DataTaskGzip {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/gzip", EMASCURL_TESTPORT]];
@@ -302,9 +312,10 @@ static id _mockNSBundle;
 
 #pragma mark * NSURLSessionUploadTask test
 
-- (void)testUploadTask {
+- (void)testHttp1UploadTask {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/put", EMASCURL_TESTPORT]];
@@ -333,9 +344,10 @@ static id _mockNSBundle;
 
 #pragma mark * NSURLSessionDownloadTask test
 
-- (void)testDownloadTask {
+- (void)testHttp1DownloadTask {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/download", EMASCURL_TESTPORT]];
@@ -358,9 +370,10 @@ static id _mockNSBundle;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)testDownloadTaskChunkedEncoding {
+- (void)testHttp1DownloadTaskChunkedEncoding {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP1];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%@/chunked", EMASCURL_TESTPORT]];
@@ -380,6 +393,107 @@ static id _mockNSBundle;
         dispatch_semaphore_signal(semaphore);
     }];
     [downloadTask resume];
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+}
+
+#pragma mark ===================== HTTP/2 test =====================
+
+#pragma mark * NSURLSessionDataTask test
+
+- (void)testHttp2DataTaskGet {
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+    [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP2];
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+
+    NSURL *url = [NSURL URLWithString:@"https://httpbin.org/anything"];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        XCTAssertNil(error);
+        XCTAssertNotNil(response);
+
+        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+        XCTAssertEqual(httpResponse.statusCode, 200);
+
+        NSError *jsonError;
+        NSDictionary *jsonObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+        XCTAssertNil(jsonError);
+
+        NSString *methodValue = jsonObject[@"method"];
+        XCTAssertEqualObjects(@"GET", methodValue);
+
+        dispatch_semaphore_signal(semaphore);
+    }];
+    [dataTask resume];
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+}
+
+- (void)testHttp2DataTaskHead {
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+    [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP2];
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+
+    NSURL *url = [NSURL URLWithString:@"https://httpbin.org/anything"];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    [request setHTTPMethod:@"HEAD"];
+
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        XCTAssertNil(error);
+        XCTAssertNotNil(response);
+
+        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+        XCTAssertEqual(httpResponse.statusCode, 200);
+        XCTAssertEqualObjects(@"", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]);
+
+        dispatch_semaphore_signal(semaphore);
+    }];
+    [dataTask resume];
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+}
+
+- (void)testHttp2DataTaskPostWithBody {
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+    [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setHTTPVersion:HTTP2];
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+
+    NSURL *url = [NSURL URLWithString:@"https://httpbin.org/anything"];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    [request setHTTPMethod:@"POST"];
+    [request setHTTPBody:[EMASCURL_TESTDATA dataUsingEncoding:NSUTF8StringEncoding]];
+
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        XCTAssertNil(error);
+        XCTAssertNotNil(response);
+
+        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+        XCTAssertEqual(httpResponse.statusCode, 200);
+
+        NSError *jsonError;
+        NSDictionary *jsonObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+        XCTAssertNil(jsonError);
+
+        NSString *methodValue = jsonObject[@"method"];
+        XCTAssertEqualObjects(@"POST", methodValue);
+
+        NSDictionary *formDict = jsonObject[@"form"];
+        XCTAssertNotNil(formDict);
+        XCTAssertEqualObjects(formDict[EMASCURL_TESTDATA], @"");
+
+        dispatch_semaphore_signal(semaphore);
+    }];
+    [dataTask resume];
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 

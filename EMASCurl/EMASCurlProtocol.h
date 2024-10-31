@@ -16,6 +16,12 @@
 
 @end
 
+typedef NS_ENUM(NSInteger, HTTPVersion) {
+    HTTP1,
+    HTTP2,
+    HTTP3
+};
+
 @interface EMASCurlProtocol : NSURLProtocol
 
 + (void)installIntoSessionConfiguration:(NSURLSessionConfiguration*)sessionConfiguration;
@@ -24,9 +30,7 @@
 
 + (void)unregisterCurlProtocol;
 
-+ (void)activateHttp2;
-
-+ (void)activateHttp3;
++ (void)setHTTPVersion:(HTTPVersion)version;
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled;
 
