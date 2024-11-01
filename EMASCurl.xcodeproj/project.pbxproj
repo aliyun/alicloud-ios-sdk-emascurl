@@ -28,8 +28,8 @@
 		6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60312CD0E0890014025B /* Main.storyboard */; };
 		6F3F60412CD0F7420014025B /* GCDWebServerManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60402CD0F7420014025B /* GCDWebServerManager.m */; };
 		6F3F60432CD0F82A0014025B /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60422CD0F82A0014025B /* test.txt */; };
-		963CEB1A9A985B093DC1F38F /* libcurl-HTTP3.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 903675D3EE83F76364BD4CC5 /* libcurl-HTTP3.xcframework */; };
 		EF68DE3487902428D6D7C1E5 /* EMASCAResource.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 9141503101648A17F2BB5D4A /* EMASCAResource.bundle */; };
+		FC079B446E6F0C77501869EB /* libcurl-HTTP3.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 903675D3EE83F76364BD4CC5 /* libcurl-HTTP3.xcframework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -81,7 +81,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				963CEB1A9A985B093DC1F38F /* libcurl-HTTP3.xcframework in Frameworks */,
+				FC079B446E6F0C77501869EB /* libcurl-HTTP3.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

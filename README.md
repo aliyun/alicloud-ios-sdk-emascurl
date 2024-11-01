@@ -52,5 +52,5 @@ Make sure you have installed `gem, ruby, xcodeproj` before.
     ```
 
 2. Results will be in the `Build` folder
-- **Build/http2**: the folder contains http2 version EMASCurl xcframework, zip file and podspec
-- **Build/http3**: the folder contains http3 version EMASCurl xcframework, zip file and podspec
+- **Build/http2**: the folder contains http2 version EMASCurl xcframework, zip file and podspec file
+- **Build/http3**: the folder contains http3 version EMASCurl xcframework, zip file and podspec file
