@@ -29,11 +29,11 @@ static id _mockNSBundle;
     [[[[_mockNSBundle stub] classMethod] andReturn:correctMainBundle] mainBundle];
 }
 
-// + (void)tearDown {
-//     // Suite-level teardown method called after the class has finished running all of its test methods and their associated per-instance tearDown methods and teardown blocks.
-//     [[GCDWebServerManager sharedManager] stopServer];
-//     [super tearDown];
-// }
++ (void)tearDown {
+    // Suite-level teardown method called after the class has finished running all of its test methods and their associated per-instance tearDown methods and teardown blocks.
+    [[GCDWebServerManager sharedManager] stopServer];
+    [super tearDown];
+}
 
 #pragma mark ===================== HTTP/1.1 test =====================
 

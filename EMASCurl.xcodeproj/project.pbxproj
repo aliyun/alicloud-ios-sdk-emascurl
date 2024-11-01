@@ -249,7 +249,6 @@
 				6F3F5FF32CD0DB6E0014025B /* Sources */,
 				6F3F5FF42CD0DB6E0014025B /* Frameworks */,
 				6F3F5FF52CD0DB6E0014025B /* Resources */,
-				5C8B8DEB74BA3F3AB1ED3225 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -332,23 +331,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		5C8B8DEB74BA3F3AB1ED3225 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		8AD156147EF6765FBE9F9FF1 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
