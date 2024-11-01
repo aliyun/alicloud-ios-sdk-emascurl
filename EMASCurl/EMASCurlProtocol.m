@@ -10,9 +10,9 @@
 
 @interface EMASCurlProtocol()
 
-@property (nonatomic) NSInputStream *inputStream;
+@property (atomic, strong) NSInputStream *inputStream;
 
-@property (nonatomic) CURL *easyHandle;
+@property (atomic) CURL *easyHandle;
 
 @end
 
@@ -28,6 +28,8 @@ static bool curlFeatureHttp2;
 
 // runtime 的libcurl xcframework是否支持HTTP3
 static bool curlFeatureHttp3;
+
+static NSString *proxyServer;
 
 static bool enableDebugLog;
 
@@ -75,6 +77,43 @@ static bool enableDebugLog;
 
     httpVersion = HTTP1;
     enableDebugLog = NO;
+
+    // 设置定时任务读取proxy
+    [self startProxyUpdatingTimer];
+}
+
++ (void)startProxyUpdatingTimer {
+    // 设置一个定时器，10s更新一次proxy设置
+    NSTimer *timer = [NSTimer timerWithTimeInterval:10.0
+                                             target:self
+                                           selector:@selector(updateProxySettings)
+                                           userInfo:nil
+                                            repeats:YES];
+    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+
+    // immediatelly start a updating action
+    [self updateProxySettings];
+}
+
++ (void)updateProxySettings {
+    CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
+    if (!proxySettings) {
+        return;
+    }
+    NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
+    if (!(proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable])) {
+        CFRelease(proxySettings);
+        return;
+    }
+    NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
+    NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
+
+    if (httpProxy && httpPort) {
+        @synchronized (self) {
+            proxyServer = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
+        }
+    }
+    CFRelease(proxySettings);
 }
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
@@ -241,9 +280,17 @@ static bool enableDebugLog;
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [filePath UTF8String]);
     }
     // 假如设置了自定义resolve，则使用
-    if(dnsResolver) {
+    if (dnsResolver) {
         [self configCustomResolve:easyHandle];
     }
+
+    @synchronized ([EMASCurlProtocol class]) {
+        // 设置proxy
+        if (proxyServer) {
+            curl_easy_setopt(easyHandle, CURLOPT_PROXY, [proxyServer UTF8String]);
+        }
+    }
+
     // 设置debug回调函数以输出日志
     if (enableDebugLog) {
         curl_easy_setopt(easyHandle, CURLOPT_VERBOSE, 1L);

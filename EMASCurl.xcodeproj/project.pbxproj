@@ -26,7 +26,7 @@
 		6F3F60432CD0F82A0014025B /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60422CD0F82A0014025B /* test.txt */; };
 		6F3F60A52CD476C00014025B /* EMASCurlTestsHTTP1.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60A42CD476C00014025B /* EMASCurlTestsHTTP1.m */; };
 		6F3F60A72CD477110014025B /* EMASCurlTestsHTTP2.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60A62CD477110014025B /* EMASCurlTestsHTTP2.m */; };
-		BEB98CBB95B64B5EA074E688 /* libcurl-HTTP3.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 903675D3EE83F76364BD4CC5 /* libcurl-HTTP3.xcframework */; };
+		C707F13C2E5E0EB3F0DB89D4 /* libcurl-HTTP3.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 903675D3EE83F76364BD4CC5 /* libcurl-HTTP3.xcframework */; };
 		EF68DE3487902428D6D7C1E5 /* EMASCAResource.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 9141503101648A17F2BB5D4A /* EMASCAResource.bundle */; };
 /* End PBXBuildFile section */
 
@@ -79,7 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BEB98CBB95B64B5EA074E688 /* libcurl-HTTP3.xcframework in Frameworks */,
+				C707F13C2E5E0EB3F0DB89D4 /* libcurl-HTTP3.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
