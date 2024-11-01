@@ -12,13 +12,9 @@
 		5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */; };
 		6F3F5FED2CD0DB520014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
 		6F3F60122CD0DB7D0014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
-		6F3F601C2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F601B2CD0DF5E0014025B /* PrivacyInfo.xcprivacy */; };
-		6F3F601D2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F601B2CD0DF5E0014025B /* PrivacyInfo.xcprivacy */; };
-		6F3F601E2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F601B2CD0DF5E0014025B /* PrivacyInfo.xcprivacy */; };
 		6F3F60232CD0E07F0014025B /* EMASCurl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6F3F601F2CD0E07F0014025B /* EMASCurl.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6F3F60242CD0E07F0014025B /* EMASCurlProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 6F3F60202CD0E07F0014025B /* EMASCurlProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6F3F60252CD0E07F0014025B /* EMASCurlProtocol.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60212CD0E07F0014025B /* EMASCurlProtocol.m */; };
-		6F3F60282CD0E0860014025B /* EMASCurlTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60262CD0E0860014025B /* EMASCurlTests.m */; };
 		6F3F60372CD0E0890014025B /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F602A2CD0E0890014025B /* AppDelegate.m */; };
 		6F3F60382CD0E0890014025B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F602F2CD0E0890014025B /* main.m */; };
 		6F3F60392CD0E0890014025B /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60332CD0E0890014025B /* SceneDelegate.m */; };
@@ -28,8 +24,10 @@
 		6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60312CD0E0890014025B /* Main.storyboard */; };
 		6F3F60412CD0F7420014025B /* GCDWebServerManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60402CD0F7420014025B /* GCDWebServerManager.m */; };
 		6F3F60432CD0F82A0014025B /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60422CD0F82A0014025B /* test.txt */; };
+		6F3F60A52CD476C00014025B /* EMASCurlTestsHTTP1.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60A42CD476C00014025B /* EMASCurlTestsHTTP1.m */; };
+		6F3F60A72CD477110014025B /* EMASCurlTestsHTTP2.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60A62CD477110014025B /* EMASCurlTestsHTTP2.m */; };
+		BEB98CBB95B64B5EA074E688 /* libcurl-HTTP3.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 903675D3EE83F76364BD4CC5 /* libcurl-HTTP3.xcframework */; };
 		EF68DE3487902428D6D7C1E5 /* EMASCAResource.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 9141503101648A17F2BB5D4A /* EMASCAResource.bundle */; };
-		FC079B446E6F0C77501869EB /* libcurl-HTTP3.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 903675D3EE83F76364BD4CC5 /* libcurl-HTTP3.xcframework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,11 +46,9 @@
 		6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EMASCurl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F3F5FE92CD0DB520014025B /* EMASCurlTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EMASCurlTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F3F5FF72CD0DB6E0014025B /* EMASCurlDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EMASCurlDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		6F3F601B2CD0DF5E0014025B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		6F3F601F2CD0E07F0014025B /* EMASCurl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurl.h; sourceTree = "<group>"; };
 		6F3F60202CD0E07F0014025B /* EMASCurlProtocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlProtocol.h; sourceTree = "<group>"; };
 		6F3F60212CD0E07F0014025B /* EMASCurlProtocol.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlProtocol.m; sourceTree = "<group>"; };
-		6F3F60262CD0E0860014025B /* EMASCurlTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlTests.m; sourceTree = "<group>"; };
 		6F3F60292CD0E0890014025B /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		6F3F602A2CD0E0890014025B /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		6F3F602B2CD0E0890014025B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -67,6 +63,8 @@
 		6F3F603F2CD0F72F0014025B /* GCDWebServerManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GCDWebServerManager.h; sourceTree = "<group>"; };
 		6F3F60402CD0F7420014025B /* GCDWebServerManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerManager.m; sourceTree = "<group>"; };
 		6F3F60422CD0F82A0014025B /* test.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.txt; sourceTree = "<group>"; };
+		6F3F60A42CD476C00014025B /* EMASCurlTestsHTTP1.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlTestsHTTP1.m; sourceTree = "<group>"; };
+		6F3F60A62CD477110014025B /* EMASCurlTestsHTTP2.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlTestsHTTP2.m; sourceTree = "<group>"; };
 		73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		80EA0CB208EDD3FA81140A4E /* Pods-EMASCurlTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlTests.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlTests/Pods-EMASCurlTests.debug.xcconfig"; sourceTree = "<group>"; };
 		903675D3EE83F76364BD4CC5 /* libcurl-HTTP3.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP3.xcframework"; path = "./out/libcurl-HTTP3.xcframework"; sourceTree = "<group>"; };
@@ -81,7 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FC079B446E6F0C77501869EB /* libcurl-HTTP3.xcframework in Frameworks */,
+				BEB98CBB95B64B5EA074E688 /* libcurl-HTTP3.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -110,7 +108,6 @@
 			isa = PBXGroup;
 			children = (
 				6F3F60422CD0F82A0014025B /* test.txt */,
-				6F3F601B2CD0DF5E0014025B /* PrivacyInfo.xcprivacy */,
 				6F3F60222CD0E07F0014025B /* EMASCurl */,
 				6F3F60272CD0E0860014025B /* EMASCurlTests */,
 				6F3F60362CD0E0890014025B /* EMASCurlDemo */,
@@ -155,9 +152,10 @@
 		6F3F60272CD0E0860014025B /* EMASCurlTests */ = {
 			isa = PBXGroup;
 			children = (
-				6F3F60262CD0E0860014025B /* EMASCurlTests.m */,
 				6F3F603F2CD0F72F0014025B /* GCDWebServerManager.h */,
 				6F3F60402CD0F7420014025B /* GCDWebServerManager.m */,
+				6F3F60A42CD476C00014025B /* EMASCurlTestsHTTP1.m */,
+				6F3F60A62CD477110014025B /* EMASCurlTestsHTTP2.m */,
 			);
 			path = EMASCurlTests;
 			sourceTree = "<group>";
@@ -308,7 +306,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6F3F601C2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -317,7 +314,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6F3F60432CD0F82A0014025B /* test.txt in Resources */,
-				6F3F601D2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */,
 				EF68DE3487902428D6D7C1E5 /* EMASCAResource.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -329,7 +325,6 @@
 				6F3F603B2CD0E0890014025B /* Assets.xcassets in Resources */,
 				6F3F603D2CD0E0890014025B /* LaunchScreen.storyboard in Resources */,
 				6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */,
-				6F3F601E2CD0DF5E0014025B /* PrivacyInfo.xcprivacy in Resources */,
 				18846F178B4772D853276E16 /* EMASCAResource.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -413,8 +408,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6F3F60A72CD477110014025B /* EMASCurlTestsHTTP2.m in Sources */,
 				6F3F60412CD0F7420014025B /* GCDWebServerManager.m in Sources */,
-				6F3F60282CD0E0860014025B /* EMASCurlTests.m in Sources */,
+				6F3F60A52CD476C00014025B /* EMASCurlTestsHTTP1.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
