@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
     s.name         = "EMASCurl"
-    s.version      = "1.0.0-http3"
+    s.version      = "1.0.0-http3-beta"
     s.summary      = "Aliyun EMASCurl iOS SDK."
     s.homepage     = "https://www.aliyun.com/product/httpdns"
     s.author       = { "xiaoyu" => "yx456323@alibaba-inc.com" }

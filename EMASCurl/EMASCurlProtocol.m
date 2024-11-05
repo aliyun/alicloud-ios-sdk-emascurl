@@ -14,6 +14,10 @@
 
 @property (atomic) CURL *easyHandle;
 
+@property (atomic) struct curl_slist *headerFields;
+
+@property (atomic) struct curl_slist *resolveList;
+
 @end
 
 
@@ -121,7 +125,7 @@ static bool enableDebugLog;
         return NO;
     }
     // 不是http或https，则不拦截
-    if(!([request.URL.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame ||
+    if (!([request.URL.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame ||
          [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)) {
         return NO;
     }
@@ -161,19 +165,24 @@ static bool enableDebugLog;
         [self.client URLProtocol:self didReceiveResponse:[self convertHeaderToResponse:receivedHeader] cacheStoragePolicy:NSURLCacheStorageAllowed];
         [self.client URLProtocolDidFinishLoading:self];
     }
-    curl_easy_cleanup(easyHandle);
-    self.easyHandle = nil;
 }
 
 - (void)stopLoading {
-    if(self.inputStream != nil && [self.inputStream streamStatus] == NSStreamStatusOpen) {
-        [self.inputStream close];
+    if (self.inputStream) {
+        if ([self.inputStream streamStatus] == NSStreamStatusOpen) {
+            [self.inputStream close];
+        }
         self.inputStream = nil;
     }
-    if (self.easyHandle != nil) {
+    if (self.easyHandle) {
         curl_easy_cleanup(self.easyHandle);
         self.easyHandle = nil;
     }
+    curl_slist_free_all(self.headerFields);
+    self.headerFields = nil;
+
+    curl_slist_free_all(self.resolveList);
+    self.resolveList = nil;
 }
 
 #pragma mark * curl option setup
@@ -229,6 +238,7 @@ static bool enableDebugLog;
 
     // 将拦截到的request的header字段进行透传
     struct curl_slist *headerFields = convertHeadersToCurlSlist(request.allHTTPHeaderFields);
+    self.headerFields = headerFields;
     curl_easy_setopt(easyHandle, CURLOPT_HTTPHEADER, headerFields);
 }
 
@@ -334,7 +344,9 @@ static bool enableDebugLog;
     // 解析成功则使用httpdns解析结果，失败则降级
     if (address) {
         NSString *hostPortAddressString = [NSString stringWithFormat:@"+%@:%@:%@", host, port, address];
-        curl_easy_setopt(easyHandle, CURLOPT_RESOLVE, curl_slist_append(NULL, [hostPortAddressString UTF8String]));
+        struct curl_slist *resolveList = curl_slist_append(NULL, [hostPortAddressString UTF8String]);
+        self.resolveList = resolveList;
+        curl_easy_setopt(easyHandle, CURLOPT_RESOLVE, resolveList);
     }
 }
 
@@ -379,7 +391,7 @@ struct curl_slist * convertHeadersToCurlSlist(NSDictionary<NSString *, NSString 
     for (NSInteger i = 0; i < headerLines.count; i++) {
         NSString *line = headerLines[i];
         // 忽略掉尾部空字符串
-        if(![line isEqualToString:@""]) {
+        if (![line isEqualToString:@""]) {
             // 分析首行，以空格做分隔
             if (i == 0) {
                 NSArray<NSString *> *components = [line componentsSeparatedByString:@" "];
