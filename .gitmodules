@@ -1,15 +1,6 @@
 [submodule "curl"]
 	path = curl
 	url = https://github.com/curl/curl
-[submodule "ngtcp2"]
-	path = ngtcp2
-	url = https://github.com/ngtcp2/ngtcp2
-[submodule "nghttp3"]
-	path = nghttp3
-	url = https://github.com/ngtcp2/nghttp3
 [submodule "nghttp2"]
 	path = nghttp2
 	url = https://github.com/nghttp2/nghttp2.git
-[submodule "boringssl"]
-	path = boringssl
-	url = https://boringssl.googlesource.com/boringssl
