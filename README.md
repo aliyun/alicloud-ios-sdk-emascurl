@@ -159,7 +159,7 @@ EMASCurl会使用zlib进行HTTP压缩与解压，因此您需要为应用的TARG
 
 ## EMASCurl使用
 
-完成**EMASCurl集成**后，您可以根据头文件中的API(位于文件MASCurlProtocol.h)使用EMASCurl，具体使用方式可以参考EMASCurlDemo中的示例。
+完成**EMASCurl集成**后，您可以根据头文件中的API(位于文件EMASCurlProtocol.h)使用EMASCurl，具体使用方式可以参考EMASCurlDemo中的示例。
 
 ## EMASCurlDemo运行
 
