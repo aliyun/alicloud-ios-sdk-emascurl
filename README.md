@@ -9,7 +9,7 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
 
 ## 版本
 
-- 当前版本：1.0.1-http2-beta
+- 当前版本：1.0.2-http2-beta
 
 ## EMASCurl构建
 
@@ -17,7 +17,7 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
 
 ### 构建工具安装
 
-构建过程中需要使用git克隆代码、使用automake, autoconf, libtool, pkg-config等构建工具、使用gem, ruby, xcodeproj等工具，请您确认这些命令行工具已经安装在本机，如果尚未安装参考以下安装命令：
+构建过程中需要使用git克隆代码、使用automake, autoconf, libtool, pkg-config, cmake等构建工具、使用gem, ruby, xcodeproj等工具，请您确认这些命令行工具已经安装在本机，如果尚未安装参考以下安装命令：
 
 ```shell
 brew install automake autoconf libtool pkg-config
