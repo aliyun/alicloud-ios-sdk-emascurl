@@ -207,6 +207,8 @@ static bool enableDebugLog;
 
     curl_slist_free_all(self.resolveList);
     self.resolveList = nil;
+
+    self.headerBuffer = nil;
 }
 
 #pragma mark * curl option setup
@@ -381,7 +383,7 @@ static bool enableDebugLog;
 #pragma mark * convert function
 
 // 将拦截到的request中的header字段，转换为一个curl list
-struct curl_slist * convertHeadersToCurlSlist(NSDictionary<NSString *, NSString *> *headers) {
+struct curl_slist *convertHeadersToCurlSlist(NSDictionary<NSString *, NSString *> *headers) {
     struct curl_slist *headerFields = NULL;
     for (NSString *key in headers) {
         // 对于Content-Length，使用CURLOPT_POSTFIELDSIZE_LARGE指定，不要在这里透传，否则POST重定向为GET时仍会保留Content-Length，导致错误
@@ -396,7 +398,7 @@ struct curl_slist * convertHeadersToCurlSlist(NSDictionary<NSString *, NSString 
 }
 
 // 将libcurl收到的header数据，转换为一个NSURLResponse
-- (NSURLResponse *)convertHeaderToResponse:(NSMutableData *)receivedHeader {
+NSURLResponse *convertHeaderToResponse(NSMutableData *receivedHeader, NSURL *url) {
     // 将 NSMutableData 转换为 NSString
     NSString *headerString = [[NSString alloc] initWithData:receivedHeader encoding:NSUTF8StringEncoding];
 
@@ -432,7 +434,7 @@ struct curl_slist * convertHeadersToCurlSlist(NSDictionary<NSString *, NSString 
             }
         }
     }
-    return [[NSHTTPURLResponse alloc] initWithURL:self.request.URL statusCode:statusCode HTTPVersion:httpVersion headerFields:headers];
+    return [[NSHTTPURLResponse alloc] initWithURL:url statusCode:statusCode HTTPVersion:httpVersion headerFields:headers];
 }
 
 #pragma mark * libcurl callback function
@@ -462,8 +464,9 @@ size_t header_cb(void *contents, size_t size, size_t nmemb, void *userp) {
     // 检查是否是头部结束行
     if ([line isEqualToString:@"\r\n"]) {
         if (!protocol.isRedirecting) {
-            NSURLResponse *response = [protocol convertHeaderToResponse:protocol.headerBuffer];
+            NSURLResponse *response = convertHeaderToResponse(protocol.headerBuffer, protocol.request.URL);
             [protocol.client URLProtocol:protocol didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageAllowed];
+            response = nil;
         }
     }
 
