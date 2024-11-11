@@ -12,11 +12,19 @@
 
 @property (atomic, strong) NSInputStream *inputStream;
 
-@property (atomic) CURL *easyHandle;
+@property (atomic, assign) CURL *easyHandle;
 
-@property (atomic) struct curl_slist *headerFields;
+@property (atomic, assign) struct curl_slist *headerFields;
 
-@property (atomic) struct curl_slist *resolveList;
+@property (atomic, assign) struct curl_slist *resolveList;
+
+@property (atomic, assign) BOOL shouldCancel;
+
+@property (atomic, strong) dispatch_semaphore_t cleanupSemaphore;
+
+@property (atomic, strong) NSMutableData *headerBuffer;
+
+@property (atomic, assign) BOOL isRedirecting;
 
 @end
 
@@ -69,6 +77,16 @@ static bool enableDebugLog;
 }
 
 #pragma mark * NSURLProtocol overrides
+
+// 在实例化方法中初始化信号量
+- (instancetype)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id<NSURLProtocolClient>)client {
+    self = [super initWithRequest:request cachedResponse:cachedResponse client:client];
+    _shouldCancel = NO;
+    _cleanupSemaphore = dispatch_semaphore_create(0);
+    _headerBuffer = [[NSMutableData alloc] init];
+    _isRedirecting = NO;
+    return self;
+}
 
 // 在类加载方法中初始化libcurl
 + (void)load {
@@ -148,26 +166,32 @@ static bool enableDebugLog;
     [self populateRequestHeader:easyHandle];
     [self populateRequestBody:easyHandle];
 
-    // 用于存储收到的所有header
-    NSMutableData *receivedHeader = [[NSMutableData alloc] init];
     NSError *error = nil;
-    [self configEasyHandle:easyHandle receivedHeader:receivedHeader error:&error];
+    [self configEasyHandle:easyHandle error:&error];
     if (error) {
         [self.client URLProtocol:self didFailWithError:error];
         return;
     }
 
-    // 开始请求
-    CURLcode res = curl_easy_perform(easyHandle);
-    if (res != CURLE_OK) {
-        [self.client URLProtocol:self didFailWithError:[NSError errorWithDomain:@"fail to peform curl" code:res userInfo:nil]];
-    } else {
-        [self.client URLProtocol:self didReceiveResponse:[self convertHeaderToResponse:receivedHeader] cacheStoragePolicy:NSURLCacheStorageAllowed];
-        [self.client URLProtocolDidFinishLoading:self];
-    }
+    // 放到别的线程执行，不要阻塞startLoading，会导致task cancel时stopLoading无法及时调用
+    dispatch_async(dispatch_queue_create("com.aliyun.emas.startrequest", DISPATCH_QUEUE_CONCURRENT), ^{
+        // 开始请求
+        CURLcode res = curl_easy_perform(easyHandle);
+        if (res != CURLE_OK) {
+            [self.client URLProtocol:self didFailWithError:[NSError errorWithDomain:@"fail to peform curl" code:res userInfo:nil]];
+        } else {
+            [self.client URLProtocolDidFinishLoading:self];
+        }
+        // 通知stopLoading已经走完curl_easy_perform
+        dispatch_semaphore_signal(self.cleanupSemaphore);
+    });
 }
 
 - (void)stopLoading {
+    self.shouldCancel = YES;
+    // 等待curl_easy_perform执行完毕或者成功被中断
+    dispatch_semaphore_wait(self.cleanupSemaphore, DISPATCH_TIME_FOREVER);
+
     if (self.inputStream) {
         if ([self.inputStream streamStatus] == NSStreamStatusOpen) {
             [self.inputStream close];
@@ -276,7 +300,7 @@ static bool enableDebugLog;
     }
 }
 
-- (void)configEasyHandle:(CURL *)easyHandle receivedHeader:(NSMutableData *)receivedHeader error:(NSError **)error {
+- (void)configEasyHandle:(CURL *)easyHandle error:(NSError **)error {
     // 假如是quic这个framework，由于使用的boringssl无法访问苹果native CA，需要从Bundle中读取CA
     if (curlFeatureHttp3) {
         NSBundle *mainBundle = [NSBundle mainBundle];
@@ -310,11 +334,15 @@ static bool enableDebugLog;
     // 设置header回调函数处理收到的响应的header数据
     curl_easy_setopt(easyHandle, CURLOPT_HEADERFUNCTION, header_cb);
     // receivedHeader会被传给header_cb函数的void *userp参数
-    curl_easy_setopt(easyHandle, CURLOPT_HEADERDATA, (__bridge void *)receivedHeader);
+    curl_easy_setopt(easyHandle, CURLOPT_HEADERDATA, (__bridge void *)self);
     // 设置write回调函数处理收到的响应的body数据
     curl_easy_setopt(easyHandle, CURLOPT_WRITEFUNCTION, write_cb);
     // self会被传给write_cb函数的void *userp
     curl_easy_setopt(easyHandle, CURLOPT_WRITEDATA, (__bridge void *)self);
+    // 设置progress_callback以响应任务取消
+    curl_easy_setopt(easyHandle, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(easyHandle, CURLOPT_XFERINFOFUNCTION, progress_callback);
+    curl_easy_setopt(easyHandle, CURLOPT_XFERINFODATA, (__bridge void *)self);
 
     // 开启TCP keep alive
     curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPALIVE, 1L);
@@ -411,8 +439,34 @@ struct curl_slist * convertHeadersToCurlSlist(NSDictionary<NSString *, NSString 
 
 // libcurl的header回调函数，用于处理收到的header
 size_t header_cb(void *contents, size_t size, size_t nmemb, void *userp) {
-    NSMutableData *receivedHeader = (__bridge NSMutableData *)userp;
-    [receivedHeader appendBytes:contents length:size * nmemb];
+    EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)userp;
+    NSData *data = [NSData dataWithBytes:contents length:size * nmemb];
+
+    NSString *line = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+
+    // 检查是否是首部行
+    if ([line hasPrefix:@"HTTP/"]) {
+        // 检查是否是重定向
+        if ([line containsString:@" 3"]) {
+            protocol.isRedirecting = YES;
+        } else {
+            protocol.isRedirecting = NO;
+        }
+    }
+
+    // 如果不是重定向，则存储行
+    if (!protocol.isRedirecting) {
+        [protocol.headerBuffer appendData:data];
+    }
+
+    // 检查是否是头部结束行
+    if ([line isEqualToString:@"\r\n"]) {
+        if (!protocol.isRedirecting) {
+            NSURLResponse *response = [protocol convertHeaderToResponse:protocol.headerBuffer];
+            [protocol.client URLProtocol:protocol didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageAllowed];
+        }
+    }
+
     return size * nmemb;
 }
 
@@ -440,6 +494,16 @@ size_t read_cb(char *buffer, size_t size, size_t nitems, void *userp) {
         [protocol.client URLProtocol:protocol didFailWithError:[NSError errorWithDomain:@"fail to read data for HTTP body" code:-2 userInfo:nil]];
     }
     return bytesRead;
+}
+
+static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
+{
+    EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)clientp;
+    // 检查是否取消传输
+    if (protocol.shouldCancel) {
+        return 1;
+    }
+    return 0;
 }
 
 // libcurl的debug回调函数，输出libcurl的运行日志
