@@ -466,7 +466,6 @@ size_t header_cb(void *contents, size_t size, size_t nmemb, void *userp) {
         if (!protocol.isRedirecting) {
             NSURLResponse *response = convertHeaderToResponse(protocol.headerBuffer, protocol.request.URL);
             [protocol.client URLProtocol:protocol didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageAllowed];
-            response = nil;
         }
     }
 
