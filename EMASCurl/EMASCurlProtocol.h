@@ -24,10 +24,13 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 
 @interface EMASCurlProtocol : NSURLProtocol
 
+// 拦截使用自定义NSURLSessionConfiguration创建的session发起的requst
 + (void)installIntoSessionConfiguration:(NSURLSessionConfiguration*)sessionConfiguration;
 
+// 拦截sharedSession发起的request
 + (void)registerCurlProtocol;
 
+// 注销对sharedSession的拦截
 + (void)unregisterCurlProtocol;
 
 + (void)setHTTPVersion:(HTTPVersion)version;

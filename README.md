@@ -3,41 +3,26 @@
 [![GitHub version](https://badge.fury.io/gh/aliyun%2Falicloud-ios-sdk-emascurl.git.svg)](https://badge.fury.io/gh/aliyun%2Falicloud-ios-sdk-emascurl.git)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
-- [EMASCurl](#emascurl)
-  - [关于](#关于)
-  - [版本](#版本)
-  - [快速入门](#快速入门)
-    - [从cocoapods引入依赖](#从cocoapods引入依赖)
-    - [EMASCurl使用示例](#emascurl使用示例)
-  - [EMASCurl构建](#emascurl构建)
-    - [构建工具安装](#构建工具安装)
-    - [拉取子模块](#拉取子模块)
-    - [构建libcurl xcframework](#构建libcurl-xcframework)
-    - [构建EMASCurl xcframework](#构建emascurl-xcframework)
-  - [EMASCurl集成](#emascurl集成)
-    - [cocoapods引入依赖](#cocoapods引入依赖)
-      - [指定Master仓库和阿里云仓库](#指定master仓库和阿里云仓库)
-      - [添加依赖](#添加依赖)
-      - [安装依赖](#安装依赖)
-    - [本地手动集成依赖](#本地手动集成依赖)
-      - [将framework文件添加到工程中](#将framework文件添加到工程中)
-      - [添加Linker Flags](#添加linker-flags)
-  - [EMASCurl使用方式](#emascurl使用方式)
-    - [开启EMASCurl拦截](#开启emascurl拦截)
-      - [拦截`NSURLSessionConfiguration`](#拦截nsurlsessionconfiguration)
-      - [拦截`sharedSession`](#拦截sharedsession)
-    - [使用HTTPDNS](#使用httpdns)
-    - [选择HTTP版本](#选择http版本)
-    - [开启debug 日志](#开启debug-日志)
-  - [License](#license)
-  - [联系我们](#联系我们)
-
-
 ## 关于
 
 EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/curl)的iOS平台网络库框架，能够与阿里云[HTTPDNS](https://www.aliyun.com/product/httpdns)配合使用，以降低iOS开发者接入[HTTPDNS](https://www.aliyun.com/product/httpdns)的门槛。
 
-## 版本
+## 目录
+- [最新版本](#最新版本)
+- [快速入门](#快速入门)
+- [构建EMASCurl](#构建emascurl)
+- [集成EMASCurl](#集成emascurl)
+  - [cocoapods引入依赖](#cocoapods引入依赖)
+  - [本地手动集成依赖](#本地手动集成依赖)
+- [使用EMASCurl](#使用emascurl)
+  - [开启EMASCurl拦截](#开启emascurl拦截)
+  - [与HTTPDNS配合使用](#与httpdns配合使用)
+  - [选择HTTP版本](#选择http版本)
+  - [开启调试日志](#开启调试日志)
+- [License](#license)
+- [联系我们](#联系我们)
+
+## 最新版本
 
 - 当前版本：1.0.2-http2-beta
 
@@ -53,7 +38,7 @@ source 'https://github.com/aliyun/aliyun-specs.git'
 target 'yourAppTarget' do
     use_framework!
 
-    pod 'EMASCurl', '1.0.2-http2-beta'
+    pod 'EMASCurl', 'x.x.x'
 end
 ```
 在您的Terminal中进入Podfile所在目录，执行以下命令安装依赖
@@ -61,16 +46,16 @@ end
 pod install --repo-update
 ```
 
-### EMASCurl使用示例
+### 使用EMASCurl发送网络请求
 
-为您的`NSURLSessionConfiguration`安装EMASCurl
+首先，为您的`NSURLSessionConfiguration`注册EMASCurl实现。
 
 ```objc
 NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
 [EMASCurlProtocol installIntoSessionConfiguration:config];
 ```
 
-之后，EMASCurl可以拦截此`NSURLSessionConfiguration`创建的`NSURLSession`发起的请求
+之后，EMASCurl可以拦截此`NSURLSessionConfiguration`创建的`NSURLSession`发起的请求。
 
 ```objc
 NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:[NSOperationQueue mainQueue]];
@@ -92,7 +77,7 @@ NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
 [dataTask resume];
 ```
 
-## EMASCurl构建
+## 构建EMASCurl
 
 本章节介绍如何使用本仓库本地构建EMASCurl xcframework。
 
@@ -108,7 +93,7 @@ gem install xcodeproj
 
 ### 拉取子模块
 
-本仓库以submodule的形式管理依赖的仓库，在克隆后需要手动拉取子模块：
+本仓库以submodule的形式管理依赖的仓库，在克隆后需要手动拉取子模块。
 
 ```shell
 git submodule update --init --recursive --progress
@@ -120,7 +105,7 @@ git submodule update --init --recursive --progress
 | curl  | curl-8_10_1  |
 | nghttp2  | v1.64.0  |
 
-### 构建libcurl xcframework
+### 构建libcurl.xcframework
 
 ```shell
 ./build_libcurl_xcframework.sh
@@ -136,7 +121,7 @@ pod install --repo-update
 ```
 运行完脚本后，在`Build/http2/emascurl`文件夹下会生成**EMASCurl.xcframework**，本框架目前支持HTTP1、HTTP2。
 
-## EMASCurl集成
+## 集成EMASCurl
 
 本章节介绍如何将EMASCurl添加到您的应用中。
 
@@ -180,7 +165,7 @@ pod install --repo-update
 
 EMASCurl会使用zlib进行HTTP压缩与解压，因此您需要为应用的TARGETS -> Build Settings -> Linking -> Other Linker Flags添加上`-lz`与`-ObjC`。
 
-## EMASCurl使用方式
+## 使用EMASCurl
 
 ### 开启EMASCurl拦截
 
@@ -192,14 +177,14 @@ EMASCurl会使用zlib进行HTTP压缩与解压，因此您需要为应用的TARG
 + (void)installIntoSessionConfiguration:(NSURLSessionConfiguration*)sessionConfiguration;
 ```
 
-首先，为您的`NSURLSessionConfiguration`安装EMASCurl
+首先，为您的`NSURLSessionConfiguration`安装EMASCurl。
 
 ```objc
 NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
 [EMASCurlProtocol installIntoSessionConfiguration:config];
 ```
 
-之后，EMASCurl可以拦截此`NSURLSessionConfiguration`创建的`NSURLSession`发起的请求
+之后，EMASCurl可以拦截此`NSURLSessionConfiguration`创建的`NSURLSession`发起的请求。
 
 ```objc
 NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:[NSOperationQueue mainQueue]];
@@ -227,13 +212,13 @@ NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
 + (void)registerCurlProtocol;
 ```
 
-首先，开启对于`sharedSession`的拦截
+首先，开启对于`sharedSession`的拦截。
 
 ```objc
 [EMASCurlProtocol registerCurlProtocol];
 ```
 
-之后，EMASCurl可以拦截`sharedSession`发起的请求
+之后，EMASCurl可以拦截`sharedSession`发起的请求。
 
 ```objc
 NSURLSession *session = [NSURLSession sharedSession];
@@ -261,9 +246,9 @@ NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
 + (void)unregisterCurlProtocol;
 ```
 
-### 使用HTTPDNS
+### 与HTTPDNS配合使用
 
-假如您希望与HTTPDNS配合使用，那么需要实现以下的DNS接口：
+EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需要实现以下的DNS接口：
 
 ```objc
 @protocol EMASCurlProtocolDNSResolver <NSObject>
@@ -326,13 +311,13 @@ NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
 + HTTP1: 使用HTTP1.1
 + HTTP2: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
 
-### 开启debug 日志
+### 开启调试日志
 
 ```objc
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled;
 ```
 
-开启后会打印出日志记录
+开启后会打印出日志记录。
 
 ## License
 

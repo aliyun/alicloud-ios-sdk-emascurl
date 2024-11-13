@@ -10,21 +10,21 @@
 
 @interface EMASCurlProtocol()
 
-@property (atomic, strong) NSInputStream *inputStream;
+@property (nonatomic, strong) NSInputStream *inputStream;
 
-@property (atomic, assign) CURL *easyHandle;
+@property (nonatomic, assign) CURL *easyHandle;
 
-@property (atomic, assign) struct curl_slist *headerFields;
+@property (nonatomic, assign) struct curl_slist *headerFields;
 
-@property (atomic, assign) struct curl_slist *resolveList;
+@property (nonatomic, assign) struct curl_slist *resolveList;
 
 @property (atomic, assign) BOOL shouldCancel;
 
 @property (atomic, strong) dispatch_semaphore_t cleanupSemaphore;
 
-@property (atomic, strong) NSMutableData *headerBuffer;
+@property (nonatomic, strong) NSMutableData *headerBuffer;
 
-@property (atomic, assign) BOOL isRedirecting;
+@property (nonatomic, assign) BOOL isRedirecting;
 
 @end
 
@@ -48,14 +48,12 @@ static bool enableDebugLog;
 
 #pragma mark * user API
 
-// 拦截使用自定义NSURLSessionConfiguration创建的session发起的requst
 + (void)installIntoSessionConfiguration:(NSURLSessionConfiguration*)sessionConfiguration {
     NSMutableArray *protocolsArray = [NSMutableArray arrayWithArray:sessionConfiguration.protocolClasses];
     [protocolsArray insertObject:self atIndex:0];
     [sessionConfiguration setProtocolClasses:protocolsArray];
 }
 
-// 拦截sharedSession发起的request
 + (void)registerCurlProtocol {
     [NSURLProtocol registerClass:self];
 }
@@ -78,7 +76,6 @@ static bool enableDebugLog;
 
 #pragma mark * NSURLProtocol overrides
 
-// 在实例化方法中初始化信号量
 - (instancetype)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id<NSURLProtocolClient>)client {
     self = [super initWithRequest:request cachedResponse:cachedResponse client:client];
     _shouldCancel = NO;
@@ -150,7 +147,6 @@ static bool enableDebugLog;
     return YES;
 }
 
-// 无需修改原request
 + (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request {
     return request;
 }
@@ -173,23 +169,23 @@ static bool enableDebugLog;
         return;
     }
 
-    // 放到别的线程执行，不要阻塞startLoading，会导致task cancel时stopLoading无法及时调用
-    dispatch_async(dispatch_queue_create("com.aliyun.emas.startrequest", DISPATCH_QUEUE_CONCURRENT), ^{
-        // 开始请求
+    NSThread *thread = [[NSThread alloc] initWithBlock:^{
         CURLcode res = curl_easy_perform(easyHandle);
         if (res != CURLE_OK) {
-            [self.client URLProtocol:self didFailWithError:[NSError errorWithDomain:@"fail to peform curl" code:res userInfo:nil]];
+            [self.client URLProtocol:self didFailWithError:[NSError errorWithDomain:@"fail to perform curl" code:res userInfo:nil]];
         } else {
             [self.client URLProtocolDidFinishLoading:self];
         }
-        // 通知stopLoading已经走完curl_easy_perform
         dispatch_semaphore_signal(self.cleanupSemaphore);
-    });
+    }];
+
+    thread.name = [NSString stringWithFormat:@"EMASCurl-%@-t", self.request.URL.host];
+    thread.qualityOfService = NSQualityOfServiceUserInitiated;
+    [thread start];
 }
 
 - (void)stopLoading {
     self.shouldCancel = YES;
-    // 等待curl_easy_perform执行完毕或者成功被中断
     dispatch_semaphore_wait(self.cleanupSemaphore, DISPATCH_TIME_FOREVER);
 
     if (self.inputStream) {
@@ -498,8 +494,7 @@ size_t read_cb(char *buffer, size_t size, size_t nitems, void *userp) {
     return bytesRead;
 }
 
-static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
-{
+static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
     EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)clientp;
     // 检查是否取消传输
     if (protocol.shouldCancel) {
@@ -539,6 +534,5 @@ int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, void *us
     }
     return 0;
 }
-
 
 @end
