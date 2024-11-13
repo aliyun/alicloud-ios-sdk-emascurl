@@ -41,6 +41,8 @@
 
 @property (nonatomic, strong) NSURLSession *session;
 
+@property (nonatomic, strong) NSURLSessionDataTask *dataTask;
+
 @end
 
 @implementation ViewController
@@ -67,6 +69,10 @@
     [self sendNormalRequest];
 }
 
+- (IBAction)cancelDataTask:(id)sender {
+    [self.dataTask cancel];
+}
+
 - (void)sendNormalRequest {
     NSURL *url = [NSURL URLWithString:@"https://httpbin.org/anything"];
 
@@ -84,6 +90,7 @@
         NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         NSLog(@"Response body: %@", body);
     }];
+    self.dataTask = dataTask;
     [dataTask resume];
 }
 
