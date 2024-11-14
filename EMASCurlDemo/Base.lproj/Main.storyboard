@@ -18,21 +18,39 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2Eo-1E-kVt">
-                                <rect key="frame" x="126" y="409" width="142" height="35"/>
+                                <rect key="frame" x="137" y="209" width="118" height="35"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="filled" title="NormalRequest"/>
+                                <buttonConfiguration key="configuration" style="filled" title="OneRequest"/>
                                 <connections>
-                                    <action selector="onNormalRequestClick:" destination="BYZ-38-t0r" eventType="touchUpInside" id="1sL-f0-8Kc"/>
+                                    <action selector="onNormalRequestClick:" destination="BYZ-38-t0r" eventType="touchUpInside" id="zix-Tr-9kr"/>
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="hne-kU-rbS">
-                                <rect key="frame" x="158" y="560" width="77" height="35"/>
+                                <rect key="frame" x="111" y="289" width="171" height="35"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="tinted" title="Cancel"/>
+                                <buttonConfiguration key="configuration" style="tinted" title="CancelOneRequest"/>
                                 <connections>
-                                    <action selector="cancelDataTask:" destination="BYZ-38-t0r" eventType="touchUpInside" id="qLZ-VZ-bJl"/>
+                                    <action selector="cancelDataTask:" destination="BYZ-38-t0r" eventType="touchUpInside" id="e3a-k0-1GB"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="FL4-GG-bTg">
+                                <rect key="frame" x="118" y="498" width="156" height="35"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="ContinueRequest"/>
+                                <connections>
+                                    <action selector="onContinueRequestClick:" destination="BYZ-38-t0r" eventType="touchUpInside" id="A1u-6d-LxZ"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="x3g-X6-vOF">
+                                <rect key="frame" x="92" y="584" width="208" height="35"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="tinted" title="CancelContinueRequest"/>
+                                <connections>
+                                    <action selector="cancelContinueRequest:" destination="BYZ-38-t0r" eventType="touchUpInside" id="C0A-sx-qO4"/>
                                 </connections>
                             </button>
                         </subviews>

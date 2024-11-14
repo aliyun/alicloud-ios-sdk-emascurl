@@ -24,7 +24,7 @@
 
 @property (nonatomic, strong) NSMutableData *headerBuffer;
 
-@property (nonatomic, assign) BOOL isRedirecting;
+@property (nonatomic, assign) BOOL isFinalResponse;
 
 @end
 
@@ -81,7 +81,7 @@ static bool enableDebugLog;
     _shouldCancel = NO;
     _cleanupSemaphore = dispatch_semaphore_create(0);
     _headerBuffer = [[NSMutableData alloc] init];
-    _isRedirecting = NO;
+    _isFinalResponse = YES;
     return self;
 }
 
@@ -444,22 +444,22 @@ size_t header_cb(void *contents, size_t size, size_t nmemb, void *userp) {
 
     // 检查是否是首部行
     if ([line hasPrefix:@"HTTP/"]) {
-        // 检查是否是重定向
-        if ([line containsString:@" 3"]) {
-            protocol.isRedirecting = YES;
+        // 检查是否是重定向、1开头的中间状态、代理的connect响应
+        if ([line containsString:@" 3"] || [line containsString:@" 1"] || [line containsString:@"Connection established"]) {
+            protocol.isFinalResponse = NO;
         } else {
-            protocol.isRedirecting = NO;
+            protocol.isFinalResponse = YES;
         }
     }
 
-    // 如果不是重定向，则存储行
-    if (!protocol.isRedirecting) {
+    // 如果是最后的Response则存储这个响应
+    if (protocol.isFinalResponse) {
         [protocol.headerBuffer appendData:data];
     }
 
     // 检查是否是头部结束行
     if ([line isEqualToString:@"\r\n"]) {
-        if (!protocol.isRedirecting) {
+        if (protocol.isFinalResponse) {
             NSURLResponse *response = convertHeaderToResponse(protocol.headerBuffer, protocol.request.URL);
             [protocol.client URLProtocol:protocol didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageAllowed];
         }
