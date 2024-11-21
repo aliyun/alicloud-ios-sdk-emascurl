@@ -22,7 +22,7 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
 
 ## 最新版本
 
-- 当前版本：1.0.2-http2-beta
+- 当前版本：1.0.2-http2
 
 ## 快速入门
 
@@ -142,7 +142,7 @@ source 'https://github.com/aliyun/aliyun-specs.git'
 ```shell
 use_framework!
 
-pod 'EMASCurl', '1.0.2-http2-beta'
+pod 'EMASCurl', 'x.x.x'
 ```
 
 #### 安装依赖
