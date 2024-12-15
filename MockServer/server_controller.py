@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Response, UploadFile, File, HTTPException
-from fastapi.responses import StreamingResponse, RedirectResponse, FileResponse
+from fastapi import FastAPI, Response, UploadFile, File, HTTPException, Request
+from fastapi.responses import StreamingResponse, RedirectResponse, FileResponse, JSONResponse
 import json
 import os
 import asyncio
@@ -13,49 +13,52 @@ def create_app():
     async def root():
         return {"message": "Hello World!"}
 
-    @app.get("/test")
-    async def test(protocol: str = "Unknown"):
-        return Response(
-            content=json.dumps({
-                "status": "ok",
-                "protocol": protocol,
-                "timestamp": "test"
-            }),
-            media_type="application/json"
+    @app.api_route("/echo", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
+    async def echo(request: Request):
+        """
+        Echo back request details including headers, method, and body
+        For binary data, only return the content length
+        """
+        # Get headers (excluding connection headers that FastAPI handles)
+        headers = dict(request.headers)
+        excluded_headers = ['connection', 'content-length', 'transfer-encoding']
+        headers = {k: v for k, v in headers.items() if k.lower() not in excluded_headers}
+        
+        # Get request body
+        body = await request.body()
+        content_type = request.headers.get('content-type', '').lower()
+        
+        # Handle body based on content type
+        if body:
+            if any(t in content_type for t in ['text', 'json', 'xml', 'form-data', 'x-www-form-urlencoded']):
+                body_content = body.decode('utf-8', errors='replace')
+            else:
+                body_content = f"<binary data of length {len(body)} bytes>"
+        else:
+            body_content = None
+            
+        response_data = {
+            "method": request.method,
+            "url": str(request.url),
+            "headers": headers,
+            "query_params": dict(request.query_params),
+            "body": body_content
+        }
+        
+        return JSONResponse(
+            content=response_data,
+            headers={"X-Echo-Server": "FastAPI"}
         )
 
-    @app.get("/download/{size_mb}")
-    async def download(size_mb: int):
-        """Generate and serve a file of specified size in MB"""
-        if size_mb <= 0 or size_mb > 100:  # limit max size to 100MB
-            raise HTTPException(status_code=400, detail="Size must be between 1 and 100 MB")
-        
-        async def generate_content():
-            chunk_size = 1024 * 1024  # 1MB chunks
-            for _ in range(size_mb):
-                yield os.urandom(chunk_size)
-        
-        return StreamingResponse(
-            generate_content(),
-            media_type="application/octet-stream",
-            headers={"Content-Disposition": f"attachment; filename=test_{size_mb}mb.bin"}
-        )
-
-    @app.get("/download/slow")
-    async def download_slow(size_kb: int = 1024, speed_kbps: int = 100):
+    @app.get("/download/1MB_data_at_200KBps_speed")
+    async def download_slow():
         """
         Generate and serve a file with controlled download speed
-        size_kb: Total size in KB
-        speed_kbps: Speed in KB per second
         """
-        if size_kb <= 0 or size_kb > 102400:  # limit max size to 100MB
-            raise HTTPException(status_code=400, detail="Size must be between 1 and 102400 KB")
-        if speed_kbps <= 0 or speed_kbps > 1024:  # limit max speed to 1MB/s
-            raise HTTPException(status_code=400, detail="Speed must be between 1 and 1024 KB/s")
         
         async def generate_slow_content():
-            chunk_size = speed_kbps * 1024  # bytes per second
-            remaining_size = size_kb * 1024  # total bytes
+            chunk_size = 200 * 1024  # bytes per second
+            remaining_size = 1 * 1024 * 1024  # total bytes
             
             while remaining_size > 0:
                 # Calculate the actual chunk size for this iteration
@@ -69,9 +72,9 @@ def create_app():
             generate_slow_content(),
             media_type="application/octet-stream",
             headers={
-                "Content-Disposition": f"attachment; filename=slow_{size_kb}kb_{speed_kbps}kbps.bin",
-                "X-Download-Size": str(size_kb * 1024),
-                "X-Download-Speed": str(speed_kbps * 1024)
+                "Content-Disposition": "attachment; filename=slow_1mb_200kbps.bin",
+                "X-Download-Size": "1MB",
+                "X-Download-Speed": "200kbps"
             }
         )
 
@@ -112,3 +115,5 @@ def create_app():
         return RedirectResponse(url=next_url)
 
     return app
+
+app = create_app()
