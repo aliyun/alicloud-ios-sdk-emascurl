@@ -35,6 +35,8 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 
 + (void)setHTTPVersion:(HTTPVersion)version;
 
++ (void)setSelfSignedCAFilePath:(NSString *)selfSignedCAFilePath;
+
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled;
 
 + (void)setDNSResolver:(Class<EMASCurlProtocolDNSResolver>)resolver;
