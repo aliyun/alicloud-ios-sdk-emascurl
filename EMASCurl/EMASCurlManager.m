@@ -108,7 +108,6 @@ static int timerCallback(CURLM *multi, long timeout_ms, void *userp);
             CURL *easy = msg->easy_handle;
             NSNumber *easyKey = @((uintptr_t)easy);
 
-            // Fetch completion
             void (^completion)(BOOL, NSError *) = _completionMap[easyKey];
 
             [_completionMap removeObjectForKey:easyKey];

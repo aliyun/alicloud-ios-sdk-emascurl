@@ -41,8 +41,8 @@ static NSURLSession *session;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)downloadBinaryDataAndCancel {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", HTTP11_ENDPOINT, PATH_DOWNLOAD_1MB_DATA_AT_200KBPS_SPEED]];
+- (void)downloadBinaryDataAndCancel:(NSString *)endpoint {
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_DOWNLOAD_1MB_DATA_AT_200KBPS_SPEED]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
@@ -83,6 +83,15 @@ static NSURLSession *session;
     [self downloadBinaryData:HTTP11_ENDPOINT];
 }
 
+- (void)testDownloadBinaryDataAndCancel {
+    [self downloadBinaryDataAndCancel:HTTP11_ENDPOINT];
+}
+
+- (void)testCancelDownloadAndDownloadAgain {
+    [self downloadBinaryDataAndCancel:HTTP11_ENDPOINT];
+    [self downloadBinaryData:HTTP11_ENDPOINT];
+}
+
 @end
 
 @interface EMASCurlDownloadTestHttp2 : EMASCurlDownloadTestBase
@@ -111,7 +120,12 @@ static NSURLSession *session;
 }
 
 - (void)testDownloadBinaryDataAndCancel {
-    [self downloadBinaryDataAndCancel];
+    [self downloadBinaryDataAndCancel:HTTP2_ENDPOINT];
+}
+
+- (void)testCancelDownloadAndDownloadAgain {
+    [self downloadBinaryDataAndCancel:HTTP2_ENDPOINT];
+    [self downloadBinaryData:HTTP2_ENDPOINT];
 }
 
 @end

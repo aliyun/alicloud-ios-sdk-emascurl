@@ -14,4 +14,7 @@ python3 server.py
 
 # 测试用例
 测试用例包含以下这些场景
--
+- 基本的GET、PUT、POST、DELETE、OPTION、HEAD请求
+- 重定向
+- 数据下载场景和中途取消
+- 数据上传场景和中途取消
