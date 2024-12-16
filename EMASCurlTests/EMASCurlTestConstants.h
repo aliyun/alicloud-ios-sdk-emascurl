@@ -25,5 +25,7 @@ static NSString *PATH_DOWNLOAD_1MB_DATA_AT_200KBPS_SPEED = @"/download/1MB_data_
 
 static NSString *PATH_GZIP_RESPONSE = @"/get/gzip_response";
 
+static NSString *PATH_UPLOAD_SLOW = @"/upload/slow";
+
 
 #endif /* EMASCurlTestConstants_h */

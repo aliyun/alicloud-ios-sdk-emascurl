@@ -24,6 +24,7 @@
 		6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60312CD0E0890014025B /* Main.storyboard */; };
 		949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */; };
 		949539152D0FC531001FE850 /* EMASCurlSimpleTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539142D0FC531001FE850 /* EMASCurlSimpleTest.m */; };
+		949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539162D1020B7001FE850 /* EMASCurlUploadTest.m */; };
 		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
 		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
 /* End PBXBuildFile section */
@@ -67,6 +68,7 @@
 		949538CC2D0F1CB3001FE850 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlDownloadTest.m; sourceTree = "<group>"; };
 		949539142D0FC531001FE850 /* EMASCurlSimpleTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlSimpleTest.m; sourceTree = "<group>"; };
+		949539162D1020B7001FE850 /* EMASCurlUploadTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlUploadTest.m; sourceTree = "<group>"; };
 		94C5B5D82D071D86006BC856 /* EMASCurlManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlManager.h; sourceTree = "<group>"; };
 		94C5B5D92D071D86006BC856 /* EMASCurlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlManager.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
@@ -186,6 +188,7 @@
 				949538C92D0E7736001FE850 /* EMASCurlTestConstants.h */,
 				949539142D0FC531001FE850 /* EMASCurlSimpleTest.m */,
 				949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */,
+				949539162D1020B7001FE850 /* EMASCurlUploadTest.m */,
 				949538CC2D0F1CB3001FE850 /* README.md */,
 			);
 			path = EMASCurlTests;
@@ -425,6 +428,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */,
 				949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */,
 				949539152D0FC531001FE850 /* EMASCurlSimpleTest.m in Sources */,
 			);

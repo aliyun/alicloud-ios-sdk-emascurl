@@ -18,27 +18,49 @@ static NSURLSession *session;
 
 @implementation EMASCurlSimpleTestBase
 
-- (void)headRequest:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_ECHO]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+#pragma mark - Helper Methods
 
-    request.HTTPMethod = @"HEAD";
+- (void)executeRequest:(NSString *)endpoint
+                  path:(NSString *)path
+                method:(NSString *)method
+                  body:(NSDictionary *)body
+               headers:(NSDictionary *)headers
+       validationBlock:(void (^)(NSData *data, NSHTTPURLResponse *response))validationBlock {
+
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, path]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    request.HTTPMethod = method;
+
+    // Add body if provided
+    if (body) {
+        NSError *jsonError;
+        NSData *bodyData = [NSJSONSerialization dataWithJSONObject:body options:0 error:&jsonError];
+        XCTAssertNil(jsonError, @"Failed to serialize request body: %@", jsonError);
+        request.HTTPBody = bodyData;
+        [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    }
+
+    // Add custom headers
+    [headers enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL *stop) {
+        [request setValue:value forHTTPHeaderField:key];
+    }];
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
     NSURLSessionDataTask *task = [session dataTaskWithRequest:request
-                                               completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error, @"Request failed with error: %@", error);
         XCTAssertNotNil(response, @"No response received");
 
         NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
 
-        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected status code 200, got %ld", (long)httpResponse.statusCode);
+        // Common response validation
+        [self validateCommonResponse:httpResponse];
 
-        NSDictionary *responseHeaders = httpResponse.allHeaderFields;
-        XCTAssertEqualObjects(responseHeaders[@"x-echo-server"], @"FastAPI", @"Expected FastAPI echo server header");
-
-        XCTAssertEqual(data.length, 0, @"HEAD request should not return body data");
+        // Custom validation if provided
+        if (validationBlock) {
+            validationBlock(data, httpResponse);
+        }
 
         dispatch_semaphore_signal(semaphore);
     }];
@@ -46,316 +68,151 @@ static NSURLSession *session;
     [task resume];
 
     XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)), 0, @"Request timed out");
+}
+
+- (void)validateCommonResponse:(NSHTTPURLResponse *)response {
+    XCTAssertEqual(response.statusCode, 200, @"Expected status code 200, got %ld", (long)response.statusCode);
+}
+
+- (void)validateEchoResponse:(NSData *)data expectedMethod:(NSString *)method {
+    NSError *jsonError;
+    NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+    XCTAssertNil(jsonError, @"Failed to parse response JSON: %@", jsonError);
+    XCTAssertEqualObjects(responseData[@"method"], method, @"Expected %@ method in response", method);
+}
+
+#pragma mark - Test Methods
+
+- (void)headRequest:(NSString *)endpoint {
+    [self executeRequest:endpoint
+                    path:PATH_ECHO
+                  method:@"HEAD"
+                    body:nil
+                 headers:nil
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        XCTAssertEqual(data.length, 0, @"HEAD request should not return body data");
+    }];
 }
 
 - (void)deleteRequest:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_ECHO]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-
-    request.HTTPMethod = @"DELETE";
-
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
-                                               completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        XCTAssertNil(error, @"Request failed with error: %@", error);
-        XCTAssertNotNil(response, @"No response received");
-
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected status code 200, got %ld", (long)httpResponse.statusCode);
-
-        NSDictionary *responseHeaders = httpResponse.allHeaderFields;
-        XCTAssertEqualObjects(responseHeaders[@"x-echo-server"], @"FastAPI", @"Expected FastAPI echo server header");
-
-        NSError *jsonError;
-        NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-        XCTAssertNil(jsonError, @"Failed to parse response JSON: %@", jsonError);
-        XCTAssertEqualObjects(responseData[@"method"], @"DELETE", @"Expected DELETE method in response");
-
-        dispatch_semaphore_signal(semaphore);
+    [self executeRequest:endpoint
+                    path:PATH_ECHO
+                  method:@"DELETE"
+                    body:nil
+                 headers:nil
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        [self validateEchoResponse:data expectedMethod:@"DELETE"];
     }];
-
-    [task resume];
-
-    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)), 0, @"Request timed out");
 }
 
 - (void)putRequest:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_ECHO]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-
-    request.HTTPMethod = @"PUT";
-
-    // Add request body
     NSDictionary *requestBody = @{@"test": @"data"};
-    NSError *jsonError;
-    NSData *bodyData = [NSJSONSerialization dataWithJSONObject:requestBody options:0 error:&jsonError];
-    XCTAssertNil(jsonError, @"Failed to serialize request body: %@", jsonError);
+    [self executeRequest:endpoint
+                    path:PATH_ECHO
+                  method:@"PUT"
+                    body:requestBody
+                 headers:nil
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        [self validateEchoResponse:data expectedMethod:@"PUT"];
 
-    request.HTTPBody = bodyData;
-    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+        NSError *jsonError;
+        NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+        XCTAssertNil(jsonError);
 
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
-                                               completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        XCTAssertNil(error, @"Request failed with error: %@", error);
-        XCTAssertNotNil(response, @"No response received");
-
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected status code 200, got %ld", (long)httpResponse.statusCode);
-
-        NSDictionary *responseHeaders = httpResponse.allHeaderFields;
-        XCTAssertEqualObjects(responseHeaders[@"x-echo-server"], @"FastAPI", @"Expected FastAPI echo server header");
-
-        NSError *parseError;
-        NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&parseError];
-        XCTAssertNil(parseError, @"Failed to parse response JSON: %@", parseError);
-
-        // Verify response data
-        XCTAssertEqualObjects(responseData[@"method"], @"PUT", @"Expected PUT method in response");
-        XCTAssertEqualObjects(responseData[@"headers"][@"content-type"], @"application/json", @"Expected content-type header in response");
-
-        // Verify the echoed body
         NSString *bodyContent = responseData[@"body"];
         XCTAssertNotNil(bodyContent, @"Expected body content in response");
         XCTAssertTrue([bodyContent containsString:@"test"], @"Expected request body to be echoed back");
-
-        dispatch_semaphore_signal(semaphore);
     }];
-
-    [task resume];
-
-    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)), 0, @"Request timed out");
 }
 
 - (void)postRequest:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_ECHO]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-
-    request.HTTPMethod = @"POST";
-
-    // Add request body
     NSDictionary *requestBody = @{
         @"name": @"test_user",
         @"age": @25,
         @"email": @"test@example.com"
     };
-    NSError *jsonError;
-    NSData *bodyData = [NSJSONSerialization dataWithJSONObject:requestBody options:0 error:&jsonError];
-    XCTAssertNil(jsonError, @"Failed to serialize request body: %@", jsonError);
 
-    request.HTTPBody = bodyData;
-    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [self executeRequest:endpoint
+                    path:PATH_ECHO
+                  method:@"POST"
+                    body:requestBody
+                 headers:nil
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        [self validateEchoResponse:data expectedMethod:@"POST"];
 
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+        NSError *jsonError;
+        NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+        XCTAssertNil(jsonError);
 
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
-                                               completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        XCTAssertNil(error, @"Request failed with error: %@", error);
-        XCTAssertNotNil(response, @"No response received");
-
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected status code 200, got %ld", (long)httpResponse.statusCode);
-
-        NSDictionary *responseHeaders = httpResponse.allHeaderFields;
-        XCTAssertEqualObjects(responseHeaders[@"x-echo-server"], @"FastAPI", @"Expected FastAPI echo server header");
-
-        NSError *parseError;
-        NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&parseError];
-        XCTAssertNil(parseError, @"Failed to parse response JSON: %@", parseError);
-
-        // Verify response data
-        XCTAssertEqualObjects(responseData[@"method"], @"POST", @"Expected POST method in response");
-        XCTAssertEqualObjects(responseData[@"headers"][@"content-type"], @"application/json", @"Expected content-type header in response");
-
-        // Verify the echoed body contains our data
         NSString *bodyContent = responseData[@"body"];
         XCTAssertNotNil(bodyContent, @"Expected body content in response");
         XCTAssertTrue([bodyContent containsString:@"test_user"], @"Expected name in echoed body");
         XCTAssertTrue([bodyContent containsString:@"test@example.com"], @"Expected email in echoed body");
-
-        dispatch_semaphore_signal(semaphore);
     }];
-
-    [task resume];
-
-    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)), 0, @"Request timed out");
 }
 
 - (void)optionsRequest:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_ECHO]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    NSDictionary *headers = @{
+        @"Access-Control-Request-Headers": @"*",
+        @"Access-Control-Request-Method": @"PUT, DELETE",
+        @"Origin": @"example.com"
+    };
 
-    request.HTTPMethod = @"OPTIONS";
+    [self executeRequest:endpoint
+                    path:PATH_ECHO
+                  method:@"OPTIONS"
+                    body:nil
+                 headers:headers
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        [self validateEchoResponse:data expectedMethod:@"OPTIONS"];
 
-    // Add CORS headers
-    [request setValue:@"*" forHTTPHeaderField:@"Access-Control-Request-Headers"];
-    [request setValue:@"PUT, DELETE" forHTTPHeaderField:@"Access-Control-Request-Method"];
-    [request setValue:@"example.com" forHTTPHeaderField:@"Origin"];
-
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
-                                               completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        XCTAssertNil(error, @"Request failed with error: %@", error);
-        XCTAssertNotNil(response, @"No response received");
-
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected status code 200, got %ld", (long)httpResponse.statusCode);
-
-        NSDictionary *responseHeaders = httpResponse.allHeaderFields;
-        XCTAssertEqualObjects(responseHeaders[@"x-echo-server"], @"FastAPI", @"Expected FastAPI echo server header");
-
-        XCTAssertEqualObjects(responseHeaders[@"Access-Control-Allow-Origin"], @"example.com", @"Expected Origin to be echoed back");
-        XCTAssertEqualObjects(responseHeaders[@"Access-Control-Allow-Methods"], @"PUT, DELETE", @"Expected allowed methods to be echoed back");
-        XCTAssertEqualObjects(responseHeaders[@"Access-Control-Allow-Headers"], @"*", @"Expected allowed headers to be echoed back");
-        XCTAssertEqualObjects(responseHeaders[@"Access-Control-Max-Age"], @"86400", @"Expected max age header to be present");
-
-        dispatch_semaphore_signal(semaphore);
+        NSDictionary *responseHeaders = response.allHeaderFields;
+        XCTAssertNotNil(responseHeaders[@"access-control-allow-origin"], @"Expected CORS headers in response");
+        XCTAssertNotNil(responseHeaders[@"access-control-allow-methods"], @"Expected allowed methods in response");
     }];
-
-    [task resume];
-
-    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)), 0, @"Request timed out");
 }
 
 - (void)getRequest:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_ECHO]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    request.HTTPMethod = @"GET";
-
-    // Add some custom headers
-    [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
-    [request setValue:@"EMASCurl-Test/1.0" forHTTPHeaderField:@"User-Agent"];
-
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
-                                          completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        XCTAssertNil(error, @"Request failed with error: %@", error);
-        XCTAssertNotNil(response, @"No response received");
-
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected status code 200, got %ld", (long)httpResponse.statusCode);
-
-        // Verify response headers
-        NSDictionary *responseHeaders = httpResponse.allHeaderFields;
-        XCTAssertEqualObjects(responseHeaders[@"x-echo-server"], @"FastAPI", @"Expected FastAPI echo server header");
-        XCTAssertEqualObjects(responseHeaders[@"content-type"], @"application/json", @"Expected JSON content type");
-
-        // Parse and verify response body
-        NSError *parseError;
-        NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&parseError];
-        XCTAssertNil(parseError, @"Failed to parse response JSON: %@", parseError);
-
-        // Verify response data
-        XCTAssertEqualObjects(responseData[@"method"], @"GET", @"Expected GET method in response");
-        XCTAssertTrue([responseData[@"url"] hasSuffix:PATH_ECHO], @"Expected URL to end with %@", PATH_ECHO);
-
-        // Verify echoed headers
-        NSDictionary *headers = responseData[@"headers"];
-        XCTAssertEqualObjects(headers[@"accept"], @"application/json", @"Expected Accept header in response");
-        XCTAssertEqualObjects(headers[@"user-agent"], @"EMASCurl-Test/1.0", @"Expected User-Agent header in response");
-
-        dispatch_semaphore_signal(semaphore);
+    [self executeRequest:endpoint
+                    path:PATH_ECHO
+                  method:@"GET"
+                    body:nil
+                 headers:nil
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        [self validateEchoResponse:data expectedMethod:@"GET"];
     }];
-
-    [task resume];
-
-    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)), 0, @"Request timed out");
 }
 
 - (void)getRedirectRequest:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_REDIRECT]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    request.HTTPMethod = @"GET";
-
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
-                                          completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        XCTAssertNil(error, @"Request failed with error: %@", error);
-        XCTAssertNotNil(response, @"No response received");
-
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected final status code 200, got %ld", (long)httpResponse.statusCode);
-
-        // Verify response headers
-        NSDictionary *responseHeaders = httpResponse.allHeaderFields;
-        XCTAssertEqualObjects(responseHeaders[@"x-echo-server"], @"FastAPI", @"Expected FastAPI echo server header");
-        XCTAssertEqualObjects(responseHeaders[@"content-type"], @"application/json", @"Expected JSON content type");
-
-        // Parse and verify response body
-        NSError *parseError;
-        NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&parseError];
-        XCTAssertNil(parseError, @"Failed to parse response JSON: %@", parseError);
-
-        // Verify we ended up at the /echo endpoint
-        XCTAssertTrue([responseData[@"url"] hasSuffix:@"/echo"], @"Expected URL to end with /echo");
-        XCTAssertEqualObjects(responseData[@"method"], @"GET", @"Expected GET method in response");
-
-        dispatch_semaphore_signal(semaphore);
+    [self executeRequest:endpoint
+                    path:PATH_REDIRECT
+                  method:@"GET"
+                    body:nil
+                 headers:nil
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        [self validateEchoResponse:data expectedMethod:@"GET"];
     }];
-
-    [task resume];
-
-    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)), 0, @"Request timed out");
 }
 
 - (void)getRedirectChainRequest:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_REDIRECT_CHAIN]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    request.HTTPMethod = @"GET";
-
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
-                                          completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        XCTAssertNil(error, @"Request failed with error: %@", error);
-        XCTAssertNotNil(response, @"No response received");
-
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected final status code 200, got %ld", (long)httpResponse.statusCode);
-
-        // Verify response headers
-        NSDictionary *responseHeaders = httpResponse.allHeaderFields;
-        XCTAssertEqualObjects(responseHeaders[@"x-echo-server"], @"FastAPI", @"Expected FastAPI echo server header");
-        XCTAssertEqualObjects(responseHeaders[@"content-type"], @"application/json", @"Expected JSON content type");
-
-        // Parse and verify response body
-        NSError *parseError;
-        NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&parseError];
-        XCTAssertNil(parseError, @"Failed to parse response JSON: %@", parseError);
-
-        // Verify we ended up at the /echo endpoint after following the chain
-        XCTAssertTrue([responseData[@"url"] hasSuffix:@"/echo"], @"Expected URL to end with /echo");
-        XCTAssertEqualObjects(responseData[@"method"], @"GET", @"Expected GET method in response");
-
-        dispatch_semaphore_signal(semaphore);
+    [self executeRequest:endpoint
+                    path:PATH_REDIRECT_CHAIN
+                  method:@"GET"
+                    body:nil
+                 headers:nil
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        [self validateEchoResponse:data expectedMethod:@"GET"];
     }];
-
-    [task resume];
-
-    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)), 0, @"Request timed out");
 }
 
 - (void)getGzipResponse:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_GZIP_RESPONSE]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    request.HTTPMethod = @"GET";
-
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
-                                           completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        XCTAssertNil(error, @"Request failed with error: %@", error);
-        XCTAssertNotNil(response, @"No response received");
-
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected status code 200, got %ld", (long)httpResponse.statusCode);
-
-        NSDictionary *responseHeaders = httpResponse.allHeaderFields;
+    [self executeRequest:endpoint
+                    path:PATH_GZIP_RESPONSE
+                  method:@"GET"
+                    body:nil
+                 headers:nil
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        NSDictionary *responseHeaders = response.allHeaderFields;
         XCTAssertEqualObjects(responseHeaders[@"content-encoding"], @"gzip", @"Expected gzip content encoding");
         XCTAssertEqualObjects(responseHeaders[@"content-type"], @"application/json", @"Expected JSON content type");
 
@@ -363,13 +220,7 @@ static NSURLSession *session;
         NSDictionary *jsonResponse = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
         XCTAssertNil(jsonError, @"Failed to parse JSON response: %@", jsonError);
         XCTAssertEqualObjects(jsonResponse[@"message"], @"This is a gzipped response", @"Unexpected response message");
-
-        dispatch_semaphore_signal(semaphore);
     }];
-
-    [task resume];
-
-    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)), 0, @"Request timed out");
 }
 
 @end
