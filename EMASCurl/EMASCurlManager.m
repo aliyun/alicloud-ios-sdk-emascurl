@@ -139,14 +139,10 @@ static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, vo
         case CURL_POLL_IN:
         case CURL_POLL_OUT:
         case CURL_POLL_INOUT:
-            // Add socket if not already present
             [activeSockets addObject:@(s)];
-            NSLog(@"Added socket %d", s);
             break;
         case CURL_POLL_REMOVE:
-            // Remove the socket
             [activeSockets removeObject:@(s)];
-            NSLog(@"Removed socket %d", s);
             break;
         default:
             break;

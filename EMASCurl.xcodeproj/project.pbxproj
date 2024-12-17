@@ -26,6 +26,7 @@
 		949539152D0FC531001FE850 /* EMASCurlSimpleTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539142D0FC531001FE850 /* EMASCurlSimpleTest.m */; };
 		949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539162D1020B7001FE850 /* EMASCurlUploadTest.m */; };
 		949539192D116EB8001FE850 /* EMASCurlMetricObserverTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */; };
+		9495391B2D1194DD001FE850 /* EMASCurlDNSResolverTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */; };
 		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
 		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
 /* End PBXBuildFile section */
@@ -71,6 +72,7 @@
 		949539142D0FC531001FE850 /* EMASCurlSimpleTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlSimpleTest.m; sourceTree = "<group>"; };
 		949539162D1020B7001FE850 /* EMASCurlUploadTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlUploadTest.m; sourceTree = "<group>"; };
 		949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlMetricObserverTest.m; sourceTree = "<group>"; };
+		9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlDNSResolverTest.m; sourceTree = "<group>"; };
 		94C5B5D82D071D86006BC856 /* EMASCurlManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlManager.h; sourceTree = "<group>"; };
 		94C5B5D92D071D86006BC856 /* EMASCurlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlManager.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
@@ -192,6 +194,7 @@
 				949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */,
 				949539162D1020B7001FE850 /* EMASCurlUploadTest.m */,
 				949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */,
+				9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */,
 				949538CC2D0F1CB3001FE850 /* README.md */,
 			);
 			path = EMASCurlTests;
@@ -433,6 +436,7 @@
 			files = (
 				949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */,
 				949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */,
+				9495391B2D1194DD001FE850 /* EMASCurlDNSResolverTest.m in Sources */,
 				949539152D0FC531001FE850 /* EMASCurlSimpleTest.m in Sources */,
 				949539192D116EB8001FE850 /* EMASCurlMetricObserverTest.m in Sources */,
 			);
