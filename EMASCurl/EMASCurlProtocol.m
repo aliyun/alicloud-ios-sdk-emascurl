@@ -17,15 +17,21 @@
 
 @property (nonatomic, strong) NSMutableData *responseHeaderBuffer;
 
+@property (nonatomic, assign) int64_t totalBytesSent;
+
+@property (nonatomic, assign) int64_t totalBytesExpected;
+
 @property (nonatomic, assign) BOOL isFinalResponse;
 
 @property (atomic, assign) BOOL shouldCancel;
 
 @property (atomic, strong) dispatch_semaphore_t cleanupSemaphore;
 
-@end
+@property (nonatomic, strong) id<EMASCurlUploadProgressHandler> uploadProgressHandler;
 
-static Class<EMASCurlProtocolDNSResolver> dnsResolver;
+@property (nonatomic, strong) id<EMASCurlProtocolDNSResolver> dnsResolver;
+
+@end
 
 static HTTPVersion httpVersion;
 
@@ -45,7 +51,7 @@ static bool enableDebugLog;
 
 #pragma mark * user API
 
-+ (void)installIntoSessionConfiguration:(NSURLSessionConfiguration*)sessionConfiguration {
++ (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration*)sessionConfiguration {
     NSMutableArray *protocolsArray = [NSMutableArray arrayWithArray:sessionConfiguration.protocolClasses];
     [protocolsArray insertObject:self atIndex:0];
     [sessionConfiguration setProtocolClasses:protocolsArray];
@@ -63,7 +69,7 @@ static bool enableDebugLog;
     httpVersion = version;
 }
 
-+ (void)setSelfSignedCAFilePath:(NSString *)selfSignedCAFilePath {
++ (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath {
     caFilePath = selfSignedCAFilePath;
 }
 
@@ -71,8 +77,12 @@ static bool enableDebugLog;
     enableDebugLog = debugLogEnabled;
 }
 
-+ (void)setDNSResolver:(Class<EMASCurlProtocolDNSResolver>)resolver {
-    dnsResolver = resolver;
++ (void)setDNSResolver:(nonnull id<EMASCurlProtocolDNSResolver>)dnsResolver inRequest:(nonnull NSMutableURLRequest *)request {
+    [NSURLProtocol setProperty:dnsResolver forKey:kEMASCurlDNSResolverKey inRequest:request];
+}
+
++ (void)setUploadProgressHandler:(nonnull id<EMASCurlUploadProgressHandler>)uploadProgressHandler inRequest:(nonnull NSMutableURLRequest *)request {
+    [NSURLProtocol setProperty:uploadProgressHandler forKey:kEMASCurlProgressHandlerKey inRequest:request];
 }
 
 #pragma mark * NSURLProtocol overrides
@@ -83,6 +93,12 @@ static bool enableDebugLog;
     _cleanupSemaphore = dispatch_semaphore_create(0);
     _responseHeaderBuffer = [[NSMutableData alloc] init];
     _isFinalResponse = YES;
+    _totalBytesSent = 0;
+    _totalBytesExpected = 0;
+
+    _dnsResolver = [NSURLProtocol propertyForKey:kEMASCurlDNSResolverKey inRequest:request];
+    _uploadProgressHandler = [NSURLProtocol propertyForKey:kEMASCurlProgressHandlerKey inRequest:request];
+
     return self;
 }
 
@@ -110,8 +126,6 @@ static bool enableDebugLog;
                                            userInfo:nil
                                             repeats:YES];
     [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
-
-    // immediatelly start a updating action
     [self updateProxySettings];
 }
 
@@ -256,34 +270,20 @@ static bool enableDebugLog;
 - (void)populateRequestBody:(CURL *)easyHandle {
     NSURLRequest *request = self.request;
 
-    if (![request HTTPBodyStream]) {
-        // 处理方法为PUT但是BODY为空的情况，指定Content-Length为0
-        if ([@"PUT" isEqualToString:request.HTTPMethod]) {
-            curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, 0L);
-        } else if ([@"POST" isEqualToString:request.HTTPMethod]) {
-            // 处理方法为POST但是BODY为空的情况，指定Content-Length为0
-            curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, 0L);
-        }
-        return;
-    }
-
     self.inputStream = request.HTTPBodyStream;
+
     // 用read_cb回调函数来读取需要传输的数据
     curl_easy_setopt(easyHandle, CURLOPT_READFUNCTION, read_cb);
     // self传给read_cb函数的void *userp参数
     curl_easy_setopt(easyHandle, CURLOPT_READDATA, self);
 
     NSString *contentLength = [request valueForHTTPHeaderField:@"Content-Length"];
-    if (!contentLength) {
-        return;
-    }
-    // 如果是PUT，使用PUT的方式指定Content-Length,否则以POST的方式指定
-    if ([@"PUT" isEqualToString:request.HTTPMethod]) {
-        curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, [contentLength longLongValue]);
-    } else if (![@"GET" isEqualToString:request.HTTPMethod] && ![@"HEAD" isEqualToString:request.HTTPMethod]) {
-        // 对于POST以及四种基本方法（GET、POST、HEAD、PUT）以外的自定义方法，以POST的方式指定Content-Length
-        curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, [contentLength longLongValue]);
-        curl_easy_setopt(easyHandle, CURLOPT_POST, 1);
+    if (contentLength) {
+        int64_t length = [contentLength longLongValue];
+        self.totalBytesExpected = length;
+    } else {
+        // If no Content-Length header, set expected bytes to -1
+        self.totalBytesExpected = -1;
     }
 }
 
@@ -309,8 +309,8 @@ static bool enableDebugLog;
     }
 
     // 假如设置了自定义resolve，则使用
-    if (dnsResolver) {
-        [self configCustomResolve:easyHandle];
+    if (self.dnsResolver) {
+        [self configCustomDNSResolver:easyHandle];
     }
 
     @synchronized ([EMASCurlProtocol class]) {
@@ -354,7 +354,7 @@ static bool enableDebugLog;
     curl_easy_setopt(easyHandle, CURLOPT_NOSIGNAL, 1L);
 }
 
-- (void)configCustomResolve:(CURL *)easyHandle {
+- (void)configCustomDNSResolver:(CURL *)easyHandle {
     NSURL *url = self.request.URL;
 
     NSString *host = [url host];
@@ -370,7 +370,7 @@ static bool enableDebugLog;
         }
     }
 
-    NSString *address = [dnsResolver resolveDomain:host];
+    NSString *address = [self.dnsResolver resolveDomain:host];
     // 解析成功则使用httpdns解析结果，失败则降级
     if (address) {
         NSString *hostPortAddressString = [NSString stringWithFormat:@"+%@:%@:%@", host, port, address];
@@ -481,17 +481,32 @@ static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
 // libcurl的read回调函数，用于post等需要设置body数据的方法
 static size_t read_cb(char *buffer, size_t size, size_t nitems, void *userp) {
     EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)userp;
-    // 检查输入流是否已打开，如果未打开则打开
+    if (!protocol || !protocol.inputStream) {
+        return CURL_READFUNC_ABORT;
+    }
+
+    if (protocol.shouldCancel) {
+        return CURL_READFUNC_ABORT;
+    }
+
     if ([protocol.inputStream streamStatus] == NSStreamStatusNotOpen) {
         [protocol.inputStream open];
     }
-    NSInteger bytesRead = [protocol.inputStream read:(uint8_t *)buffer maxLength:(size * nitems)];
-    if (bytesRead == 0) {
-        [protocol.inputStream close];
-    }
+
+    NSInteger bytesRead = [protocol.inputStream read:(uint8_t *)buffer maxLength:size * nitems];
     if (bytesRead < 0) {
-        [protocol.client URLProtocol:protocol didFailWithError:[NSError errorWithDomain:@"fail to read data for HTTP body" code:-2 userInfo:nil]];
+        return CURL_READFUNC_ABORT;
     }
+
+    protocol.totalBytesSent += bytesRead;
+
+    if (protocol.uploadProgressHandler) {
+        [protocol.uploadProgressHandler uploadWithRequest:protocol.request
+                                          didSendBodyData:bytesRead
+                                           totalBytesSent:protocol.totalBytesSent
+                                 totalBytesExpectedToSend:protocol.totalBytesExpected];
+    }
+
     return bytesRead;
 }
 

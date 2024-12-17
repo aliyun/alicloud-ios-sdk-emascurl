@@ -15,7 +15,7 @@
 
 @implementation MyDNSResolver
 
-+ (NSString *)resolveDomain:(NSString *)domain {
+- (NSString *)resolveDomain:(NSString *)domain {
     HttpDnsService *httpdns = [HttpDnsService sharedInstance];
     HttpdnsResult* result = [httpdns resolveHostSyncNonBlocking:domain byIpType:HttpdnsQueryIPTypeBoth];
     NSLog(@"httpdns resolve result: %@", result);
@@ -60,7 +60,6 @@
 - (void)configUrlSessionUsingEmasNet {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
 
-    [EMASCurlProtocol setDNSResolver:[MyDNSResolver class]];
     [EMASCurlProtocol setDebugLogEnabled:YES];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
     // [EMASCurlProtocol setHTTPVersion:HTTP2];
@@ -79,8 +78,9 @@
 }
 
 - (void)sendNormalRequest {
+    [EMASCurlProtocol setDNSResolver:[MyDNSResolver new] inRequest:self.request];
     NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:self.request
-                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                     completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         if (error) {
             NSLog(@"Request failed due to error: %@", error.localizedDescription);
             return;
@@ -111,6 +111,7 @@
 }
 
 - (void)sendContinueRequest {
+    [EMASCurlProtocol setDNSResolver:[MyDNSResolver new] inRequest:self.request];
     NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:self.request
                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         if (error) {
