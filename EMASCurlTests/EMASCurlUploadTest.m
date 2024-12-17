@@ -10,53 +10,20 @@
 #import <EMASCurl/EMASCurl.h>
 #import "EMASCurlTestConstants.h"
 
-static NSURLSession *session;
-
-@interface TestUploadProgressHandler : NSObject<EMASCurlUploadProgressHandler>
-
-- (void)setProgressBlock:(void (^)(double progress))block;
-
-@end
-
-@implementation TestUploadProgressHandler
-
-static void (^progressBlock)(double progress);
-
-- (void)setProgressBlock:(void (^)(double progress))block {
-    progressBlock = block;
-}
-
-#pragma mark - EMASCurlUploadProgressHandler
-
-- (void)uploadWithRequest:(NSURLRequest *)request
-          didSendBodyData:(int64_t)bytesSent
-           totalBytesSent:(int64_t)totalBytesSent
- totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
-    if (progressBlock && totalBytesExpectedToSend > 0) {
-        double progress = (double)totalBytesSent / totalBytesExpectedToSend;
-        progressBlock(progress);
-    }
-}
-
-@end
-
 @interface EMASCurlUploadTestBase : XCTestCase
 
-@property (nonatomic, assign) int64_t totalBytesSent;
-@property (nonatomic, assign) int64_t expectedTotalBytes;
 @property (nonatomic, strong) NSMutableArray<NSNumber *> *progressValues;
 @property (nonatomic, copy) void (^completionBlock)(NSData *data, NSURLResponse *response, NSError *error);
-@property (nonatomic, strong) NSMutableData *receivedData;
 
 @end
+
+static NSURLSession *session;
 
 @implementation EMASCurlUploadTestBase
 
 - (void)setUp {
     [super setUp];
     self.progressValues = [NSMutableArray array];
-    self.totalBytesSent = 0;
-    self.expectedTotalBytes = 1024 * 1024; // 1MB
 }
 
 - (NSData *)generateTestData:(NSUInteger)size {
@@ -150,21 +117,15 @@ static void (^progressBlock)(double progress);
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    self.totalBytesSent = 0;
-    self.expectedTotalBytes = 1024 * 1024;
     self.progressValues = [NSMutableArray array];
-    self.receivedData = [NSMutableData data];
 
     __weak typeof(self) weakSelf = self;
 
-    TestUploadProgressHandler *uploadProgressHandler = [TestUploadProgressHandler new];
-
-    [uploadProgressHandler setProgressBlock:^(double progress) {
+    [EMASCurlProtocol setUploadProgressUpdateBlockForRequest:request uploadProgressUpdateBlock:^(NSURLRequest * _Nonnull request, int64_t bytesSent, int64_t totalBytesSent, int64_t totalBytesExpectedToSend) {
         typeof(self) strongSelf = weakSelf;
+        double progress = (double)totalBytesSent / totalBytesExpectedToSend;
         [strongSelf.progressValues addObject:@(progress)];
     }];
-
-    [EMASCurlProtocol setUploadProgressHandler:uploadProgressHandler inRequest:request];
 
     NSURLSessionUploadTask *task = [session uploadTaskWithRequest:request fromFile:fileURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         [[NSFileManager defaultManager] removeItemAtPath:formDataPath error:nil];
@@ -198,7 +159,7 @@ static void (^progressBlock)(double progress);
 
     [task resume];
 
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_SEC)), 0, @"Upload request timed out");
 }
 
 - (void)uploadDataAndCancel:(NSString *)endpoint {
@@ -215,15 +176,23 @@ static void (^progressBlock)(double progress);
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    self.totalBytesSent = 0;
-    self.expectedTotalBytes = 1024 * 1024;
     self.progressValues = [NSMutableArray array];
-    self.receivedData = [NSMutableData data];
 
     __weak typeof(self) weakSelf = self;
 
-    TestUploadProgressHandler *uploadProgressHandler = [TestUploadProgressHandler new];
-    [EMASCurlProtocol setUploadProgressHandler:uploadProgressHandler inRequest:request];
+    __block NSMutableArray<NSURLSessionUploadTask *> *requestWrapper = [NSMutableArray new];
+
+    [EMASCurlProtocol setUploadProgressUpdateBlockForRequest:request uploadProgressUpdateBlock:^(NSURLRequest * _Nonnull request, int64_t bytesSent, int64_t totalBytesSent, int64_t totalBytesExpectedToSend) {
+        double progress = 0;
+        if (totalBytesExpectedToSend > 0) {
+            progress = (double)totalBytesSent / totalBytesExpectedToSend;
+        }
+        typeof(self) strongSelf = weakSelf;
+        [strongSelf.progressValues addObject:@(progress)];
+        if (progress > 0.3) {
+            [requestWrapper[0] cancel];
+        }
+    }];
 
     NSURLSessionUploadTask *task = [session uploadTaskWithRequest:request fromFile:fileURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         [[NSFileManager defaultManager] removeItemAtPath:formDataPath error:nil];
@@ -237,13 +206,7 @@ static void (^progressBlock)(double progress);
         dispatch_semaphore_signal(semaphore);
     }];
 
-    [uploadProgressHandler setProgressBlock:^(double progress) {
-        typeof(self) strongSelf = weakSelf;
-        [strongSelf.progressValues addObject:@(progress)];
-        if (progress > 0.3) {
-            [task cancel];
-        }
-    }];
+    [requestWrapper addObject:task];
 
     [task resume];
 

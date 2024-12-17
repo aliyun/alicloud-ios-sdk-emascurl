@@ -15,7 +15,7 @@
 
 @implementation MyDNSResolver
 
-- (NSString *)resolveDomain:(NSString *)domain {
++ (NSString *)resolveDomain:(NSString *)domain {
     HttpDnsService *httpdns = [HttpDnsService sharedInstance];
     HttpdnsResult* result = [httpdns resolveHostSyncNonBlocking:domain byIpType:HttpdnsQueryIPTypeBoth];
     NSLog(@"httpdns resolve result: %@", result);
@@ -62,6 +62,7 @@
 
     [EMASCurlProtocol setDebugLogEnabled:YES];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setDNSResolver:[MyDNSResolver class]];
     // [EMASCurlProtocol setHTTPVersion:HTTP2];
     // [EMASCurlProtocol setHTTPVersion:HTTP3];
 
@@ -78,7 +79,6 @@
 }
 
 - (void)sendNormalRequest {
-    [EMASCurlProtocol setDNSResolver:[MyDNSResolver new] inRequest:self.request];
     NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:self.request
                                                      completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         if (error) {
@@ -111,7 +111,6 @@
 }
 
 - (void)sendContinueRequest {
-    [EMASCurlProtocol setDNSResolver:[MyDNSResolver new] inRequest:self.request];
     NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:self.request
                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         if (error) {

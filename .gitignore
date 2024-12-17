@@ -243,3 +243,6 @@ Cartfile.private
 
 # python
 __pycache__/
+
+# vscode
+.vscode
