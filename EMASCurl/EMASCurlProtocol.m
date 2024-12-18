@@ -193,7 +193,7 @@ static bool s_enableDebugLog;
         return;
     }
 
-    [[EMASCurlManager sharedInstance] enqueueNewEasyHanlde:easyHandle completion:^(BOOL succeed, NSError *error) {
+    [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error) {
         [self observeNetworkMetric];
 
         if (succeed) {

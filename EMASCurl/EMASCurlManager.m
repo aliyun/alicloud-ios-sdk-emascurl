@@ -76,7 +76,7 @@ static int timerCallback(CURLM *multi, long timeout_ms, void *userp);
     [_condition unlock];
 }
 
-- (void)enqueueNewEasyHanlde:(CURL *)easyHandle completion:(void (^)(BOOL, NSError *))completion {
+- (void)enqueueNewEasyHandle:(CURL *)easyHandle completion:(void (^)(BOOL, NSError *))completion {
     NSNumber *easyKey = @((uintptr_t)easyHandle);
     _completionMap[easyKey] = completion;
 
