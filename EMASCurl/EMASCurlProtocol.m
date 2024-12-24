@@ -9,6 +9,16 @@
 #import "EMASCurlManager.h"
 #import <curl/curl.h>
 
+#define HTTP_METHOD_GET @"GET"
+#define HTTP_METHOD_PUT @"PUT"
+#define HTTP_METHOD_POST @"POST"
+#define HTTP_METHOD_HEAD @"HEAD"
+#define HTTP_METHOD_DELETE @"DELETE"
+#define HTTP_METHOD_PATCH @"PATCH"
+#define HTTP_METHOD_OPTIONS @"OPTIONS"
+#define HTTP_METHOD_TRACE @"TRACE"
+#define HTTP_METHOD_CONNECT @"CONNECT"
+
 @interface EMASCurlProtocol()
 
 @property (nonatomic, assign) CURL *easyHandle;
@@ -310,6 +320,18 @@ static bool s_enableDebugLog;
 - (void)populateRequestBody:(CURL *)easyHandle {
     NSURLRequest *request = self.request;
 
+    if (!request.HTTPBodyStream) {
+        if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
+            curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, 0L);
+        } else if ([HTTP_METHOD_POST isEqualToString:request.HTTPMethod]) {
+            curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, 0L);
+        } else {
+            // 其他情况无需处理
+        }
+
+        return;
+    }
+
     self.inputStream = request.HTTPBodyStream;
 
     // 用read_cb回调函数来读取需要传输的数据
@@ -317,14 +339,34 @@ static bool s_enableDebugLog;
     // self传给read_cb函数的void *userp参数
     curl_easy_setopt(easyHandle, CURLOPT_READDATA, self);
 
-    NSString *contentLength = [request valueForHTTPHeaderField:@"Content-Length"];
-    if (contentLength) {
-        int64_t length = [contentLength longLongValue];
-        self.totalBytesExpected = length;
-    } else {
-        // If no Content-Length header, set expected bytes to -1
-        self.totalBytesExpected = -1;
+    if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
+        curl_easy_setopt(easyHandle, CURLOPT_UPLOAD, 1L);
     }
+
+    NSString *contentLength = [request valueForHTTPHeaderField:@"Content-Length"];
+    if (!contentLength) {
+        // 未设置Content-Length的情况，即使是使用Transfer-Encoding: chunked，也把totalBytesExpected设置为-1
+        self.totalBytesExpected = -1;
+        return;
+    }
+
+    int64_t length = [contentLength longLongValue];
+    self.totalBytesExpected = length;
+
+    if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
+        curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, length);
+        return;
+    }
+
+    if ([HTTP_METHOD_GET isEqualToString:request.HTTPMethod]
+        || [HTTP_METHOD_HEAD isEqualToString:request.HTTPMethod]) {
+        // GET/HEAD方法不需要设置body
+        return;
+    }
+
+    // 其他情况，都以POST的方式指定Content-Length
+    curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, length);
+    curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE, length);
 }
 
 - (void)configEasyHandle:(CURL *)easyHandle error:(NSError **)error {

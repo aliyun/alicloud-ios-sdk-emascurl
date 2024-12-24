@@ -21,10 +21,7 @@ typedef struct {
     CURL *easy;
 } CallbackContext;
 
-// Internal callbacks
-static size_t writeCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
 static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, void *socketp);
-static int timerCallback(CURLM *multi, long timeout_ms, void *userp);
 
 @end
 
@@ -46,8 +43,6 @@ static int timerCallback(CURLM *multi, long timeout_ms, void *userp);
         _multiHandle = curl_multi_init();
         curl_multi_setopt(_multiHandle, CURLMOPT_SOCKETFUNCTION, socketCallback);
         curl_multi_setopt(_multiHandle, CURLMOPT_SOCKETDATA, (__bridge void *)self);
-        curl_multi_setopt(_multiHandle, CURLMOPT_TIMERFUNCTION, timerCallback);
-        curl_multi_setopt(_multiHandle, CURLMOPT_TIMERDATA, (__bridge void *)self);
 
         _completionMap = [NSMutableDictionary dictionary];
 
@@ -148,11 +143,6 @@ static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, vo
             break;
     }
 
-    return 0;
-}
-
-static int timerCallback(CURLM *multi, long timeout_ms, void *userp) {
-    // Set a timer or just rely on polling in our thread loop.
     return 0;
 }
 
