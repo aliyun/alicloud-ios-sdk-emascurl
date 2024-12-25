@@ -318,11 +318,10 @@ EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需
 + (void)setHTTPVersion:(HTTPVersion)version;
 ```
 
-目前提供HTTP1、HTTP2与HTTP3三种版本：
+目前提供HTTP1、HTTP2三种版本：
 
 + **HTTP1**: 使用HTTP1.1
 + **HTTP2**: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
-+ **HTTP3**: 首先尝试使用HTTP3，如果与服务器的HTTP3协商失败，则会退回到HTTP2，再失败则退回到HTTP1.1
 
 ### 设置CA证书文件路径
 
