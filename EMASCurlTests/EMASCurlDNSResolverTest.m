@@ -37,7 +37,6 @@ static NSURLSession *session;
 }
 
 - (void)tearDown {
-    session = nil;
     [super tearDown];
 }
 
@@ -75,6 +74,7 @@ static NSURLSession *session;
 
     NSURL *url = [NSURL URLWithString:testURL];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    request.timeoutInterval = 10;
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
@@ -87,7 +87,7 @@ static NSURLSession *session;
 
     [dataTask resume];
 
-    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 30 * NSEC_PER_SEC)), 0, @"Request timed out");
+    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC)), 0, @"Request timed out");
 }
 
 @end

@@ -105,6 +105,10 @@ static bool s_enableDebugLog;
     [NSURLProtocol setProperty:[metricsObserverBlock copy] forKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
 }
 
++ (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)timeoutInterval {
+    [NSURLProtocol setProperty:@(timeoutInterval) forKey:kEMASCurlConnectTimeoutIntervalKey inRequest:request];
+}
+
 #pragma mark * NSURLProtocol overrides
 
 - (instancetype)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id<NSURLProtocolClient>)client {
@@ -433,6 +437,18 @@ static bool s_enableDebugLog;
 
     // 开启TCP keep alive
     curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPALIVE, 1L);
+
+    // 设置连接超时时间
+    NSNumber *connectTimeoutInterval = [NSURLProtocol propertyForKey:(NSString *)kEMASCurlConnectTimeoutIntervalKey inRequest:self.request];
+    if (connectTimeoutInterval) {
+        curl_easy_setopt(easyHandle, CURLOPT_CONNECTTIMEOUT, connectTimeoutInterval.longValue);
+    }
+
+    // 设置请求超时时间
+    NSTimeInterval requestTimeoutInterval = self.request.timeoutInterval;
+    if (requestTimeoutInterval) {
+        curl_easy_setopt(easyHandle, CURLOPT_TIMEOUT, requestTimeoutInterval);
+    }
 
     // 开启重定向
     curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
