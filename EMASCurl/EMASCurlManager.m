@@ -13,7 +13,7 @@
     NSCondition *_condition;
     BOOL _shouldStop;
     NSMutableDictionary<NSNumber *, void (^)(BOOL, NSError *)> *_completionMap;
-    NSMutableSet *activeSockets;
+    NSMutableSet *_activeSockets;
 }
 
 typedef struct {
@@ -45,6 +45,7 @@ static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, vo
         curl_multi_setopt(_multiHandle, CURLMOPT_SOCKETDATA, (__bridge void *)self);
 
         _completionMap = [NSMutableDictionary dictionary];
+        _activeSockets = [NSMutableSet set];
 
         _condition = [[NSCondition alloc] init];
         _shouldStop = NO;
@@ -128,16 +129,16 @@ static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, vo
 // MARK: - Callbacks
 static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, void *socketp) {
     EMASCurlManager *selfRef = (__bridge EMASCurlManager *)userp;
-    NSMutableSet *activeSockets = selfRef->activeSockets;
+    NSMutableSet *_activeSockets = selfRef->_activeSockets;
 
     switch (what) {
         case CURL_POLL_IN:
         case CURL_POLL_OUT:
         case CURL_POLL_INOUT:
-            [activeSockets addObject:@(s)];
+            [_activeSockets addObject:@(s)];
             break;
         case CURL_POLL_REMOVE:
-            [activeSockets removeObject:@(s)];
+            [_activeSockets removeObject:@(s)];
             break;
         default:
             break;

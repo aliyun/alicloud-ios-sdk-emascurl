@@ -12,6 +12,5 @@ target 'EMASCurlDemo' do
 end
 
 target 'EMASCurlTests' do
-  pod "GCDWebServer", "~> 3.0"
   pod 'OCMock', '3.9.1'
 end

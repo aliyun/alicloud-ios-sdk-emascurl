@@ -281,13 +281,13 @@ static bool s_enableDebugLog;
     NSURLRequest *request = self.request;
 
     // 配置HTTP METHOD
-    if ([@"GET" isEqualToString:request.HTTPMethod]) {
+    if ([HTTP_METHOD_GET isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_HTTPGET, 1);
-    } else if ([@"POST" isEqualToString:request.HTTPMethod]) {
+    } else if ([HTTP_METHOD_POST isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_POST, 1);
-    } else if ([@"PUT" isEqualToString:request.HTTPMethod]) {
+    } else if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_UPLOAD, 1);
-    } else if ([@"HEAD" isEqualToString:request.HTTPMethod]) {
+    } else if ([HTTP_METHOD_HEAD isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_NOBODY, 1);
     } else {
         curl_easy_setopt(easyHandle, CURLOPT_CUSTOMREQUEST, [request.HTTPMethod UTF8String]);
@@ -352,10 +352,6 @@ static bool s_enableDebugLog;
     curl_easy_setopt(easyHandle, CURLOPT_READFUNCTION, read_cb);
     // self传给read_cb函数的void *userp参数
     curl_easy_setopt(easyHandle, CURLOPT_READDATA, self);
-
-    if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
-        curl_easy_setopt(easyHandle, CURLOPT_UPLOAD, 1L);
-    }
 
     NSString *contentLength = [request valueForHTTPHeaderField:@"Content-Length"];
     if (!contentLength) {
