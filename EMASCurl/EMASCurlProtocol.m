@@ -6,34 +6,48 @@
 //
 
 #import "EMASCurlProtocol.h"
+#import "EMASCurlManager.h"
 #import <curl/curl.h>
+
+#define HTTP_METHOD_GET @"GET"
+#define HTTP_METHOD_PUT @"PUT"
+#define HTTP_METHOD_POST @"POST"
+#define HTTP_METHOD_HEAD @"HEAD"
+#define HTTP_METHOD_DELETE @"DELETE"
+#define HTTP_METHOD_PATCH @"PATCH"
+#define HTTP_METHOD_OPTIONS @"OPTIONS"
+#define HTTP_METHOD_TRACE @"TRACE"
+#define HTTP_METHOD_CONNECT @"CONNECT"
 
 @interface EMASCurlProtocol()
 
+@property (nonatomic, assign) CURL *easyHandle;
+
 @property (nonatomic, strong) NSInputStream *inputStream;
 
-@property (nonatomic, assign) CURL *easyHandle;
+@property (nonatomic, strong) NSMutableData *responseHeaderBuffer;
 
 @property (nonatomic, assign) struct curl_slist *headerFields;
 
 @property (nonatomic, assign) struct curl_slist *resolveList;
 
+@property (nonatomic, assign) int64_t totalBytesSent;
+
+@property (nonatomic, assign) int64_t totalBytesExpected;
+
+@property (nonatomic, assign) BOOL isFinalResponse;
+
 @property (atomic, assign) BOOL shouldCancel;
 
 @property (atomic, strong) dispatch_semaphore_t cleanupSemaphore;
 
-@property (nonatomic, strong) NSMutableData *headerBuffer;
+@property (nonatomic, copy) EMASCurlUploadProgressUpdateBlock uploadProgressUpdateBlock;
 
-@property (nonatomic, assign) BOOL isRedirecting;
+@property (nonatomic, copy) EMASCurlMetricsObserverBlock metricsObserverBlock;
 
 @end
 
-
-@implementation EMASCurlProtocol
-
-static Class<EMASCurlProtocolDNSResolver> dnsResolver;
-
-static HTTPVersion httpVersion;
+static HTTPVersion s_httpVersion;
 
 // runtime 的libcurl xcframework是否支持HTTP2
 static bool curlFeatureHttp2;
@@ -41,14 +55,19 @@ static bool curlFeatureHttp2;
 // runtime 的libcurl xcframework是否支持HTTP3
 static bool curlFeatureHttp3;
 
-static NSString *proxyServer;
+static NSString *s_caFilePath;
 
-static bool enableDebugLog;
+static NSString *s_proxyServer;
 
+static Class<EMASCurlProtocolDNSResolver> s_dnsResolverClass;
+
+static bool s_enableDebugLog;
+
+@implementation EMASCurlProtocol
 
 #pragma mark * user API
 
-+ (void)installIntoSessionConfiguration:(NSURLSessionConfiguration*)sessionConfiguration {
++ (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration*)sessionConfiguration {
     NSMutableArray *protocolsArray = [NSMutableArray arrayWithArray:sessionConfiguration.protocolClasses];
     [protocolsArray insertObject:self atIndex:0];
     [sessionConfiguration setProtocolClasses:protocolsArray];
@@ -63,25 +82,44 @@ static bool enableDebugLog;
 }
 
 + (void)setHTTPVersion:(HTTPVersion)version {
-    httpVersion = version;
+    s_httpVersion = version;
+}
+
++ (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath {
+    s_caFilePath = selfSignedCAFilePath;
 }
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
-    enableDebugLog = debugLogEnabled;
+    s_enableDebugLog = debugLogEnabled;
 }
 
-+ (void)setDNSResolver:(Class<EMASCurlProtocolDNSResolver>)resolver {
-    dnsResolver = resolver;
++ (void)setDNSResolver:(nonnull Class<EMASCurlProtocolDNSResolver>)dnsResolver {
+    s_dnsResolverClass = dnsResolver;
+}
+
++ (void)setUploadProgressUpdateBlockForRequest:(nonnull NSMutableURLRequest *)request uploadProgressUpdateBlock:(nonnull EMASCurlUploadProgressUpdateBlock)uploadProgressUpdateBlock {
+    [NSURLProtocol setProperty:[uploadProgressUpdateBlock copy] forKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
+}
+
++ (void)setMetricsObserverBlockForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlock)metricsObserverBlock {
+    [NSURLProtocol setProperty:[metricsObserverBlock copy] forKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
 }
 
 #pragma mark * NSURLProtocol overrides
 
 - (instancetype)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id<NSURLProtocolClient>)client {
     self = [super initWithRequest:request cachedResponse:cachedResponse client:client];
-    _shouldCancel = NO;
-    _cleanupSemaphore = dispatch_semaphore_create(0);
-    _headerBuffer = [[NSMutableData alloc] init];
-    _isRedirecting = NO;
+    if (self) {
+        _shouldCancel = NO;
+        _cleanupSemaphore = dispatch_semaphore_create(0);
+        _responseHeaderBuffer = [[NSMutableData alloc] init];
+        _isFinalResponse = YES;
+        _totalBytesSent = 0;
+        _totalBytesExpected = 0;
+
+        _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
+        _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
+    }
     return self;
 }
 
@@ -94,8 +132,8 @@ static bool enableDebugLog;
     curlFeatureHttp2 = (version_info->features & CURL_VERSION_HTTP2) ? YES : NO;
     curlFeatureHttp3 = (version_info->features & CURL_VERSION_HTTP3) ? YES : NO;
 
-    httpVersion = HTTP1;
-    enableDebugLog = NO;
+    s_httpVersion = HTTP1;
+    s_enableDebugLog = NO;
 
     // 设置定时任务读取proxy
     [self startProxyUpdatingTimer];
@@ -109,8 +147,6 @@ static bool enableDebugLog;
                                            userInfo:nil
                                             repeats:YES];
     [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
-
-    // immediatelly start a updating action
     [self updateProxySettings];
 }
 
@@ -129,7 +165,7 @@ static bool enableDebugLog;
 
     if (httpProxy && httpPort) {
         @synchronized (self) {
-            proxyServer = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
+            s_proxyServer = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
         }
     }
     CFRelease(proxySettings);
@@ -155,6 +191,7 @@ static bool enableDebugLog;
     CURL *easyHandle = curl_easy_init();
     self.easyHandle = easyHandle;
     if (!easyHandle) {
+        [self observeNetworkMetric];
         [self.client URLProtocol:self didFailWithError:[NSError errorWithDomain:@"fail to init easy handle" code:-1 userInfo:nil]];
         return;
     }
@@ -165,23 +202,22 @@ static bool enableDebugLog;
     NSError *error = nil;
     [self configEasyHandle:easyHandle error:&error];
     if (error) {
+        [self observeNetworkMetric];
         [self.client URLProtocol:self didFailWithError:error];
         return;
     }
 
-    NSThread *thread = [[NSThread alloc] initWithBlock:^{
-        CURLcode res = curl_easy_perform(easyHandle);
-        if (res != CURLE_OK) {
-            [self.client URLProtocol:self didFailWithError:[NSError errorWithDomain:@"fail to perform curl" code:res userInfo:nil]];
-        } else {
+    [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error) {
+        [self observeNetworkMetric];
+
+        if (succeed) {
             [self.client URLProtocolDidFinishLoading:self];
+        } else {
+            [self.client URLProtocol:self didFailWithError:error];
         }
+
         dispatch_semaphore_signal(self.cleanupSemaphore);
     }];
-
-    thread.name = [NSString stringWithFormat:@"EMASCurl-%@-t", self.request.URL.host];
-    thread.qualityOfService = NSQualityOfServiceUserInitiated;
-    [thread start];
 }
 
 - (void)stopLoading {
@@ -194,17 +230,49 @@ static bool enableDebugLog;
         }
         self.inputStream = nil;
     }
+
+    if (self.headerFields) {
+        curl_slist_free_all(self.headerFields);
+        self.headerFields = nil;
+    }
+    if (self.resolveList) {
+        curl_slist_free_all(self.resolveList);
+        self.resolveList = nil;
+    }
     if (self.easyHandle) {
         curl_easy_cleanup(self.easyHandle);
         self.easyHandle = nil;
     }
-    curl_slist_free_all(self.headerFields);
-    self.headerFields = nil;
 
-    curl_slist_free_all(self.resolveList);
-    self.resolveList = nil;
+    self.responseHeaderBuffer = nil;
+}
 
-    self.headerBuffer = nil;
+- (void)observeNetworkMetric {
+    if (!self.metricsObserverBlock || !self.easyHandle) {
+        return;
+    }
+
+    double nameLookupTime = 0;
+    double connectTime = 0;
+    double appConnectTime = 0;
+    double preTransferTime = 0;
+    double startTransferTime = 0;
+    double totalTime = 0;
+
+    curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+    curl_easy_getinfo(self.easyHandle, CURLINFO_CONNECT_TIME, &connectTime);
+    curl_easy_getinfo(self.easyHandle, CURLINFO_APPCONNECT_TIME, &appConnectTime);
+    curl_easy_getinfo(self.easyHandle, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
+    curl_easy_getinfo(self.easyHandle, CURLINFO_STARTTRANSFER_TIME, &startTransferTime);
+    curl_easy_getinfo(self.easyHandle, CURLINFO_TOTAL_TIME, &totalTime);
+
+    self.metricsObserverBlock(self.request,
+                              nameLookupTime * 1000,
+                              connectTime * 1000,
+                              appConnectTime * 1000,
+                              preTransferTime * 1000,
+                              startTransferTime * 1000,
+                              totalTime * 1000);
 }
 
 #pragma mark * curl option setup
@@ -213,13 +281,13 @@ static bool enableDebugLog;
     NSURLRequest *request = self.request;
 
     // 配置HTTP METHOD
-    if ([@"GET" isEqualToString:request.HTTPMethod]) {
+    if ([HTTP_METHOD_GET isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_HTTPGET, 1);
-    } else if ([@"POST" isEqualToString:request.HTTPMethod]) {
+    } else if ([HTTP_METHOD_POST isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_POST, 1);
-    } else if ([@"PUT" isEqualToString:request.HTTPMethod]) {
+    } else if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_UPLOAD, 1);
-    } else if ([@"HEAD" isEqualToString:request.HTTPMethod]) {
+    } else if ([HTTP_METHOD_HEAD isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_NOBODY, 1);
     } else {
         curl_easy_setopt(easyHandle, CURLOPT_CUSTOMREQUEST, [request.HTTPMethod UTF8String]);
@@ -229,7 +297,7 @@ static bool enableDebugLog;
     curl_easy_setopt(easyHandle, CURLOPT_URL, request.URL.absoluteString.UTF8String);
 
     // 配置 http version
-    switch (httpVersion) {
+    switch (s_httpVersion) {
         case HTTP3:
             // 仅https url能使用quic
             if (curlFeatureHttp3 && [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame) {
@@ -259,26 +327,27 @@ static bool enableDebugLog;
     curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
 
     // 将拦截到的request的header字段进行透传
-    struct curl_slist *headerFields = convertHeadersToCurlSlist(request.allHTTPHeaderFields);
-    self.headerFields = headerFields;
-    curl_easy_setopt(easyHandle, CURLOPT_HTTPHEADER, headerFields);
+    self.headerFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
+    curl_easy_setopt(easyHandle, CURLOPT_HTTPHEADER, self.headerFields);
 }
 
 - (void)populateRequestBody:(CURL *)easyHandle {
     NSURLRequest *request = self.request;
 
-    if (![request HTTPBodyStream]) {
-        // 处理方法为PUT但是BODY为空的情况，指定Content-Length为0
-        if ([@"PUT" isEqualToString:request.HTTPMethod]) {
+    if (!request.HTTPBodyStream) {
+        if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
             curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, 0L);
-        } else if ([@"POST" isEqualToString:request.HTTPMethod]) {
-            // 处理方法为POST但是BODY为空的情况，指定Content-Length为0
+        } else if ([HTTP_METHOD_POST isEqualToString:request.HTTPMethod]) {
             curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, 0L);
+        } else {
+            // 其他情况无需处理
         }
+
         return;
     }
 
     self.inputStream = request.HTTPBodyStream;
+
     // 用read_cb回调函数来读取需要传输的数据
     curl_easy_setopt(easyHandle, CURLOPT_READFUNCTION, read_cb);
     // self传给read_cb函数的void *userp参数
@@ -286,16 +355,28 @@ static bool enableDebugLog;
 
     NSString *contentLength = [request valueForHTTPHeaderField:@"Content-Length"];
     if (!contentLength) {
+        // 未设置Content-Length的情况，即使是使用Transfer-Encoding: chunked，也把totalBytesExpected设置为-1
+        self.totalBytesExpected = -1;
         return;
     }
-    // 如果是PUT，使用PUT的方式指定Content-Length,否则以POST的方式指定
-    if ([@"PUT" isEqualToString:request.HTTPMethod]) {
-        curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, [contentLength longLongValue]);
-    } else if (![@"GET" isEqualToString:request.HTTPMethod] && ![@"HEAD" isEqualToString:request.HTTPMethod]) {
-        // 对于POST以及四种基本方法（GET、POST、HEAD、PUT）以外的自定义方法，以POST的方式指定Content-Length
-        curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, [contentLength longLongValue]);
-        curl_easy_setopt(easyHandle, CURLOPT_POST, 1);
+
+    int64_t length = [contentLength longLongValue];
+    self.totalBytesExpected = length;
+
+    if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
+        curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, length);
+        return;
     }
+
+    if ([HTTP_METHOD_GET isEqualToString:request.HTTPMethod]
+        || [HTTP_METHOD_HEAD isEqualToString:request.HTTPMethod]) {
+        // GET/HEAD方法不需要设置body
+        return;
+    }
+
+    // 其他情况，都以POST的方式指定Content-Length
+    curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, length);
+    curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE, length);
 }
 
 - (void)configEasyHandle:(CURL *)easyHandle error:(NSError **)error {
@@ -311,32 +392,40 @@ static bool enableDebugLog;
         NSString *filePath = [resourceBundle pathForResource:@"cacert" ofType:@"pem"];
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [filePath UTF8String]);
     }
+
+    // 是否设置自定义根证书
+    if (s_caFilePath) {
+        curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [s_caFilePath UTF8String]);
+    }
+
     // 假如设置了自定义resolve，则使用
-    if (dnsResolver) {
-        [self configCustomResolve:easyHandle];
+    if (s_dnsResolverClass) {
+        [self configCustomDNSResolver:easyHandle];
     }
 
     @synchronized ([EMASCurlProtocol class]) {
         // 设置proxy
-        if (proxyServer) {
-            curl_easy_setopt(easyHandle, CURLOPT_PROXY, [proxyServer UTF8String]);
+        if (s_proxyServer) {
+            curl_easy_setopt(easyHandle, CURLOPT_PROXY, [s_proxyServer UTF8String]);
         }
     }
 
     // 设置debug回调函数以输出日志
-    if (enableDebugLog) {
+    if (s_enableDebugLog) {
         curl_easy_setopt(easyHandle, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(easyHandle, CURLOPT_DEBUGFUNCTION, debug_cb);
     }
 
     // 设置header回调函数处理收到的响应的header数据
-    curl_easy_setopt(easyHandle, CURLOPT_HEADERFUNCTION, header_cb);
     // receivedHeader会被传给header_cb函数的void *userp参数
+    curl_easy_setopt(easyHandle, CURLOPT_HEADERFUNCTION, header_cb);
     curl_easy_setopt(easyHandle, CURLOPT_HEADERDATA, (__bridge void *)self);
+
     // 设置write回调函数处理收到的响应的body数据
-    curl_easy_setopt(easyHandle, CURLOPT_WRITEFUNCTION, write_cb);
     // self会被传给write_cb函数的void *userp
+    curl_easy_setopt(easyHandle, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(easyHandle, CURLOPT_WRITEDATA, (__bridge void *)self);
+
     // 设置progress_callback以响应任务取消
     curl_easy_setopt(easyHandle, CURLOPT_NOPROGRESS, 0L);
     curl_easy_setopt(easyHandle, CURLOPT_XFERINFOFUNCTION, progress_callback);
@@ -344,42 +433,55 @@ static bool enableDebugLog;
 
     // 开启TCP keep alive
     curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPALIVE, 1L);
+
     // 开启重定向
     curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
     // 为了线程安全，设置NOSIGNAL
     curl_easy_setopt(easyHandle, CURLOPT_NOSIGNAL, 1L);
 }
 
-- (void)configCustomResolve:(CURL *)easyHandle {
+- (void)configCustomDNSResolver:(CURL *)easyHandle {
     NSURL *url = self.request.URL;
+    if (!url || !url.host) {
+        return;
+    }
 
-    NSString *host = [url host];
-    NSNumber *port = [url port];
+    NSString *host = url.host;
+    NSNumber *port = url.port;
+    NSString *scheme = url.scheme.lowercaseString;
 
-    // 如果没有提供端口号，则 port 可能为 nil
-    if (!port) {
-        // 根据 URL 的 scheme 来设置默认端口
-        if ([url.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame) {
-            port = @(80);
-        } else if ([url.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame) {
-            port = @(443);
+    NSInteger resolvedPort;
+    if (port) {
+        resolvedPort = port.integerValue;
+    } else {
+        if ([scheme isEqualToString:@"https"]) {
+            resolvedPort = 443;
+        } else if ([scheme isEqualToString:@"http"]) {
+            resolvedPort = 80;
+        } else {
+            return;
         }
     }
 
-    NSString *address = [dnsResolver resolveDomain:host];
-    // 解析成功则使用httpdns解析结果，失败则降级
-    if (address) {
-        NSString *hostPortAddressString = [NSString stringWithFormat:@"+%@:%@:%@", host, port, address];
-        struct curl_slist *resolveList = curl_slist_append(NULL, [hostPortAddressString UTF8String]);
-        self.resolveList = resolveList;
-        curl_easy_setopt(easyHandle, CURLOPT_RESOLVE, resolveList);
+    NSString *address = [s_dnsResolverClass resolveDomain:host];
+    if (!address) {
+        return;
+    }
+
+    // Format: +{host}:{port}:{ips}
+    NSString *hostPortAddressString = [NSString stringWithFormat:@"+%@:%ld:%@",
+                                     host,
+                                     (long)resolvedPort,
+                                     address];
+
+    self.resolveList = curl_slist_append(self.resolveList, [hostPortAddressString UTF8String]);
+    if (self.resolveList) {
+        curl_easy_setopt(easyHandle, CURLOPT_RESOLVE, self.resolveList);
     }
 }
 
-#pragma mark * convert function
-
 // 将拦截到的request中的header字段，转换为一个curl list
-struct curl_slist *convertHeadersToCurlSlist(NSDictionary<NSString *, NSString *> *headers) {
+- (struct curl_slist *)convertHeadersToCurlSlist:(NSDictionary<NSString *, NSString *> *)headers {
     struct curl_slist *headerFields = NULL;
     for (NSString *key in headers) {
         // 对于Content-Length，使用CURLOPT_POSTFIELDSIZE_LARGE指定，不要在这里透传，否则POST重定向为GET时仍会保留Content-Length，导致错误
@@ -393,8 +495,43 @@ struct curl_slist *convertHeadersToCurlSlist(NSDictionary<NSString *, NSString *
     return headerFields;
 }
 
+#pragma mark * libcurl callback function
+
+// libcurl的header回调函数，用于处理收到的header
+static size_t header_cb(void *contents, size_t size, size_t nmemb, void *userp) {
+    EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)userp;
+    NSData *data = [NSData dataWithBytes:contents length:size * nmemb];
+
+    NSString *line = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+
+    // 检查是否是首部行
+    if ([line hasPrefix:@"HTTP/"]) {
+        // 检查是否是重定向、1开头的中间状态、代理的connect响应
+        if ([line containsString:@" 3"] || [line containsString:@" 1"] || [line containsString:@"Connection established"]) {
+            protocol.isFinalResponse = NO;
+        } else {
+            protocol.isFinalResponse = YES;
+        }
+    }
+
+    // 如果是最后的Response则存储这个响应
+    if (protocol.isFinalResponse) {
+        [protocol.responseHeaderBuffer appendData:data];
+    }
+
+    // 检查是否是头部结束行
+    if ([line isEqualToString:@"\r\n"]) {
+        if (protocol.isFinalResponse) {
+            NSURLResponse *response = convertHeaderToResponse(protocol.responseHeaderBuffer, protocol.request.URL);
+            [protocol.client URLProtocol:protocol didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageAllowed];
+        }
+    }
+
+    return size * nmemb;
+}
+
 // 将libcurl收到的header数据，转换为一个NSURLResponse
-NSURLResponse *convertHeaderToResponse(NSMutableData *receivedHeader, NSURL *url) {
+static NSURLResponse *convertHeaderToResponse(NSMutableData *receivedHeader, NSURL *url) {
     // 将 NSMutableData 转换为 NSString
     NSString *headerString = [[NSString alloc] initWithData:receivedHeader encoding:NSUTF8StringEncoding];
 
@@ -433,43 +570,8 @@ NSURLResponse *convertHeaderToResponse(NSMutableData *receivedHeader, NSURL *url
     return [[NSHTTPURLResponse alloc] initWithURL:url statusCode:statusCode HTTPVersion:httpVersion headerFields:headers];
 }
 
-#pragma mark * libcurl callback function
-
-// libcurl的header回调函数，用于处理收到的header
-size_t header_cb(void *contents, size_t size, size_t nmemb, void *userp) {
-    EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)userp;
-    NSData *data = [NSData dataWithBytes:contents length:size * nmemb];
-
-    NSString *line = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-
-    // 检查是否是首部行
-    if ([line hasPrefix:@"HTTP/"]) {
-        // 检查是否是重定向
-        if ([line containsString:@" 3"]) {
-            protocol.isRedirecting = YES;
-        } else {
-            protocol.isRedirecting = NO;
-        }
-    }
-
-    // 如果不是重定向，则存储行
-    if (!protocol.isRedirecting) {
-        [protocol.headerBuffer appendData:data];
-    }
-
-    // 检查是否是头部结束行
-    if ([line isEqualToString:@"\r\n"]) {
-        if (!protocol.isRedirecting) {
-            NSURLResponse *response = convertHeaderToResponse(protocol.headerBuffer, protocol.request.URL);
-            [protocol.client URLProtocol:protocol didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageAllowed];
-        }
-    }
-
-    return size * nmemb;
-}
-
 // libcurl的write回调函数，用于处理收到的body
-size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
+static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
     NSMutableData *data = [[NSMutableData alloc] init];
     [data appendBytes:contents length:size * nmemb];
     NSURLProtocol *protocol = (__bridge NSURLProtocol *)userp;
@@ -478,19 +580,35 @@ size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
 }
 
 // libcurl的read回调函数，用于post等需要设置body数据的方法
-size_t read_cb(char *buffer, size_t size, size_t nitems, void *userp) {
+static size_t read_cb(char *buffer, size_t size, size_t nitems, void *userp) {
     EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)userp;
-    // 检查输入流是否已打开，如果未打开则打开
+
+    if (!protocol || !protocol.inputStream) {
+        return CURL_READFUNC_ABORT;
+    }
+
+    if (protocol.shouldCancel) {
+        return CURL_READFUNC_ABORT;
+    }
+
     if ([protocol.inputStream streamStatus] == NSStreamStatusNotOpen) {
         [protocol.inputStream open];
     }
-    NSInteger bytesRead = [protocol.inputStream read:(uint8_t *)buffer maxLength:(size * nitems)];
-    if (bytesRead == 0) {
-        [protocol.inputStream close];
-    }
+
+    NSInteger bytesRead = [protocol.inputStream read:(uint8_t *)buffer maxLength:size * nitems];
     if (bytesRead < 0) {
-        [protocol.client URLProtocol:protocol didFailWithError:[NSError errorWithDomain:@"fail to read data for HTTP body" code:-2 userInfo:nil]];
+        return CURL_READFUNC_ABORT;
     }
+
+    protocol.totalBytesSent += bytesRead;
+
+    if (protocol.uploadProgressUpdateBlock) {
+        protocol.uploadProgressUpdateBlock(protocol.request,
+                                           bytesRead,
+                                           protocol.totalBytesSent,
+                                           protocol.totalBytesExpected);
+    }
+
     return bytesRead;
 }
 
@@ -504,31 +622,31 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 }
 
 // libcurl的debug回调函数，输出libcurl的运行日志
-int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
+static int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
     switch (type) {
         case CURLINFO_TEXT:
-            NSLog(@"[TEXT] %.*s", (int)size, data);
+            NSLog(@"[CURLINFO_TEXT] %.*s", (int)size, data);
             break;
         case CURLINFO_HEADER_IN:
-            NSLog(@"[HEADER_IN] %.*s", (int)size, data);
+            NSLog(@"[CURLINFO_HEADER_IN] %.*s", (int)size, data);
             break;
         case CURLINFO_HEADER_OUT:
-            NSLog(@"[HEADER_OUT] %.*s", (int)size, data);
+            NSLog(@"[CURLINFO_HEADER_OUT] %.*s", (int)size, data);
             break;
         case CURLINFO_DATA_IN:
-            NSLog(@"[DATA_IN] %.*s", (int)size, data);
+            NSLog(@"[CURLINFO_DATA_IN] %.*s", (int)size, data);
             break;
         case CURLINFO_DATA_OUT:
-            NSLog(@"[DATA_OUT] %.*s", (int)size, data);
+            NSLog(@"[CURLINFO_DATA_OUT] %.*s", (int)size, data);
             break;
         case CURLINFO_SSL_DATA_IN:
-            NSLog(@"[SSL_DATA_IN] %.*s", (int)size, data);
+            NSLog(@"[CURLINFO_SSL_DATA_IN] %.*s", (int)size, data);
             break;
         case CURLINFO_SSL_DATA_OUT:
-            NSLog(@"[SSL_DATA_OUT] %.*s", (int)size, data);
+            NSLog(@"[CURLINFO_SSL_DATA_OUT] %.*s", (int)size, data);
             break;
         case CURLINFO_END:
-            NSLog(@"[END] %.*s", (int)size, data);
+            NSLog(@"[CURLINFO_END] %.*s", (int)size, data);
         default:
             break;
     }

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -22,10 +22,13 @@
 		6F3F603B2CD0E0890014025B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F602B2CD0E0890014025B /* Assets.xcassets */; };
 		6F3F603D2CD0E0890014025B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F602E2CD0E0890014025B /* LaunchScreen.storyboard */; };
 		6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60312CD0E0890014025B /* Main.storyboard */; };
-		6F3F60412CD0F7420014025B /* GCDWebServerManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60402CD0F7420014025B /* GCDWebServerManager.m */; };
-		6F3F60432CD0F82A0014025B /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60422CD0F82A0014025B /* test.txt */; };
-		6F3F60A52CD476C00014025B /* EMASCurlTestsHTTP1.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60A42CD476C00014025B /* EMASCurlTestsHTTP1.m */; };
-		6F3F60A72CD477110014025B /* EMASCurlTestsHTTP2.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60A62CD477110014025B /* EMASCurlTestsHTTP2.m */; };
+		949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */; };
+		949539152D0FC531001FE850 /* EMASCurlSimpleTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539142D0FC531001FE850 /* EMASCurlSimpleTest.m */; };
+		949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539162D1020B7001FE850 /* EMASCurlUploadTest.m */; };
+		949539192D116EB8001FE850 /* EMASCurlMetricObserverTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */; };
+		9495391B2D1194DD001FE850 /* EMASCurlDNSResolverTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */; };
+		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
+		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,19 +62,51 @@
 		6F3F60332CD0E0890014025B /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
 		6F3F60342CD0E0890014025B /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		6F3F60352CD0E0890014025B /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
-		6F3F603F2CD0F72F0014025B /* GCDWebServerManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GCDWebServerManager.h; sourceTree = "<group>"; };
-		6F3F60402CD0F7420014025B /* GCDWebServerManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerManager.m; sourceTree = "<group>"; };
-		6F3F60422CD0F82A0014025B /* test.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.txt; sourceTree = "<group>"; };
-		6F3F60A42CD476C00014025B /* EMASCurlTestsHTTP1.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlTestsHTTP1.m; sourceTree = "<group>"; };
-		6F3F60A62CD477110014025B /* EMASCurlTestsHTTP2.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlTestsHTTP2.m; sourceTree = "<group>"; };
 		73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		80EA0CB208EDD3FA81140A4E /* Pods-EMASCurlTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlTests.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlTests/Pods-EMASCurlTests.debug.xcconfig"; sourceTree = "<group>"; };
 		8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "./out/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
+		949538C92D0E7736001FE850 /* EMASCurlTestConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlTestConstants.h; sourceTree = "<group>"; };
+		949538CC2D0F1CB3001FE850 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlDownloadTest.m; sourceTree = "<group>"; };
+		949539142D0FC531001FE850 /* EMASCurlSimpleTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlSimpleTest.m; sourceTree = "<group>"; };
+		949539162D1020B7001FE850 /* EMASCurlUploadTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlUploadTest.m; sourceTree = "<group>"; };
+		949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlMetricObserverTest.m; sourceTree = "<group>"; };
+		9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlDNSResolverTest.m; sourceTree = "<group>"; };
+		94C5B5D82D071D86006BC856 /* EMASCurlManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlManager.h; sourceTree = "<group>"; };
+		94C5B5D92D071D86006BC856 /* EMASCurlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlManager.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
 		DC044DADBD1D286A25E7ABFA /* Pods_AVPlayerDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AVPlayerDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED34BF3164EE9802D9AB9B8A /* Pods-EMASCurlTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlTests.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlTests/Pods-EMASCurlTests.release.xcconfig"; sourceTree = "<group>"; };
 		FC63873258AC2D2C8BE72105 /* Pods-AVPlayerDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AVPlayerDemo.debug.xcconfig"; path = "Target Support Files/Pods-AVPlayerDemo/Pods-AVPlayerDemo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		949538D62D0F31B1001FE850 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"__pycache__/server_controller.cpython-39.pyc",
+				certs/rootCA/index.txt,
+				certs/rootCA/index.txt.attr,
+				certs/rootCA/index.txt.old,
+				certs/rootCA/newcerts/1000.pem,
+				certs/rootCA/openssl.cnf,
+				certs/rootCA/private/ca.key,
+				certs/rootCA/serial,
+				certs/rootCA/serial.old,
+				certs/server/server.crt,
+				certs/server/server.csr,
+				certs/server/server.key,
+				README.md,
+				requirements.txt,
+				server_controller.py,
+			);
+			target = 6F3F5FE82CD0DB520014025B /* EMASCurlTests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		949538AA2D0C3BA3001FE850 /* MockServer */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (949538D62D0F31B1001FE850 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = MockServer; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		6F3F5FD72CD0DB200014025B /* Frameworks */ = {
@@ -106,10 +141,10 @@
 		6F3F5FD02CD0DB200014025B = {
 			isa = PBXGroup;
 			children = (
-				6F3F60422CD0F82A0014025B /* test.txt */,
 				6F3F60222CD0E07F0014025B /* EMASCurl */,
 				6F3F60272CD0E0860014025B /* EMASCurlTests */,
 				6F3F60362CD0E0890014025B /* EMASCurlDemo */,
+				949538AA2D0C3BA3001FE850 /* MockServer */,
 				6F3F60112CD0DB7D0014025B /* Frameworks */,
 				6F3F5FDB2CD0DB200014025B /* Products */,
 				F020AA635FEA508BFC2214FC /* Pods */,
@@ -143,6 +178,8 @@
 				6F3F601F2CD0E07F0014025B /* EMASCurl.h */,
 				6F3F60202CD0E07F0014025B /* EMASCurlProtocol.h */,
 				6F3F60212CD0E07F0014025B /* EMASCurlProtocol.m */,
+				94C5B5D82D071D86006BC856 /* EMASCurlManager.h */,
+				94C5B5D92D071D86006BC856 /* EMASCurlManager.m */,
 			);
 			path = EMASCurl;
 			sourceTree = "<group>";
@@ -150,10 +187,13 @@
 		6F3F60272CD0E0860014025B /* EMASCurlTests */ = {
 			isa = PBXGroup;
 			children = (
-				6F3F603F2CD0F72F0014025B /* GCDWebServerManager.h */,
-				6F3F60402CD0F7420014025B /* GCDWebServerManager.m */,
-				6F3F60A42CD476C00014025B /* EMASCurlTestsHTTP1.m */,
-				6F3F60A62CD477110014025B /* EMASCurlTestsHTTP2.m */,
+				949538C92D0E7736001FE850 /* EMASCurlTestConstants.h */,
+				949539142D0FC531001FE850 /* EMASCurlSimpleTest.m */,
+				949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */,
+				949539162D1020B7001FE850 /* EMASCurlUploadTest.m */,
+				949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */,
+				9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */,
+				949538CC2D0F1CB3001FE850 /* README.md */,
 			);
 			path = EMASCurlTests;
 			sourceTree = "<group>";
@@ -198,6 +238,7 @@
 			files = (
 				6F3F60232CD0E07F0014025B /* EMASCurl.h in Headers */,
 				6F3F60242CD0E07F0014025B /* EMASCurlProtocol.h in Headers */,
+				94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -235,6 +276,9 @@
 			);
 			dependencies = (
 				6F3F5FEF2CD0DB520014025B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				949538AA2D0C3BA3001FE850 /* MockServer */,
 			);
 			name = EMASCurlTests;
 			productName = EMASCurlTests;
@@ -312,7 +356,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6F3F60432CD0F82A0014025B /* test.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -381,6 +424,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6F3F60252CD0E07F0014025B /* EMASCurlProtocol.m in Sources */,
+				94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -388,9 +432,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6F3F60A72CD477110014025B /* EMASCurlTestsHTTP2.m in Sources */,
-				6F3F60412CD0F7420014025B /* GCDWebServerManager.m in Sources */,
-				6F3F60A52CD476C00014025B /* EMASCurlTestsHTTP1.m in Sources */,
+				949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */,
+				949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */,
+				9495391B2D1194DD001FE850 /* EMASCurlDNSResolverTest.m in Sources */,
+				949539152D0FC531001FE850 /* EMASCurlSimpleTest.m in Sources */,
+				949539192D116EB8001FE850 /* EMASCurlMetricObserverTest.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -633,7 +679,6 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
-					"-l\"GCDWebServer\"",
 					"-l\"z\"",
 					"-framework",
 					"\"CFNetwork\"",
@@ -660,7 +705,6 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
-					"-l\"GCDWebServer\"",
 					"-l\"z\"",
 					"-framework",
 					"\"CFNetwork\"",

@@ -1,5 +1,0 @@
-This txt file is used for EMASCurl HTTP/1 testing.
-To be or not to be, that is the question.
-When in Rome, do as the Romans do.
-Actions speak louder than words.
-The pen is mightier than the sword.

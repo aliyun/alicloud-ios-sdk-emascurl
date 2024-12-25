@@ -43,6 +43,10 @@
 
 @property (nonatomic, strong) NSURLSessionDataTask *dataTask;
 
+@property (nonatomic, strong) NSTimer *timer;
+
+@property (nonatomic, strong) NSMutableURLRequest *request;
+
 @end
 
 @implementation ViewController
@@ -56,13 +60,14 @@
 - (void)configUrlSessionUsingEmasNet {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
 
-    [EMASCurlProtocol setDNSResolver:[MyDNSResolver class]];
     [EMASCurlProtocol setDebugLogEnabled:YES];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol setDNSResolver:[MyDNSResolver class]];
     // [EMASCurlProtocol setHTTPVersion:HTTP2];
     // [EMASCurlProtocol setHTTPVersion:HTTP3];
 
     _session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:[NSOperationQueue mainQueue]];
+    _request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://httpbin.org/anything"]];
 }
 
 - (IBAction)onNormalRequestClick:(id)sender {
@@ -74,12 +79,8 @@
 }
 
 - (void)sendNormalRequest {
-    NSURL *url = [NSURL URLWithString:@"https://httpbin.org/anything"];
-
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-
-    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
-                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:self.request
+                                                     completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         if (error) {
             NSLog(@"Request failed due to error: %@", error.localizedDescription);
             return;
@@ -91,6 +92,37 @@
         NSLog(@"Response body: %@", body);
     }];
     self.dataTask = dataTask;
+    [dataTask resume];
+}
+
+- (IBAction)onContinueRequestClick:(id)sender {
+    NSTimer *timer = [NSTimer timerWithTimeInterval:0.1
+                                             target:self
+                                           selector:@selector(sendContinueRequest)
+                                           userInfo:nil
+                                            repeats:YES];
+    self.timer = timer;
+    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+}
+
+- (IBAction)cancelContinueRequest:(id)sender {
+    [self.timer invalidate];
+    self.timer = nil;
+}
+
+- (void)sendContinueRequest {
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:self.request
+                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (error) {
+            NSLog(@"Request failed due to error: %@", error.localizedDescription);
+            return;
+        }
+
+        NSLog(@"Response : %@", response);
+
+        NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        NSLog(@"Response body: %@", body);
+    }];
     [dataTask resume];
 }
 
