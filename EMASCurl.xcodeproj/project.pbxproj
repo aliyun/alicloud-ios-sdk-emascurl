@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2689848F829331F121A85036 /* libPods-EMASCurlTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F38E3FE6C69573CEDA87BA1 /* libPods-EMASCurlTests.a */; };
 		591EB06AEB7EE940B38F4096 /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */; };
 		5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */; };
 		6F3F5FED2CD0DB520014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
@@ -27,6 +26,7 @@
 		949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539162D1020B7001FE850 /* EMASCurlUploadTest.m */; };
 		949539192D116EB8001FE850 /* EMASCurlMetricObserverTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */; };
 		9495391B2D1194DD001FE850 /* EMASCurlDNSResolverTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */; };
+		94953A972D1BEBE8001FE850 /* EMASCurlTimeoutTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94953A962D1BEBE8001FE850 /* EMASCurlTimeoutTest.m */; };
 		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
 		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
 /* End PBXBuildFile section */
@@ -44,7 +44,6 @@
 /* Begin PBXFileReference section */
 		226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_EMASCurlDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2DBA4A149115D13FCC136512 /* Pods-AVPlayerDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AVPlayerDemo.release.xcconfig"; path = "Target Support Files/Pods-AVPlayerDemo/Pods-AVPlayerDemo.release.xcconfig"; sourceTree = "<group>"; };
-		4F38E3FE6C69573CEDA87BA1 /* libPods-EMASCurlTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-EMASCurlTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EMASCurl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F3F5FE92CD0DB520014025B /* EMASCurlTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EMASCurlTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F3F5FF72CD0DB6E0014025B /* EMASCurlDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EMASCurlDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -63,7 +62,6 @@
 		6F3F60342CD0E0890014025B /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		6F3F60352CD0E0890014025B /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.debug.xcconfig"; sourceTree = "<group>"; };
-		80EA0CB208EDD3FA81140A4E /* Pods-EMASCurlTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlTests.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlTests/Pods-EMASCurlTests.debug.xcconfig"; sourceTree = "<group>"; };
 		8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "./out/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
 		949538C92D0E7736001FE850 /* EMASCurlTestConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlTestConstants.h; sourceTree = "<group>"; };
 		949538CC2D0F1CB3001FE850 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -72,11 +70,11 @@
 		949539162D1020B7001FE850 /* EMASCurlUploadTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlUploadTest.m; sourceTree = "<group>"; };
 		949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlMetricObserverTest.m; sourceTree = "<group>"; };
 		9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlDNSResolverTest.m; sourceTree = "<group>"; };
+		94953A962D1BEBE8001FE850 /* EMASCurlTimeoutTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlTimeoutTest.m; sourceTree = "<group>"; };
 		94C5B5D82D071D86006BC856 /* EMASCurlManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlManager.h; sourceTree = "<group>"; };
 		94C5B5D92D071D86006BC856 /* EMASCurlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlManager.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
 		DC044DADBD1D286A25E7ABFA /* Pods_AVPlayerDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AVPlayerDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		ED34BF3164EE9802D9AB9B8A /* Pods-EMASCurlTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlTests.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlTests/Pods-EMASCurlTests.release.xcconfig"; sourceTree = "<group>"; };
 		FC63873258AC2D2C8BE72105 /* Pods-AVPlayerDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AVPlayerDemo.debug.xcconfig"; path = "Target Support Files/Pods-AVPlayerDemo/Pods-AVPlayerDemo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -122,7 +120,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6F3F5FED2CD0DB520014025B /* EMASCurl.framework in Frameworks */,
-				2689848F829331F121A85036 /* libPods-EMASCurlTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,7 +162,6 @@
 			isa = PBXGroup;
 			children = (
 				226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */,
-				4F38E3FE6C69573CEDA87BA1 /* libPods-EMASCurlTests.a */,
 				8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */,
 				DC044DADBD1D286A25E7ABFA /* Pods_AVPlayerDemo.framework */,
 			);
@@ -193,6 +189,7 @@
 				949539162D1020B7001FE850 /* EMASCurlUploadTest.m */,
 				949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */,
 				9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */,
+				94953A962D1BEBE8001FE850 /* EMASCurlTimeoutTest.m */,
 				949538CC2D0F1CB3001FE850 /* README.md */,
 			);
 			path = EMASCurlTests;
@@ -221,8 +218,6 @@
 			children = (
 				73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */,
 				A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */,
-				80EA0CB208EDD3FA81140A4E /* Pods-EMASCurlTests.debug.xcconfig */,
-				ED34BF3164EE9802D9AB9B8A /* Pods-EMASCurlTests.release.xcconfig */,
 				FC63873258AC2D2C8BE72105 /* Pods-AVPlayerDemo.debug.xcconfig */,
 				2DBA4A149115D13FCC136512 /* Pods-AVPlayerDemo.release.xcconfig */,
 			);
@@ -267,7 +262,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6F3F5FF02CD0DB520014025B /* Build configuration list for PBXNativeTarget "EMASCurlTests" */;
 			buildPhases = (
-				8AD156147EF6765FBE9F9FF1 /* [CP] Check Pods Manifest.lock */,
 				6F3F5FE52CD0DB520014025B /* Sources */,
 				6F3F5FE62CD0DB520014025B /* Frameworks */,
 				6F3F5FE72CD0DB520014025B /* Resources */,
@@ -372,28 +366,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		8AD156147EF6765FBE9F9FF1 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-EMASCurlTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 		E47199EE6DAF4B10E966261D /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -435,6 +407,7 @@
 				949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */,
 				949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */,
 				9495391B2D1194DD001FE850 /* EMASCurlDNSResolverTest.m in Sources */,
+				94953A972D1BEBE8001FE850 /* EMASCurlTimeoutTest.m in Sources */,
 				949539152D0FC531001FE850 /* EMASCurlSimpleTest.m in Sources */,
 				949539192D116EB8001FE850 /* EMASCurlMetricObserverTest.m in Sources */,
 			);
@@ -669,7 +642,6 @@
 		};
 		6F3F5FF12CD0DB520014025B /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 80EA0CB208EDD3FA81140A4E /* Pods-EMASCurlTests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -695,7 +667,6 @@
 		};
 		6F3F5FF22CD0DB520014025B /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = ED34BF3164EE9802D9AB9B8A /* Pods-EMASCurlTests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

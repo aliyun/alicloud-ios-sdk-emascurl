@@ -10,7 +10,3 @@ target 'EMASCurlDemo' do
 
   pod 'AlicloudHTTPDNS'
 end
-
-target 'EMASCurlTests' do
-  pod 'OCMock', '3.9.1'
-end
