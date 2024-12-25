@@ -10,12 +10,18 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
 - [快速入门](#快速入门)
 - [构建EMASCurl](#构建emascurl)
 - [集成EMASCurl](#集成emascurl)
-  - [cocoapods引入依赖](#cocoapods引入依赖)
+  - [CocoaPods引入依赖](#cocoapods引入依赖)
   - [本地手动集成依赖](#本地手动集成依赖)
 - [使用EMASCurl](#使用emascurl)
   - [开启EMASCurl拦截](#开启emascurl拦截)
+    - [拦截`NSURLSessionConfiguration`](#拦截nsurlsessionconfiguration)
+    - [拦截`sharedSession`](#拦截sharedsession)
   - [与HTTPDNS配合使用](#与httpdns配合使用)
   - [选择HTTP版本](#选择http版本)
+  - [设置CA证书文件路径](#设置ca证书文件路径)
+  - [设置连接超时](#设置连接超时)
+  - [设置上传进度回调](#设置上传进度回调)
+  - [设置性能指标回调](#设置性能指标回调)
   - [开启调试日志](#开启调试日志)
 - [License](#license)
 - [联系我们](#联系我们)
@@ -26,9 +32,9 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
 
 ## 快速入门
 
-### 从cocoapods引入依赖
+### 从CocoaPods引入依赖
 
-在您的Podfile文件中添加如下依赖：
+在您的`Podfile`文件中添加如下依赖：
 
 ```ruby
 source 'https://github.com/aliyun/aliyun-specs.git'
@@ -36,10 +42,11 @@ source 'https://github.com/aliyun/aliyun-specs.git'
 target 'yourAppTarget' do
     use_framework!
 
-    pod 'EMASCurl', 'x.x.x'
+    pod 'EMASCurl', '1.0.2-http2-beta'
 end
 ```
-在您的Terminal中进入Podfile所在目录，执行以下命令安装依赖
+在您的Terminal中进入`Podfile`所在目录，执行以下命令安装依赖：
+
 ```shell
 pod install --repo-update
 ```
@@ -64,12 +71,12 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
                                         completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
     if (error) {
-        NSLog(@"Request failed due to error: %@", error.localizedDescription);
+        NSLog(@"请求失败，错误信息: %@", error.localizedDescription);
         return;
     }
-    NSLog(@"Response : %@", response);
+    NSLog(@"响应: %@", response);
     NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSLog(@"Response body: %@", body);
+    NSLog(@"响应体: %@", body);
 }];
 
 [dataTask resume];
@@ -77,11 +84,11 @@ NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
 
 ## 构建EMASCurl
 
-本章节介绍如何使用本仓库本地构建EMASCurl xcframework。
+本章节介绍如何使用本仓库本地构建EMASCurl `xcframework`。
 
 ### 构建工具安装
 
-构建过程中需要使用git克隆代码、使用automake, autoconf, libtool, pkg-config等构建工具、使用gem, ruby, xcodeproj等工具，请您确认这些命令行工具已经安装在本机，如果尚未安装参考以下安装命令：
+构建过程中需要使用`git`克隆代码、使用`automake`、`autoconf`、`libtool`、`pkg-config`等构建工具、使用`gem`、`ruby`、`xcodeproj`等工具，请您确认这些命令行工具已经安装在本机。如果尚未安装，请参考以下安装命令：
 
 ```shell
 brew install automake autoconf libtool pkg-config
@@ -91,17 +98,18 @@ gem install xcodeproj
 
 ### 拉取子模块
 
-本仓库以submodule的形式管理依赖的仓库，在克隆后需要手动拉取子模块。
+本仓库以`submodule`的形式管理依赖的仓库，在克隆后需要手动拉取子模块。
 
 ```shell
 git submodule update --init --recursive --progress
 ```
 
 所依赖的子模块版本信息如下：
-| dependency repository     | version     |
-|:---------|:---------|
-| curl  | curl-8_10_1  |
-| nghttp2  | v1.64.0  |
+
+| 依赖仓库         | 版本        |
+|:-----------------|:------------|
+| curl             | curl-8_10_1 |
+| nghttp2         | v1.64.0     |
 
 ### 构建libcurl.xcframework
 
@@ -123,15 +131,15 @@ pod install --repo-update
 
 本章节介绍如何将EMASCurl添加到您的应用中。
 
-我们提供了cocoapods引入依赖和本地依赖两种集成方式，推荐工程使用cocoapods管理依赖。
+我们提供了CocoaPods引入依赖和本地手动集成两种方式，推荐工程使用CocoaPods管理依赖。
 
-### cocoapods引入依赖
+### CocoaPods引入依赖
 
 #### 指定Master仓库和阿里云仓库
 
-EMASCurl和其他EMAS产品的iOS SDK，都是发布到阿里云EMAS官方维护的github仓库中，因此，您需要在您的Podfile文件中包含该仓库地址。
+EMASCurl和其他EMAS产品的iOS SDK，都是发布到阿里云EMAS官方维护的GitHub仓库中，因此，您需要在您的`Podfile`文件中包含该仓库地址。
 
-```shell
+```ruby
 source 'https://github.com/aliyun/aliyun-specs.git'
 ```
 
@@ -139,7 +147,7 @@ source 'https://github.com/aliyun/aliyun-specs.git'
 
 为您需要依赖EMASCurl的target添加如下依赖。
 
-```shell
+```ruby
 use_framework!
 
 pod 'EMASCurl', '1.0.2-http2-beta'
@@ -147,7 +155,7 @@ pod 'EMASCurl', '1.0.2-http2-beta'
 
 #### 安装依赖
 
-在您的Terminal中进入Podfile所在目录，执行以下命令安装依赖。
+在您的Terminal中进入`Podfile`所在目录，执行以下命令安装依赖。
 
 ```shell
 pod install --repo-update
@@ -157,11 +165,15 @@ pod install --repo-update
 
 #### 将framework文件添加到工程中
 
-您需要首先按照**EMASCurl构建**的步骤在本地构建出**EMASCurl.xcframework**，然后在xcode工程项目中(Build Phases -> Link Binary With Libraries)添加对于**EMASCurl.xcframework**的依赖。
+您需要首先按照**EMASCurl构建**的步骤在本地构建出**EMASCurl.xcframework**，然后在Xcode工程项目中（`Build Phases` -> `Link Binary With Libraries`）添加对于**EMASCurl.xcframework**的依赖。
 
 #### 添加Linker Flags
 
-EMASCurl会使用zlib进行HTTP压缩与解压，因此您需要为应用的TARGETS -> Build Settings -> Linking -> Other Linker Flags添加上`-lz`与`-ObjC`。
+EMASCurl会使用`zlib`进行HTTP压缩与解压，因此您需要为应用的TARGETS -> Build Settings -> Linking -> Other Linker Flags添加上`-lz`与`-ObjC`。
+
+#### 添加CA证书文件路径（如果使用自签名证书）
+
+如果您使用自签名证书，还需将CA证书文件路径设置到EMASCurl中，具体请参考[使用EMASCurl](#使用emascurl)章节中的相关内容。
 
 ## 使用EMASCurl
 
@@ -172,7 +184,7 @@ EMASCurl会使用zlib进行HTTP压缩与解压，因此您需要为应用的TARG
 #### 拦截`NSURLSessionConfiguration`
 
 ```objc
-+ (void)installIntoSessionConfiguration:(NSURLSessionConfiguration*)sessionConfiguration;
++ (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration *)sessionConfiguration;
 ```
 
 首先，为您的`NSURLSessionConfiguration`安装EMASCurl。
@@ -193,12 +205,12 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
                                         completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
     if (error) {
-        NSLog(@"Request failed due to error: %@", error.localizedDescription);
+        NSLog(@"请求失败，错误信息: %@", error.localizedDescription);
         return;
     }
-    NSLog(@"Response : %@", response);
+    NSLog(@"响应: %@", response);
     NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSLog(@"Response body: %@", body);
+    NSLog(@"响应体: %@", body);
 }];
 
 [dataTask resume];
@@ -227,12 +239,12 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
                                         completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
     if (error) {
-        NSLog(@"Request failed due to error: %@", error.localizedDescription);
+        NSLog(@"请求失败，错误信息: %@", error.localizedDescription);
         return;
     }
-    NSLog(@"Response : %@", response);
+    NSLog(@"响应: %@", response);
     NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSLog(@"Response body: %@", body);
+    NSLog(@"响应体: %@", body);
 }];
 
 [dataTask resume];
@@ -251,7 +263,7 @@ EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需
 ```objc
 @protocol EMASCurlProtocolDNSResolver <NSObject>
 
-+ (NSString *)resolveDomain:(NSString *)domain;
++ (nullable NSString *)resolveDomain:(nonnull NSString *)domain;
 
 @end
 ```
@@ -265,7 +277,7 @@ EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需
 
 @implementation MyDNSResolver
 
-+ (NSString *)resolveDomain:(NSString *)domain {
++ (nullable NSString *)resolveDomain:(nonnull NSString *)domain {
     HttpDnsService *httpdns = [HttpDnsService sharedInstance];
     HttpdnsResult* result = [httpdns resolveHostSyncNonBlocking:domain byIpType:HttpdnsQueryIPTypeBoth];
     NSLog(@"httpdns resolve result: %@", result);
@@ -284,12 +296,14 @@ EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需
     }
     return nil;
 }
+
+@end
 ```
 
 然后调用以下方法为EMASCurl设置DNS解析器：
 
 ```objc
-+ (void)setDNSResolver:(Class<EMASCurlProtocolDNSResolver>)resolver;
++ (void)setDNSResolver:(nonnull Class<EMASCurlProtocolDNSResolver>)dnsResolver;
 ```
 
 例如：
@@ -304,10 +318,94 @@ EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需
 + (void)setHTTPVersion:(HTTPVersion)version;
 ```
 
-目前提供HTTP1与HTTP2两种版本：
+目前提供HTTP1、HTTP2与HTTP3三种版本：
 
-+ HTTP1: 使用HTTP1.1
-+ HTTP2: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
++ **HTTP1**: 使用HTTP1.1
++ **HTTP2**: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
++ **HTTP3**: 首先尝试使用HTTP3，如果与服务器的HTTP3协商失败，则会退回到HTTP2，再失败则退回到HTTP1.1
+
+### 设置CA证书文件路径
+
+```objc
++ (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath;
+```
+
+如果您的服务器使用自签名证书，您需要设置CA证书文件的路径，以确保EMASCurl能够正确验证SSL/TLS连接。
+
+例如：
+
+```objc
+NSString *caFilePath = [[NSBundle mainBundle] pathForResource:@"my_ca" ofType:@"pem"];
+[EMASCurlProtocol setSelfSignedCAFilePath:caFilePath];
+```
+
+### 设置连接超时
+
+```objc
++ (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)connectTimeoutInSeconds;
+```
+
+`NSURLSession`未提供设置连接超时的方式，因此EMASCurl单独提供了此功能。请求的整体超时时间，仍然由`NSURLSessionConfiguration`中的`timeoutIntervalForRequest`，或直接配置`NSURLRequest`中的`timeoutInterval`控制。
+
+例如：
+
+```objc
+NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+[EMASCurlProtocol setConnectTimeoutIntervalForRequest:request connectTimeoutInterval:10.0];
+```
+
+### 设置上传进度回调
+
+```objc
+typedef void(^EMASCurlUploadProgressUpdateBlock)(NSURLRequest * _Nonnull request,
+                                         int64_t bytesSent,
+                                         int64_t totalBytesSent,
+                                         int64_t totalBytesExpectedToSend);
+
++ (void)setUploadProgressUpdateBlockForRequest:(nonnull NSMutableURLRequest *)request uploadProgressUpdateBlock:(nonnull EMASCurlUploadProgressUpdateBlock)uploadProgressUpdateBlock;
+```
+
+由于`NSURLProtocol`并未提供合适的机制来提供上传进度的跟踪，EMASCurl提供了一个额外的上传进度处理方式。您可以为每个请求设置上传进度回调。
+
+例如：
+
+```objc
+NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+[EMASCurlProtocol setUploadProgressUpdateBlockForRequest:request uploadProgressUpdateBlock:^(NSURLRequest * _Nonnull request, int64_t bytesSent, int64_t totalBytesSent, int64_t totalBytesExpectedToSend) {
+    NSLog(@"上传进度: 已发送 %lld / 总共 %lld 字节", totalBytesSent, totalBytesExpectedToSend);
+}];
+```
+
+### 设置性能指标回调
+
+```objc
+typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
+                                   double nameLookUpTimeMS,
+                                   double connectTimeMs,
+                                   double appConnectTimeMs,
+                                   double preTransferTimeMs,
+                                   double startTransferTimeMs,
+                                   double totalTimeMs);
+
++ (void)setMetricsObserverBlockForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlock)metricsObserverBlock;
+```
+
+网络请求性能指标回调，可以帮助您监控请求的各项耗时指标。
+
+例如：
+
+```objc
+NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+[EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
+    NSLog(@"性能指标:");
+    NSLog(@"DNS解析耗时: %.2f ms", nameLookUpTimeMS);
+    NSLog(@"TCP连接耗时: %.2f ms", connectTimeMs);
+    NSLog(@"SSL/TLS握手耗时: %.2f ms", appConnectTimeMs);
+    NSLog(@"传输前准备耗时: %.2f ms", preTransferTimeMs);
+    NSLog(@"收到第一个字节耗时: %.2f ms", startTransferTimeMs);
+    NSLog(@"总耗时: %.2f ms", totalTimeMs);
+}];
+```
 
 ### 开启调试日志
 
@@ -315,7 +413,13 @@ EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled;
 ```
 
-开启后会打印出日志记录。
+开启后会打印出日志记录，便于调试。
+
+例如：
+
+```objc
+[EMASCurlProtocol setDebugLogEnabled:YES];
+```
 
 ## License
 
