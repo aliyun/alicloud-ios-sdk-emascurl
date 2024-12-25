@@ -67,7 +67,7 @@ static NSURLSession *session;
 }
 
 - (void)uploadData:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_UPLOAD_SLOW]];
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_UPLOAD_POST_SLOW]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"POST";
 
@@ -104,7 +104,7 @@ static NSURLSession *session;
 }
 
 - (void)uploadDataWithProgress:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_UPLOAD_SLOW]];
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_UPLOAD_POST_SLOW]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"POST";
 
@@ -163,7 +163,7 @@ static NSURLSession *session;
 }
 
 - (void)uploadDataAndCancel:(NSString *)endpoint {
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_UPLOAD_SLOW]];
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_UPLOAD_POST_SLOW]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"POST";
 
@@ -213,6 +213,32 @@ static NSURLSession *session;
     XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_SEC)), 0, @"Upload request timed out");
 }
 
+- (void)uploadDataUsingHttpBody:(NSString *)endpoint {
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_UPLOAD_PUT_SLOW]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    request.HTTPMethod = @"PUT";
+
+    NSData *testData = [self generateTestData:1024 * 1024];
+    [request setHTTPBody:testData];
+
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+                                                completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        XCTAssertNil(error, @"Upload failed with error: %@", error);
+        XCTAssertNotNil(response, @"No response received");
+
+        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected 200 status code");
+
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    [dataTask resume];
+
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+}
+
 @end
 
 @interface EMASCurlUploadTestHttp11 : EMASCurlUploadTestBase
@@ -243,6 +269,10 @@ static NSURLSession *session;
 - (void)testCancelUploadAndUploadAgain {
     [self uploadDataAndCancel:HTTP11_ENDPOINT];
     [self uploadData:HTTP11_ENDPOINT];
+}
+
+- (void)testUploadDataUsingHttpBody {
+    [self uploadDataUsingHttpBody:HTTP11_ENDPOINT];
 }
 
 @end

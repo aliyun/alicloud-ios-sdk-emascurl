@@ -99,7 +99,7 @@ def create_app():
             headers=response_headers
         )
 
-    @app.post("/upload/slow")
+    @app.post("/upload/post/slow")
     async def upload_file_slow(file: UploadFile = File(...)):
         """Handle file upload with simulated slow processing"""
         chunk_size = 200 * 1024
@@ -114,6 +114,26 @@ def create_app():
             "content_type": file.content_type,
             "size": total_size
         }
+
+
+    @app.put("/upload/put/slow")
+    async def upload_file_slow(request: Request):
+        """Handle file upload with simulated slow processing"""
+        chunk_size = 200 * 1024
+        total_size = 0
+
+        content_type = request.headers.get("Content-Type", "application/octet-stream")
+
+        # Read the body data in chunks
+        async for chunk in request.stream():
+            total_size += len(chunk)
+            await asyncio.sleep(1)  # Simulate slow processing
+
+        return {
+            "content_type": content_type,
+            "size": total_size
+        }
+
 
     @app.get("/download/1MB_data_at_200KBps_speed")
     async def download_slow(body: Optional[Any] = Body(None)):

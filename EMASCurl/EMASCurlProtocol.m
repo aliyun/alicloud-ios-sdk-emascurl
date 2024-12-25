@@ -27,6 +27,10 @@
 
 @property (nonatomic, strong) NSMutableData *responseHeaderBuffer;
 
+@property (nonatomic, assign) struct curl_slist *headerFields;
+
+@property (nonatomic, assign) struct curl_slist *resolveList;
+
 @property (nonatomic, assign) int64_t totalBytesSent;
 
 @property (nonatomic, assign) int64_t totalBytesExpected;
@@ -226,10 +230,20 @@ static bool s_enableDebugLog;
         }
         self.inputStream = nil;
     }
+
+    if (self.headerFields) {
+        curl_slist_free_all(self.headerFields);
+        self.headerFields = nil;
+    }
+    if (self.resolveList) {
+        curl_slist_free_all(self.resolveList);
+        self.resolveList = nil;
+    }
     if (self.easyHandle) {
         curl_easy_cleanup(self.easyHandle);
         self.easyHandle = nil;
     }
+
     self.responseHeaderBuffer = nil;
 }
 
@@ -313,8 +327,8 @@ static bool s_enableDebugLog;
     curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
 
     // 将拦截到的request的header字段进行透传
-    struct curl_slist *headerFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
-    curl_easy_setopt(easyHandle, CURLOPT_HTTPHEADER, headerFields);
+    self.headerFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
+    curl_easy_setopt(easyHandle, CURLOPT_HTTPHEADER, self.headerFields);
 }
 
 - (void)populateRequestBody:(CURL *)easyHandle {
@@ -386,8 +400,6 @@ static bool s_enableDebugLog;
     // 是否设置自定义根证书
     if (s_caFilePath) {
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [s_caFilePath UTF8String]);
-        curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYPEER, 1L);
-        curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYHOST, 2L);
     }
 
     // 假如设置了自定义resolve，则使用
@@ -425,10 +437,6 @@ static bool s_enableDebugLog;
 
     // 开启TCP keep alive
     curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPALIVE, 1L);
-    curl_easy_setopt(easyHandle, CURLOPT_FRESH_CONNECT, 0L);  // Allow connection reuse
-    curl_easy_setopt(easyHandle, CURLOPT_FORBID_REUSE, 0L);   // Do not forbid reuse
-    curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPIDLE, 60L);  // Start sending Keep-Alive probes after 60 seconds
-    curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPINTVL, 60L); // Interval between Keep-Alive probes
 
     // 开启重定向
     curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
@@ -470,10 +478,9 @@ static bool s_enableDebugLog;
                                      (long)resolvedPort,
                                      address];
 
-    struct curl_slist *resolveList = NULL;
-    resolveList = curl_slist_append(resolveList, [hostPortAddressString UTF8String]);
-    if (resolveList) {
-        curl_easy_setopt(easyHandle, CURLOPT_RESOLVE, resolveList);
+    self.resolveList = curl_slist_append(self.resolveList, [hostPortAddressString UTF8String]);
+    if (self.resolveList) {
+        curl_easy_setopt(easyHandle, CURLOPT_RESOLVE, self.resolveList);
     }
 }
 
