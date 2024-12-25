@@ -55,14 +55,6 @@ typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
                                    double startTransferTimeMs,
                                    double totalTimeMs);
 
-static NSString * _Nonnull const kEMASCurlDNSResolverKey = @"kEMASCurlDNSResolverKey";
-
-static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMASCurlUploadProgressUpdateBlockKey";
-
-static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
-
-static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
-
 
 // HTTP版本，高版本一定包含支持低版本
 typedef NS_ENUM(NSInteger, HTTPVersion) {

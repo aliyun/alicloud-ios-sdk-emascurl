@@ -19,6 +19,10 @@
 #define HTTP_METHOD_TRACE @"TRACE"
 #define HTTP_METHOD_CONNECT @"CONNECT"
 
+static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMASCurlUploadProgressUpdateBlockKey";
+static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
+static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
+
 @interface EMASCurlProtocol()
 
 @property (nonatomic, assign) CURL *easyHandle;
