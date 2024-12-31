@@ -112,9 +112,16 @@ static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, vo
             NSError *error = nil;
             if (msg->data.result != CURLE_OK) {
                 succeed = NO;
-                error = [NSError errorWithDomain:@"MultiCurlManager"
-                                            code:msg->data.result
-                                        userInfo:@{NSLocalizedDescriptionKey: @(curl_easy_strerror(msg->data.result))}];
+
+                char *urlp = NULL;
+                curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &urlp);
+                NSString *url = urlp ? @(urlp) : @"unknownURL";
+                NSDictionary *userInfo = @{
+                    NSLocalizedDescriptionKey: @(curl_easy_strerror(msg->data.result)),
+                    NSURLErrorFailingURLStringErrorKey: url
+                };
+
+                error = [NSError errorWithDomain:@"MultiCurlManager" code:msg->data.result userInfo:userInfo];
             }
 
             curl_multi_remove_handle(_multiHandle, easy);

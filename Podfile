@@ -8,5 +8,5 @@ target 'EMASCurlDemo' do
   # Comment the next line if you don't want to use dynamic frameworks
   use_frameworks!
 
-  pod 'AlicloudHTTPDNS'
+  pod 'AlicloudHTTPDNS', '3.1.5'
 end
