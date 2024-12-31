@@ -88,7 +88,7 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 
 // 设置连接超时，单位秒
 // `NSURLSession`未提供设置连接超时的方式，因此这里单独提供
-// 请求的整体超时时间，仍然由`NSURLSessionConfiguration`中的`timeoutIntervalForRequest`，或直接配置`NSURLRequest`中的`timeoutInterval`控制
+// 对于请求的整体超时时间，请直接配置`NSURLRequest`中的`timeoutInterval`进行设置，默认是60s
 + (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)connectTimeoutInSeconds;
 
 // 设置上传进度回调
