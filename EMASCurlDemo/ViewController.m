@@ -63,6 +63,7 @@
     [EMASCurlProtocol setDebugLogEnabled:YES];
     [EMASCurlProtocol installIntoSessionConfiguration:config];
     [EMASCurlProtocol setDNSResolver:[MyDNSResolver class]];
+
     // [EMASCurlProtocol setHTTPVersion:HTTP2];
     // [EMASCurlProtocol setHTTPVersion:HTTP3];
 

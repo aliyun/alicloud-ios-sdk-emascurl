@@ -19,6 +19,10 @@
 #define HTTP_METHOD_TRACE @"TRACE"
 #define HTTP_METHOD_CONNECT @"CONNECT"
 
+static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMASCurlUploadProgressUpdateBlockKey";
+static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
+static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
+
 @interface EMASCurlProtocol()
 
 @property (nonatomic, assign) CURL *easyHandle;
@@ -103,6 +107,10 @@ static bool s_enableDebugLog;
 
 + (void)setMetricsObserverBlockForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlock)metricsObserverBlock {
     [NSURLProtocol setProperty:[metricsObserverBlock copy] forKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
+}
+
++ (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)timeoutInterval {
+    [NSURLProtocol setProperty:@(timeoutInterval) forKey:kEMASCurlConnectTimeoutIntervalKey inRequest:request];
 }
 
 #pragma mark * NSURLProtocol overrides
@@ -434,6 +442,18 @@ static bool s_enableDebugLog;
     // 开启TCP keep alive
     curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPALIVE, 1L);
 
+    // 设置连接超时时间
+    NSNumber *connectTimeoutInterval = [NSURLProtocol propertyForKey:(NSString *)kEMASCurlConnectTimeoutIntervalKey inRequest:self.request];
+    if (connectTimeoutInterval) {
+        curl_easy_setopt(easyHandle, CURLOPT_CONNECTTIMEOUT, connectTimeoutInterval.longValue);
+    }
+
+    // 设置请求超时时间
+    NSTimeInterval requestTimeoutInterval = self.request.timeoutInterval;
+    if (requestTimeoutInterval) {
+        curl_easy_setopt(easyHandle, CURLOPT_TIMEOUT, requestTimeoutInterval);
+    }
+
     // 开启重定向
     curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
     // 为了线程安全，设置NOSIGNAL
@@ -506,15 +526,23 @@ static size_t header_cb(void *contents, size_t size, size_t nmemb, void *userp) 
 
     // 检查是否是首部行
     if ([line hasPrefix:@"HTTP/"]) {
-        // 检查是否是重定向、1开头的中间状态、代理的connect响应
-        if ([line containsString:@" 3"] || [line containsString:@" 1"] || [line containsString:@"Connection established"]) {
-            protocol.isFinalResponse = NO;
+        NSArray<NSString *> *parts = [line componentsSeparatedByString:@" "];
+        if (parts.count >= 2) {
+            NSString *statusStr = parts[1];
+            NSInteger statusCode = [statusStr integerValue];
+            // 检查是否是重定向、1开头的中间状态、代理的connect响应
+            if ((statusCode >= 300 && statusCode <= 303) || (statusCode >= 100 && statusCode < 200)
+                || [line containsString:@"Connection established"]) {
+                protocol.isFinalResponse = NO;
+            } else {
+                protocol.isFinalResponse = YES;
+            }
         } else {
             protocol.isFinalResponse = YES;
         }
     }
 
-    // 如果是最后的Response则存储这个响应
+    // 如果已经确定是最后的响应头部，则开始记录
     if (protocol.isFinalResponse) {
         [protocol.responseHeaderBuffer appendData:data];
     }

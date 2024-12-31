@@ -8,9 +8,5 @@ target 'EMASCurlDemo' do
   # Comment the next line if you don't want to use dynamic frameworks
   use_frameworks!
 
-  pod 'AlicloudHTTPDNS'
-end
-
-target 'EMASCurlTests' do
-  pod 'OCMock', '3.9.1'
+  pod 'AlicloudHTTPDNS', '3.1.5'
 end

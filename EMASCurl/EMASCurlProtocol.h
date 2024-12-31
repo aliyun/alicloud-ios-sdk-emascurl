@@ -27,7 +27,7 @@
 @end
 
 
-/// 由于NSURLProtocol并未提供合适的机制来提供上传进度的跟踪，我们提供一个额外的上传进度处理方式
+/// 由于`NSURLProtocol`并未提供合适的机制来提供上传进度的跟踪，我们提供一个额外的上传进度处理方式
 ///
 /// param @request 发起请求使用的请求实例
 /// param @bytesSent: 已发送的字节数
@@ -55,12 +55,6 @@ typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
                                    double startTransferTimeMs,
                                    double totalTimeMs);
 
-static NSString * _Nonnull const kEMASCurlDNSResolverKey = @"kEMASCurlDNSResolverKey";
-
-static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMASCurlUploadProgressUpdateBlockKey";
-
-static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
-
 
 // HTTP版本，高版本一定包含支持低版本
 typedef NS_ENUM(NSInteger, HTTPVersion) {
@@ -72,13 +66,13 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 
 @interface EMASCurlProtocol : NSURLProtocol
 
-// 拦截使用自定义NSURLSessionConfiguration创建的session发起的requst
+// 拦截使用自定义`NSURLSessionConfiguration`创建的session发起的requst
 + (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration *)sessionConfiguration;
 
-// 拦截sharedSession发起的request
+// 拦截`sharedSession`发起的request
 + (void)registerCurlProtocol;
 
-// 注销对sharedSession的拦截
+// 注销对`sharedSession`的拦截
 + (void)unregisterCurlProtocol;
 
 + (void)setHTTPVersion:(HTTPVersion)version;
@@ -92,10 +86,15 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 // 设置DNS解析器
 + (void)setDNSResolver:(nonnull Class<EMASCurlProtocolDNSResolver>)dnsResolver;
 
-/// 设置上传进度回调
+// 设置连接超时，单位秒
+// `NSURLSession`未提供设置连接超时的方式，因此这里单独提供
+// 请求的整体超时时间，仍然由`NSURLSessionConfiguration`中的`timeoutIntervalForRequest`，或直接配置`NSURLRequest`中的`timeoutInterval`控制
++ (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)connectTimeoutInSeconds;
+
+// 设置上传进度回调
 + (void)setUploadProgressUpdateBlockForRequest:(nonnull NSMutableURLRequest *)request uploadProgressUpdateBlock:(nonnull EMASCurlUploadProgressUpdateBlock)uploadProgressUpdateBlock;
 
-/// 设置性能指标回调
+// 设置性能指标回调
 + (void)setMetricsObserverBlockForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlock)metricsObserverBlock;
 
 @end

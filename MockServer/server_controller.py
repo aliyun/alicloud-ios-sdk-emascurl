@@ -212,6 +212,12 @@ def create_app():
             headers={"Content-Encoding": "gzip"}
         )
 
+    @app.get("/timeout/request")
+    async def timeout_request():
+        # Sleep for 2 seconds to simulate a slow response
+        await asyncio.sleep(2)
+        return {"message": "Response after delay"}
+
     return app
 
 app = create_app()

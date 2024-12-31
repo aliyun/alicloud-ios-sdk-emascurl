@@ -2,9 +2,65 @@ import os
 import sys
 import signal
 import multiprocessing
+import socket
+import time
+import threading
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
 from server_controller import app
+
+class TimeoutServer:
+    def __init__(self, host='0.0.0.0', port=9081, accept_delay=2):
+        self.host = host
+        self.port = port
+        self.accept_delay = accept_delay
+        self.server_socket = None
+        self.running = False
+        self.thread = None
+
+    def start(self):
+        """Start the server in a separate thread"""
+        self.running = True
+        self.thread = threading.Thread(target=self._run_server)
+        self.thread.daemon = True
+        self.thread.start()
+        print(f"Timeout test server started on {self.host}:{self.port} with {self.accept_delay}s delay")
+
+    def stop(self):
+        """Stop the server"""
+        self.running = False
+        if self.server_socket:
+            self.server_socket.close()
+        if self.thread:
+            self.thread.join()
+        print("Timeout test server stopped")
+
+    def _run_server(self):
+        """Main server loop"""
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.bind((self.host, self.port))
+        self.server_socket.listen(1)
+        self.server_socket.settimeout(1)  # Allow checking running flag every second
+
+        while self.running:
+            try:
+                # Wait for connection
+                client_socket, address = self.server_socket.accept()
+                print(f"Connection from {address}, delaying accept for {self.accept_delay}s")
+
+                # Delay accepting the connection
+                time.sleep(self.accept_delay)
+
+                # Close the connection without sending any response
+                client_socket.close()
+                print("Connection closed after delay")
+
+            except socket.timeout:
+                continue  # Just a timeout for checking running flag
+            except Exception as e:
+                if self.running:  # Only log if we're still meant to be running
+                    print(f"Error: {e}")
 
 def server_process(config):
     """Run server in a separate process"""
@@ -36,14 +92,19 @@ def main():
     config_http2.certfile = cert_file
     config_http2.keyfile = key_file
 
-    # Create server processes
+    # Create HTTP servers processes
     processes = []
     try:
+        # Start HTTP/1.1 and HTTP/2 servers
         for config in [config_http11, config_http2]:
             p = multiprocessing.Process(target=server_process, args=(config,))
             p.start()
             processes.append(p)
             print(f"Started process {p.pid} for {config.bind[0]}")
+
+        # Start timeout test server
+        timeout_server = TimeoutServer(port=9081, accept_delay=2)
+        timeout_server.start()
 
         # Wait for processes
         for p in processes:
@@ -52,7 +113,10 @@ def main():
     except KeyboardInterrupt:
         print("\nReceived keyboard interrupt, shutting down...")
     finally:
-        # Kill all processes
+        # Stop timeout server
+        timeout_server.stop()
+
+        # Kill all HTTP server processes
         for p in processes:
             if p.is_alive():
                 print(f"Terminating process {p.pid}")
