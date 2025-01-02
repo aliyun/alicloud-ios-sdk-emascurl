@@ -550,7 +550,11 @@ static size_t header_cb(void *contents, size_t size, size_t nmemb, void *userp) 
     // 检查是否是头部结束行
     if ([line isEqualToString:@"\r\n"]) {
         if (protocol.isFinalResponse) {
-            NSURLResponse *response = convertHeaderToResponse(protocol.responseHeaderBuffer, protocol.request.URL);
+            NSError *error = nil;
+            NSURLResponse *response = convertHeaderToResponse(protocol.responseHeaderBuffer, protocol.request.URL, &error);
+            if (error) {
+                return CURL_WRITEFUNC_ERROR;
+            }
             [protocol.client URLProtocol:protocol didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageAllowed];
         }
     }
@@ -559,43 +563,48 @@ static size_t header_cb(void *contents, size_t size, size_t nmemb, void *userp) 
 }
 
 // 将libcurl收到的header数据，转换为一个NSURLResponse
-static NSURLResponse *convertHeaderToResponse(NSMutableData *receivedHeader, NSURL *url) {
-    // 将 NSMutableData 转换为 NSString
-    NSString *headerString = [[NSString alloc] initWithData:receivedHeader encoding:NSUTF8StringEncoding];
-
-    // 以双换行分割成多个response
-    NSArray<NSString *> *responses = [headerString componentsSeparatedByString:@"\r\n\r\n"];
-    // 保留最后一个response，过滤掉separate出的空字符串
-    NSString *lastResponse = nil;
-    for (NSString *response in [responses reverseObjectEnumerator]) {
-        if (![response isEqualToString:@""]) {
-            lastResponse = response;
-            break;
-        }
+// 使用CFHTTP提供的处理函数，确保功能正确性
+static NSURLResponse *convertHeaderToResponse(NSMutableData *receivedHeader, NSURL *url, NSError **error) {
+    CFHTTPMessageRef httpMessage = CFHTTPMessageCreateEmpty(kCFAllocatorDefault, false);
+    if (!httpMessage) {
+        *error = [NSError errorWithDomain:NSURLErrorDomain
+                                     code:0
+                                 userInfo:@{NSLocalizedDescriptionKey: @"Failed to create CFHTTPMessage."}];
+        return nil;
     }
 
-    // 将response按换行分割成行
-    NSArray<NSString *> *headerLines = [lastResponse componentsSeparatedByString:@"\r\n"];
-    NSInteger statusCode = 0;
-    NSString *httpVersion = nil;
-    NSMutableDictionary<NSString *, NSString *> *headers = [NSMutableDictionary dictionary];
-    for (NSInteger i = 0; i < headerLines.count; i++) {
-        NSString *line = headerLines[i];
-        // 忽略掉尾部空字符串
-        if (![line isEqualToString:@""]) {
-            // 分析首行，以空格做分隔
-            if (i == 0) {
-                NSArray<NSString *> *components = [line componentsSeparatedByString:@" "];
-                httpVersion = components[0];
-                statusCode = [components[1] integerValue];
-            } else {
-                // 后续的行以": "做分隔
-                NSArray<NSString *> *components = [line componentsSeparatedByString:@": "];
-                headers[components[0]] = components[1];
-            }
-        }
+    BOOL parseSuccess = CFHTTPMessageAppendBytes(httpMessage, receivedHeader.bytes, (CFIndex)receivedHeader.length);
+    if (!parseSuccess || !CFHTTPMessageIsHeaderComplete(httpMessage)) {
+        *error = [NSError errorWithDomain:NSURLErrorDomain
+                                     code:0
+                                 userInfo:@{NSLocalizedDescriptionKey: @"Failed to parse HTTP headers."}];
+        CFRelease(httpMessage);
+        return nil;
     }
-    return [[NSHTTPURLResponse alloc] initWithURL:url statusCode:statusCode HTTPVersion:httpVersion headerFields:headers];
+
+    CFIndex statusCode = CFHTTPMessageGetResponseStatusCode(httpMessage);
+    if (statusCode == 0) {
+        *error = [NSError errorWithDomain:NSURLErrorDomain
+                                     code:0
+                                 userInfo:@{NSLocalizedDescriptionKey: @"Invalid HTTP status code."}];
+        CFRelease(httpMessage);
+        return nil;
+    }
+
+    CFStringRef versionRef = CFHTTPMessageCopyVersion(httpMessage);
+    NSString *httpVersion = (__bridge_transfer NSString *)versionRef;
+
+    CFDictionaryRef headersRef = CFHTTPMessageCopyAllHeaderFields(httpMessage);
+    NSDictionary *headers = (__bridge_transfer NSDictionary *)headersRef;
+
+    NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:url
+                                                              statusCode:(NSInteger)statusCode
+                                                             HTTPVersion:httpVersion
+                                                            headerFields:headers];
+
+    CFRelease(httpMessage);
+
+    return response;
 }
 
 // libcurl的write回调函数，用于处理收到的body
