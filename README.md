@@ -28,7 +28,7 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
 
 ## 最新版本
 
-- 当前版本：1.0.2-http2-beta
+- 当前版本：1.1.0-http2
 
 ## 快速入门
 
@@ -42,7 +42,7 @@ source 'https://github.com/aliyun/aliyun-specs.git'
 target 'yourAppTarget' do
     use_framework!
 
-    pod 'EMASCurl', '1.0.2-http2-beta'
+    pod 'EMASCurl', 'x.x.x'
 end
 ```
 在您的Terminal中进入`Podfile`所在目录，执行以下命令安装依赖：
@@ -150,7 +150,7 @@ source 'https://github.com/aliyun/aliyun-specs.git'
 ```ruby
 use_framework!
 
-pod 'EMASCurl', '1.0.2-http2-beta'
+pod 'EMASCurl', 'x.x.x'
 ```
 
 #### 安装依赖
@@ -344,12 +344,15 @@ NSString *caFilePath = [[NSBundle mainBundle] pathForResource:@"my_ca" ofType:@"
 + (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)connectTimeoutInSeconds;
 ```
 
-`NSURLSession`未提供设置连接超时的方式，因此EMASCurl单独提供了此功能。请求的整体超时时间，仍然由`NSURLSessionConfiguration`中的`timeoutIntervalForRequest`，或直接配置`NSURLRequest`中的`timeoutInterval`控制。
+`NSURLSession`未提供设置连接超时的方式，因此EMASCurl单独提供了此功能。对于请求的整体超时时间，请直接配置`NSURLRequest`中的`timeoutInterval`进行设置，默认是60s。
 
 例如：
 
 ```objc
 NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+//设置整体超时时间为20s
+request.timeoutInterval = 20;
+//设置连接超时时间为10s
 [EMASCurlProtocol setConnectTimeoutIntervalForRequest:request connectTimeoutInterval:10.0];
 ```
 
