@@ -34,6 +34,8 @@ static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCur
 
 @property (nonatomic, strong) NSMutableDictionary<NSString *, NSString *> *headers;
 
+@property (nonatomic, assign) BOOL isFinalResponse;
+
 @end
 
 @implementation CurlHTTPResponse
@@ -51,6 +53,7 @@ static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCur
     _httpVersion = nil;
     _reasonPhrase = nil;
     _headers = [NSMutableDictionary new];
+    _isFinalResponse = NO;
 }
 
 @end
@@ -70,8 +73,6 @@ static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCur
 @property (nonatomic, assign) int64_t totalBytesExpected;
 
 @property (nonatomic, strong) CurlHTTPResponse *currentResponse;
-
-@property (nonatomic, assign) BOOL hasReceivedFinalResponse;
 
 @property (atomic, assign) BOOL shouldCancel;
 
@@ -155,7 +156,6 @@ static bool s_enableDebugLog;
         _totalBytesSent = 0;
         _totalBytesExpected = 0;
         _currentResponse = [CurlHTTPResponse new];
-        _hasReceivedFinalResponse = NO;
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
@@ -604,8 +604,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                                                                          HTTPVersion:protocol.currentResponse.httpVersion
                                                                         headerFields:protocol.currentResponse.headers];
             [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageAllowed];
-            protocol.hasReceivedFinalResponse = YES;
-            protocol.currentResponse = nil;
+            protocol.currentResponse.isFinalResponse = YES;
         }
     }
 
@@ -640,7 +639,8 @@ static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
 
     NSMutableData *data = [[NSMutableData alloc] initWithBytes:contents length:size * nmemb];
 
-    if (protocol.hasReceivedFinalResponse) {
+    // 只有确认获得已经读取了最后一个响应，接受的数据才视为有效数据
+    if (protocol.currentResponse.isFinalResponse) {
         [protocol.client URLProtocol:protocol didLoadData:data];
     }
 
