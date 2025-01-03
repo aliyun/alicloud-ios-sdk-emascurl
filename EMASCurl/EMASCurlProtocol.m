@@ -23,15 +23,48 @@ static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMAS
 static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
 
+
+@interface CurlHTTPResponse : NSObject
+
+@property (nonatomic, assign) NSInteger statusCode;
+
+@property (nonatomic, strong) NSString *httpVersion;
+
+@property (nonatomic, strong) NSString *reasonPhrase;
+
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSString *> *headers;
+
+@property (nonatomic, assign) BOOL isFinalResponse;
+
+@end
+
+@implementation CurlHTTPResponse
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        [self reset];
+    }
+    return self;
+}
+
+- (void)reset {
+    _statusCode = 0;
+    _httpVersion = nil;
+    _reasonPhrase = nil;
+    _headers = [NSMutableDictionary new];
+    _isFinalResponse = NO;
+}
+
+@end
+
 @interface EMASCurlProtocol()
 
 @property (nonatomic, assign) CURL *easyHandle;
 
 @property (nonatomic, strong) NSInputStream *inputStream;
 
-@property (nonatomic, strong) NSMutableData *responseHeaderBuffer;
-
-@property (nonatomic, assign) struct curl_slist *headerFields;
+@property (nonatomic, assign) struct curl_slist *requestHeaderFields;
 
 @property (nonatomic, assign) struct curl_slist *resolveList;
 
@@ -39,7 +72,7 @@ static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCur
 
 @property (nonatomic, assign) int64_t totalBytesExpected;
 
-@property (nonatomic, assign) BOOL isFinalResponse;
+@property (nonatomic, strong) CurlHTTPResponse *currentResponse;
 
 @property (atomic, assign) BOOL shouldCancel;
 
@@ -120,10 +153,9 @@ static bool s_enableDebugLog;
     if (self) {
         _shouldCancel = NO;
         _cleanupSemaphore = dispatch_semaphore_create(0);
-        _responseHeaderBuffer = [[NSMutableData alloc] init];
-        _isFinalResponse = YES;
         _totalBytesSent = 0;
         _totalBytesExpected = 0;
+        _currentResponse = [CurlHTTPResponse new];
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
@@ -239,9 +271,9 @@ static bool s_enableDebugLog;
         self.inputStream = nil;
     }
 
-    if (self.headerFields) {
-        curl_slist_free_all(self.headerFields);
-        self.headerFields = nil;
+    if (self.requestHeaderFields) {
+        curl_slist_free_all(self.requestHeaderFields);
+        self.requestHeaderFields = nil;
     }
     if (self.resolveList) {
         curl_slist_free_all(self.resolveList);
@@ -251,8 +283,6 @@ static bool s_enableDebugLog;
         curl_easy_cleanup(self.easyHandle);
         self.easyHandle = nil;
     }
-
-    self.responseHeaderBuffer = nil;
 }
 
 - (void)observeNetworkMetric {
@@ -335,8 +365,8 @@ static bool s_enableDebugLog;
     curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
 
     // 将拦截到的request的header字段进行透传
-    self.headerFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
-    curl_easy_setopt(easyHandle, CURLOPT_HTTPHEADER, self.headerFields);
+    self.requestHeaderFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
+    curl_easy_setopt(easyHandle, CURLOPT_HTTPHEADER, self.requestHeaderFields);
 }
 
 - (void)populateRequestBody:(CURL *)easyHandle {
@@ -400,6 +430,9 @@ static bool s_enableDebugLog;
         NSString *filePath = [resourceBundle pathForResource:@"cacert" ofType:@"pem"];
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [filePath UTF8String]);
     }
+
+    // 启用cookie
+    curl_easy_setopt(easyHandle, CURLOPT_COOKIEFILE, @"");
 
     // 是否设置自定义根证书
     if (s_caFilePath) {
@@ -505,7 +538,7 @@ static bool s_enableDebugLog;
     struct curl_slist *headerFields = NULL;
     for (NSString *key in headers) {
         // 对于Content-Length，使用CURLOPT_POSTFIELDSIZE_LARGE指定，不要在这里透传，否则POST重定向为GET时仍会保留Content-Length，导致错误
-        if ([key isEqualToString:@"Content-Length"]) {
+        if ([key caseInsensitiveCompare:@"Content-Length"] == NSOrderedSame) {
             continue;
         }
         NSString *value = headers[key];
@@ -518,92 +551,102 @@ static bool s_enableDebugLog;
 #pragma mark * libcurl callback function
 
 // libcurl的header回调函数，用于处理收到的header
-static size_t header_cb(void *contents, size_t size, size_t nmemb, void *userp) {
-    EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)userp;
-    NSData *data = [NSData dataWithBytes:contents length:size * nmemb];
+size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
+    EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)userdata;
 
-    NSString *line = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    size_t totalSize = size * nitems;
+    NSData *data = [NSData dataWithBytes:buffer length:size * nitems];
 
-    // 检查是否是首部行
-    if ([line hasPrefix:@"HTTP/"]) {
-        NSArray<NSString *> *parts = [line componentsSeparatedByString:@" "];
-        if (parts.count >= 2) {
-            NSString *statusStr = parts[1];
-            NSInteger statusCode = [statusStr integerValue];
-            // 检查是否是重定向、1开头的中间状态、代理的connect响应
-            if ((statusCode >= 300 && statusCode <= 303) || (statusCode >= 100 && statusCode < 200)
-                || [line containsString:@"Connection established"]) {
-                protocol.isFinalResponse = NO;
+    NSString *headerLine = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    headerLine = [headerLine stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+    if ([headerLine hasPrefix:@"HTTP/"]) {
+        // 头部首行，标识新的头部开始
+        [protocol.currentResponse reset];
+
+        NSArray<NSString *> *components = [headerLine componentsSeparatedByString:@" "];
+        if (components.count >= 3) {
+            protocol.currentResponse.httpVersion = components[0];
+            protocol.currentResponse.statusCode = [components[1] integerValue];
+            protocol.currentResponse.reasonPhrase = [[components subarrayWithRange:NSMakeRange(2, components.count - 2)] componentsJoinedByString:@" "];
+        } else if (components.count == 2) {
+            protocol.currentResponse.httpVersion = components[0];
+            protocol.currentResponse.statusCode = [components[1] integerValue];
+            protocol.currentResponse.reasonPhrase = @"";
+        }
+    } else {
+        NSRange delimiterRange = [headerLine rangeOfString:@": "];
+        if (delimiterRange.location != NSNotFound) {
+            NSString *key = [headerLine substringToIndex:delimiterRange.location];
+            NSString *value = [headerLine substringFromIndex:delimiterRange.location + delimiterRange.length];
+
+            if (protocol.currentResponse.headers[key]) {
+                NSString *existingValue = protocol.currentResponse.headers[key];
+                NSString *combinedValue = [existingValue stringByAppendingFormat:@", %@", value];
+                protocol.currentResponse.headers[key] = combinedValue;
             } else {
-                protocol.isFinalResponse = YES;
+                protocol.currentResponse.headers[key] = value;
             }
+        }
+    }
+
+    if ([headerLine length] == 0) {
+        // 尾行，标识当前头部读取结束
+        NSInteger statusCode = protocol.currentResponse.statusCode;
+        NSString *reasonPhrase = protocol.currentResponse.reasonPhrase;
+
+        if (isRedirectionStatusCode(statusCode)) {
+            [protocol.currentResponse reset];
+        } else if (isInformationalStatusCode(statusCode)) {
+            [protocol.currentResponse reset];
+        } else if (isConnectEstablishedStatusCode(statusCode, reasonPhrase)) {
+            [protocol.currentResponse reset];
         } else {
-            protocol.isFinalResponse = YES;
+            NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
+                                                                          statusCode:protocol.currentResponse.statusCode
+                                                                         HTTPVersion:protocol.currentResponse.httpVersion
+                                                                        headerFields:protocol.currentResponse.headers];
+            [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageAllowed];
+            protocol.currentResponse.isFinalResponse = YES;
         }
     }
 
-    // 如果已经确定是最后的响应头部，则开始记录
-    if (protocol.isFinalResponse) {
-        [protocol.responseHeaderBuffer appendData:data];
-    }
-
-    // 检查是否是头部结束行
-    if ([line isEqualToString:@"\r\n"]) {
-        if (protocol.isFinalResponse) {
-            NSURLResponse *response = convertHeaderToResponse(protocol.responseHeaderBuffer, protocol.request.URL);
-            [protocol.client URLProtocol:protocol didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageAllowed];
-        }
-    }
-
-    return size * nmemb;
+    return totalSize;
 }
 
-// 将libcurl收到的header数据，转换为一个NSURLResponse
-static NSURLResponse *convertHeaderToResponse(NSMutableData *receivedHeader, NSURL *url) {
-    // 将 NSMutableData 转换为 NSString
-    NSString *headerString = [[NSString alloc] initWithData:receivedHeader encoding:NSUTF8StringEncoding];
-
-    // 以双换行分割成多个response
-    NSArray<NSString *> *responses = [headerString componentsSeparatedByString:@"\r\n\r\n"];
-    // 保留最后一个response，过滤掉separate出的空字符串
-    NSString *lastResponse = nil;
-    for (NSString *response in [responses reverseObjectEnumerator]) {
-        if (![response isEqualToString:@""]) {
-            lastResponse = response;
-            break;
-        }
+BOOL isRedirectionStatusCode(NSInteger statusCode) {
+    switch (statusCode) {
+        case 300: // Multiple Choices
+        case 301: // Moved Permanently
+        case 302: // Found
+        case 303: // See Other
+        case 307: // Temporary Redirect
+        case 308: // Permanent Redirect
+            return YES;
+        default:
+            return NO;
     }
+}
 
-    // 将response按换行分割成行
-    NSArray<NSString *> *headerLines = [lastResponse componentsSeparatedByString:@"\r\n"];
-    NSInteger statusCode = 0;
-    NSString *httpVersion = nil;
-    NSMutableDictionary<NSString *, NSString *> *headers = [NSMutableDictionary dictionary];
-    for (NSInteger i = 0; i < headerLines.count; i++) {
-        NSString *line = headerLines[i];
-        // 忽略掉尾部空字符串
-        if (![line isEqualToString:@""]) {
-            // 分析首行，以空格做分隔
-            if (i == 0) {
-                NSArray<NSString *> *components = [line componentsSeparatedByString:@" "];
-                httpVersion = components[0];
-                statusCode = [components[1] integerValue];
-            } else {
-                // 后续的行以": "做分隔
-                NSArray<NSString *> *components = [line componentsSeparatedByString:@": "];
-                headers[components[0]] = components[1];
-            }
-        }
-    }
-    return [[NSHTTPURLResponse alloc] initWithURL:url statusCode:statusCode HTTPVersion:httpVersion headerFields:headers];
+BOOL isInformationalStatusCode(NSInteger statusCode) {
+    return statusCode >= 100 && statusCode < 200;
+}
+
+BOOL isConnectEstablishedStatusCode(NSInteger statusCode, NSString *reasonPhrase) {
+    return statusCode == 200 && [reasonPhrase caseInsensitiveCompare:@"connection established"] == NSOrderedSame;
 }
 
 // libcurl的write回调函数，用于处理收到的body
 static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
-    NSMutableData *data = [[NSMutableData alloc] init];
-    [data appendBytes:contents length:size * nmemb];
-    NSURLProtocol *protocol = (__bridge NSURLProtocol *)userp;
-    [protocol.client URLProtocol:protocol didLoadData:data];
+    EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)userp;
+
+    NSMutableData *data = [[NSMutableData alloc] initWithBytes:contents length:size * nmemb];
+
+    // 只有确认获得已经读取了最后一个响应，接受的数据才视为有效数据
+    if (protocol.currentResponse.isFinalResponse) {
+        [protocol.client URLProtocol:protocol didLoadData:data];
+    }
+
     return size * nmemb;
 }
 
