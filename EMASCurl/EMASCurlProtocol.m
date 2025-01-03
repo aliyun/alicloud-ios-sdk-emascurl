@@ -71,6 +71,8 @@ static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCur
 
 @property (nonatomic, strong) CurlHTTPResponse *currentResponse;
 
+@property (nonatomic, assign) BOOL hasReceivedFinalResponse;
+
 @property (atomic, assign) BOOL shouldCancel;
 
 @property (atomic, strong) dispatch_semaphore_t cleanupSemaphore;
@@ -153,6 +155,7 @@ static bool s_enableDebugLog;
         _totalBytesSent = 0;
         _totalBytesExpected = 0;
         _currentResponse = [CurlHTTPResponse new];
+        _hasReceivedFinalResponse = NO;
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
@@ -601,6 +604,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                                                                          HTTPVersion:protocol.currentResponse.httpVersion
                                                                         headerFields:protocol.currentResponse.headers];
             [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageAllowed];
+            protocol.hasReceivedFinalResponse = YES;
             protocol.currentResponse = nil;
         }
     }
@@ -632,10 +636,14 @@ BOOL isConnectEstablishedStatusCode(NSInteger statusCode, NSString *reasonPhrase
 
 // libcurl的write回调函数，用于处理收到的body
 static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
-    NSMutableData *data = [[NSMutableData alloc] init];
-    [data appendBytes:contents length:size * nmemb];
-    NSURLProtocol *protocol = (__bridge NSURLProtocol *)userp;
-    [protocol.client URLProtocol:protocol didLoadData:data];
+    EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)userp;
+
+    NSMutableData *data = [[NSMutableData alloc] initWithBytes:contents length:size * nmemb];
+
+    if (protocol.hasReceivedFinalResponse) {
+        [protocol.client URLProtocol:protocol didLoadData:data];
+    }
+
     return size * nmemb;
 }
 
