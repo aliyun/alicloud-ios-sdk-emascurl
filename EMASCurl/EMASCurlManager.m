@@ -9,6 +9,7 @@
 
 @interface EMASCurlManager () {
     CURLM *_multiHandle;
+    CURLSH *_shareHandle;
     NSThread *_networkThread;
     NSCondition *_condition;
     BOOL _shouldStop;
@@ -20,8 +21,6 @@ typedef struct {
     __unsafe_unretained EMASCurlManager *manager;
     CURL *easy;
 } CallbackContext;
-
-static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, void *socketp);
 
 @end
 
@@ -40,9 +39,17 @@ static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, vo
     self = [super init];
     if (self) {
         curl_global_init(CURL_GLOBAL_ALL);
+
         _multiHandle = curl_multi_init();
-        curl_multi_setopt(_multiHandle, CURLMOPT_SOCKETFUNCTION, socketCallback);
         curl_multi_setopt(_multiHandle, CURLMOPT_SOCKETDATA, (__bridge void *)self);
+
+        // 考虑客户端场景，在同一个App内共享cookie、dns、tcp连接是合理的
+        // 如果有需求，需要做实例隔离，整个架构要重新设计
+        _shareHandle = curl_share_init();
+        curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
+        curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
+        curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
+        curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_CONNECT);
 
         _completionMap = [NSMutableDictionary dictionary];
         _activeSockets = [NSMutableSet set];
@@ -63,6 +70,9 @@ static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, vo
         curl_multi_cleanup(_multiHandle);
         _multiHandle = NULL;
     }
+    if (_shareHandle) {
+        curl_share_cleanup(_shareHandle);
+    }
     curl_global_cleanup();
 }
 
@@ -79,6 +89,7 @@ static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, vo
 
     [_condition lock];
     curl_multi_add_handle(_multiHandle, easyHandle);
+    curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
     [_condition signal];
     [_condition unlock];
 }
@@ -132,27 +143,6 @@ static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, vo
             }
         }
     }
-}
-
-// MARK: - Callbacks
-static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, void *socketp) {
-    EMASCurlManager *selfRef = (__bridge EMASCurlManager *)userp;
-    NSMutableSet *_activeSockets = selfRef->_activeSockets;
-
-    switch (what) {
-        case CURL_POLL_IN:
-        case CURL_POLL_OUT:
-        case CURL_POLL_INOUT:
-            [_activeSockets addObject:@(s)];
-            break;
-        case CURL_POLL_REMOVE:
-            [_activeSockets removeObject:@(s)];
-            break;
-        default:
-            break;
-    }
-
-    return 0;
 }
 
 @end
