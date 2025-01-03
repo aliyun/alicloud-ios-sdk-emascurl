@@ -51,6 +51,7 @@ static int socketCallback(CURL *easy, curl_socket_t s, int what, void *userp, vo
         _shouldStop = NO;
 
         _networkThread = [[NSThread alloc] initWithTarget:self selector:@selector(networkThreadEntry) object:nil];
+        _networkThread.qualityOfService = NSQualityOfServiceUserInitiated;
         [_networkThread start];
     }
     return self;
