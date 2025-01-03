@@ -431,6 +431,9 @@ static bool s_enableDebugLog;
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [filePath UTF8String]);
     }
 
+    // 启用cookie
+    curl_easy_setopt(easyHandle, CURLOPT_COOKIEFILE, @"");
+
     // 是否设置自定义根证书
     if (s_caFilePath) {
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [s_caFilePath UTF8String]);
