@@ -186,6 +186,16 @@ def create_app():
             headers={"X-Original-Path": "/redirect"}
         )
 
+    @app.get("/redirect_to")
+    async def redirect_to(from_url: str = None):
+        """
+        Redirect to the specified URL provided in the 'from' parameter
+        If no URL is provided, returns a 400 error
+        """
+        if not from_url:
+            raise HTTPException(status_code=400, detail="Missing 'from' parameter")
+        return RedirectResponse(url=from_url, status_code=302)
+
     @app.get("/redirect_chain")
     async def redirect_chain(body: Optional[Any] = Body(None)):
         """

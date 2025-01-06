@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		591EB06AEB7EE940B38F4096 /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */; };
+		243BB9ECD47350A60179CEE9 /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */; };
 		5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */; };
 		6F3F5FED2CD0DB520014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
 		6F3F60122CD0DB7D0014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
@@ -79,7 +79,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		949538D62D0F31B1001FE850 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		949538D62D0F31B1001FE850 /* Exceptions for "MockServer" folder in "EMASCurlTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"__pycache__/server_controller.cpython-39.pyc",
@@ -103,7 +103,18 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		949538AA2D0C3BA3001FE850 /* MockServer */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (949538D62D0F31B1001FE850 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = MockServer; sourceTree = "<group>"; };
+		949538AA2D0C3BA3001FE850 /* MockServer */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				949538D62D0F31B1001FE850 /* Exceptions for "MockServer" folder in "EMASCurlTests" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = MockServer;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,7 +122,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				591EB06AEB7EE940B38F4096 /* libcurl-HTTP2.xcframework in Frameworks */,
+				243BB9ECD47350A60179CEE9 /* libcurl-HTTP2.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

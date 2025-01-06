@@ -80,6 +80,9 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 // 设置CA证书文件路径
 + (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath;
 
+// 是否开启内部Cookie存储
++ (void)setBuiltInCookieStorageEnabled:(BOOL)enabled;
+
 // 设置是否开启调试日志
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled;
 

@@ -24,6 +24,12 @@ typedef struct {
 
 @end
 
+@interface EMASCurlManager () {
+    BOOL _enableCookieSharing;
+}
+
+@end
+
 @implementation EMASCurlManager
 
 + (instancetype)sharedInstance {
@@ -57,6 +63,8 @@ typedef struct {
         _condition = [[NSCondition alloc] init];
         _shouldStop = NO;
 
+        _enableCookieSharing = YES;
+
         _networkThread = [[NSThread alloc] initWithTarget:self selector:@selector(networkThreadEntry) object:nil];
         _networkThread.qualityOfService = NSQualityOfServiceUserInitiated;
         [_networkThread start];
@@ -76,6 +84,10 @@ typedef struct {
     curl_global_cleanup();
 }
 
+- (void)disableCookieSharing {
+    _enableCookieSharing = NO;
+}
+
 - (void)stop {
     [_condition lock];
     _shouldStop = YES;
@@ -89,7 +101,11 @@ typedef struct {
 
     [_condition lock];
     curl_multi_add_handle(_multiHandle, easyHandle);
-    curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
+
+    if (_enableCookieSharing) {
+        // 不使用内置cookie共享机制
+        curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
+    }
     [_condition signal];
     [_condition unlock];
 }
