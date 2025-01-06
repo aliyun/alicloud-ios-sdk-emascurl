@@ -29,7 +29,7 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
 
 ## 最新版本
 
-- 当前版本：1.1.0-http2
+- 当前版本：1.1.1-http2
 
 ## 快速入门
 
