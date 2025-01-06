@@ -19,6 +19,7 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
   - [与HTTPDNS配合使用](#与httpdns配合使用)
   - [选择HTTP版本](#选择http版本)
   - [设置CA证书文件路径](#设置ca证书文件路径)
+  - [设置Cookie存储](#设置cookie存储)
   - [设置连接超时](#设置连接超时)
   - [设置上传进度回调](#设置上传进度回调)
   - [设置性能指标回调](#设置性能指标回调)
@@ -318,10 +319,10 @@ EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需
 + (void)setHTTPVersion:(HTTPVersion)version;
 ```
 
-目前提供HTTP1、HTTP2三种版本：
+EMASCurl默认使用HTTP2版本，更高版本会包含低版本的能力。需要注意的是，HTTP3需要特殊的编译方式支持，且会引入更大的包体积，具体请参考完整的文档。
 
-+ **HTTP1**: 使用HTTP1.1
-+ **HTTP2**: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
+**HTTP1**: 使用HTTP1.1
+**HTTP2**: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
 
 ### 设置CA证书文件路径
 
@@ -337,6 +338,14 @@ EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需
 NSString *caFilePath = [[NSBundle mainBundle] pathForResource:@"my_ca" ofType:@"pem"];
 [EMASCurlProtocol setSelfSignedCAFilePath:caFilePath];
 ```
+
+### 设置Cookie存储
+
+```objc
++ (void)setBuiltInCookieStorageEnabled:(BOOL)enabled;
+```
+
+EMASCurl默认开启内部Cookie存储功能，但只支持到[RFC 6265]标准。如果您选择关闭内置Cookie存储，在依赖cookie能力时，需要自行处理请求/响应中的cookie字段。
 
 ### 设置连接超时
 
