@@ -567,7 +567,12 @@ static bool s_enableDebugLog;
             continue;
         }
         NSString *value = headers[key];
-        NSString *header = [NSString stringWithFormat:@"%@: %@", key, value];
+        NSString *header;
+        if ([[value stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet] length] == 0) {
+            header = [NSString stringWithFormat:@"%@;", key];
+        } else {
+            header = [NSString stringWithFormat:@"%@: %@", key, value];
+        }
         headerFields = curl_slist_append(headerFields, [header UTF8String]);
     }
     return headerFields;
