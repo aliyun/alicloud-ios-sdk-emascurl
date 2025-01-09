@@ -92,6 +92,8 @@ static bool curlFeatureHttp2;
 // runtime 的libcurl xcframework是否支持HTTP3
 static bool curlFeatureHttp3;
 
+static bool s_enableBuiltInGzip;
+
 static NSString *s_caFilePath;
 
 static BOOL s_enableBuiltInCookieStorage;
@@ -122,6 +124,10 @@ static bool s_enableDebugLog;
 
 + (void)setHTTPVersion:(HTTPVersion)version {
     s_httpVersion = version;
+}
+
++ (void)setBuiltInGzipEnabled:(BOOL)enabled {
+    s_enableBuiltInGzip = enabled;
 }
 
 + (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath {
@@ -184,6 +190,8 @@ static bool s_enableDebugLog;
 
     s_httpVersion = HTTP1;
     s_enableDebugLog = NO;
+
+    s_enableBuiltInGzip = YES;
 
     s_enableBuiltInCookieStorage = YES;
 
@@ -373,8 +381,10 @@ static bool s_enableDebugLog;
             break;
     }
 
-    // 配置支持的HTTP压缩算法，""代表自动检测内置的算法，目前zlib支持deflate与gzip
-    curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
+    if (s_enableBuiltInGzip) {
+        // 配置支持的HTTP压缩算法，""代表自动检测内置的算法，目前zlib支持deflate与gzip
+        curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
+    }
 
     // 将拦截到的request的header字段进行透传
     self.requestHeaderFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
