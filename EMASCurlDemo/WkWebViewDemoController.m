@@ -1,5 +1,6 @@
 #import "WkWebViewDemoController.h"
 #import <WebKit/WebKit.h>
+#import <EMASCurl/JDCache.h>
 
 @interface WkWebViewDemoController ()
 @property (nonatomic, strong) WKWebView *webView;
@@ -12,6 +13,8 @@
     self.title = @"WebView Demo";
     
     WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
+    configuration.loader.enable = YES;
+
     self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:configuration];
     [self.view addSubview:self.webView];
     

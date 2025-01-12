@@ -94,7 +94,7 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
             [JDCacheLoader handleBlobData];
             
             [self sharePool];
-            [self addHookJs];
+            // [self addHookJs];
             // [self registerJSBridge];
             [self registerSchemes];
         }
