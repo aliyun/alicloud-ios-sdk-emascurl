@@ -1,10 +1,10 @@
 //
-//  JDCacheIterator.m
-//  JDHybrid
+//  EMASCurlCacheIterator.m
+//  EMASCurlHybrid
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,13 +25,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDResourceMatcherIterator.h"
-#import "JDResourceMatcherManager.h"
+#import "EMASCurlResourceMatcherIterator.h"
+#import "EMASCurlResourceMatcherManager.h"
 
-@implementation JDResourceMatcherIterator
+@implementation EMASCurlResourceMatcherIterator
 
-- (NSArray<id<JDResourceMatcherImplProtocol>> *)resMatchers {
-    NSArray<id<JDResourceMatcherImplProtocol>> *resMatcherArr = @[];
+- (NSArray<id<EMASCurlResourceMatcherImplProtocol>> *)resMatchers {
+    NSArray<id<EMASCurlResourceMatcherImplProtocol>> *resMatcherArr = @[];
     if ([self.iteratorDataSource respondsToSelector:@selector(liveResMatchers)]) {
         resMatcherArr = [self.iteratorDataSource liveResMatchers];
      }
@@ -39,10 +39,10 @@ SOFTWARE.
     
 }
 
-- (nullable id<JDResourceMatcherImplProtocol>)targetMatcherWithUrlSchemeTask:(id<WKURLSchemeTask>)urlSchemeTask {
-    __block id<JDResourceMatcherImplProtocol> targetMatcher = nil;
+- (nullable id<EMASCurlResourceMatcherImplProtocol>)targetMatcherWithUrlSchemeTask:(id<WKURLSchemeTask>)urlSchemeTask {
+    __block id<EMASCurlResourceMatcherImplProtocol> targetMatcher = nil;
     NSURLRequest *request = urlSchemeTask.request;
-    [[self resMatchers] enumerateObjectsUsingBlock:^(id<JDResourceMatcherImplProtocol>  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+    [[self resMatchers] enumerateObjectsUsingBlock:^(id<EMASCurlResourceMatcherImplProtocol>  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         if (!obj || ![obj respondsToSelector:@selector(canHandleWithRequest:)]) {
             return;
         }
@@ -56,7 +56,7 @@ SOFTWARE.
 }
 
 - (void)startWithUrlSchemeTask:(id<WKURLSchemeTask>)urlSchemeTask {
-    id<JDResourceMatcherImplProtocol> matcher = [self targetMatcherWithUrlSchemeTask:urlSchemeTask];
+    id<EMASCurlResourceMatcherImplProtocol> matcher = [self targetMatcherWithUrlSchemeTask:urlSchemeTask];
     if (!matcher || ![matcher respondsToSelector:@selector(startWithRequest: responseCallback: dataCallback: failCallback: successCallback: redirectCallback:)]) {
         [self.iteratorDelagate didFailWithError:[NSError errorWithDomain:NSCocoaErrorDomain code:-1 userInfo:nil] urlSchemeTask:urlSchemeTask];
         [self.iteratorDelagate didFinishWithUrlSchemeTask:urlSchemeTask];
@@ -72,7 +72,7 @@ SOFTWARE.
         [self.iteratorDelagate didFinishWithUrlSchemeTask:urlSchemeTask];
     } redirectCallback:^(NSURLResponse * _Nonnull response,
                          NSURLRequest * _Nonnull redirectRequest,
-                         JDNetRedirectDecisionCallback  _Nonnull redirectDecisionCallback) {
+                         EMASCurlNetRedirectDecisionCallback  _Nonnull redirectDecisionCallback) {
         [self.iteratorDelagate didRedirectWithResponse:response
                                             newRequest:redirectRequest
                                       redirectDecision:redirectDecisionCallback
@@ -81,7 +81,7 @@ SOFTWARE.
 }
 
 - (void)networkRequestWithUrlSchemeTask:(id<WKURLSchemeTask>)urlSchemeTask {
-    id<JDResourceMatcherImplProtocol> networkMatcher = [[self resMatchers] lastObject];
+    id<EMASCurlResourceMatcherImplProtocol> networkMatcher = [[self resMatchers] lastObject];
     if (!networkMatcher || ![networkMatcher respondsToSelector:@selector(startWithRequest: responseCallback: dataCallback: failCallback: successCallback: redirectCallback:)]) {
         [self.iteratorDelagate didFailWithError:[NSError errorWithDomain:NSCocoaErrorDomain code:-1 userInfo:nil] urlSchemeTask:urlSchemeTask];
         [self.iteratorDelagate didFinishWithUrlSchemeTask:urlSchemeTask];
@@ -96,7 +96,7 @@ SOFTWARE.
         [self.iteratorDelagate didFinishWithUrlSchemeTask:urlSchemeTask];
     } redirectCallback:^(NSURLResponse * _Nonnull response,
                          NSURLRequest * _Nonnull redirectRequest,
-                         JDNetRedirectDecisionCallback  _Nonnull redirectDecisionCallback) {
+                         EMASCurlNetRedirectDecisionCallback  _Nonnull redirectDecisionCallback) {
         [self.iteratorDelagate didRedirectWithResponse:response
                                             newRequest:redirectRequest
                                       redirectDecision:redirectDecisionCallback

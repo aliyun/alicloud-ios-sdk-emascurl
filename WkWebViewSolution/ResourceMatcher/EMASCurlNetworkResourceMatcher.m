@@ -1,10 +1,10 @@
 //
-//  JDNetworkResourceMatcher.m
-//  JDHybrid
+//  EMASCurlNetworkResourceMatcher.m
+//  EMASCurlHybrid
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,32 +25,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDNetworkResourceMatcher.h"
-#import "JDNetworkSession.h"
-#import "JDUtils.h"
+#import "EMASCurlNetworkResourceMatcher.h"
+#import "EMASCurlNetworkSession.h"
+#import "EMASCurlUtils.h"
 
-@interface JDNetworkResourceMatcher ()
-@property (nonatomic, strong) JDNetworkSession *networkSession;
+@interface EMASCurlNetworkResourceMatcher ()
+@property (nonatomic, strong) EMASCurlNetworkSession *networkSession;
 @end
 
-@implementation JDNetworkResourceMatcher
+@implementation EMASCurlNetworkResourceMatcher
 
 - (BOOL)canHandleWithRequest:(nonnull NSURLRequest *)request {
     return YES;
 }
 
 - (void)startWithRequest:(nonnull NSURLRequest *)request
-        responseCallback:(nonnull JDNetResponseCallback)responseCallback
-            dataCallback:(nonnull JDNetDataCallback)dataCallback
-            failCallback:(nonnull JDNetFailCallback)failCallback
-         successCallback:(nonnull JDNetSuccessCallback)successCallback
-        redirectCallback:(nonnull JDNetRedirectCallback)redirectCallback{
-    JDNetworkDataTask *dataTask = [self.networkSession dataTaskWithRequest:request
+        responseCallback:(nonnull EMASCurlNetResponseCallback)responseCallback
+            dataCallback:(nonnull EMASCurlNetDataCallback)dataCallback
+            failCallback:(nonnull EMASCurlNetFailCallback)failCallback
+         successCallback:(nonnull EMASCurlNetSuccessCallback)successCallback
+        redirectCallback:(nonnull EMASCurlNetRedirectCallback)redirectCallback{
+    EMASCurlNetworkDataTask *dataTask = [self.networkSession dataTaskWithRequest:request
                                                           responseCallback:responseCallback
                                                               dataCallback:dataCallback
                                                            successCallback:^{
         successCallback();
-        JDCacheLog(@"从网络请求获取数据，url: %@", request.URL.absoluteString);
+        EMASCurlCacheLog(@"从网络请求获取数据，url: %@", request.URL.absoluteString);
     }
                                                               failCallback:failCallback
                                                           redirectCallback:redirectCallback];
@@ -64,9 +64,9 @@ SOFTWARE.
 
 #pragma mark - lazy
 
-- (JDNetworkSession *)networkSession {
+- (EMASCurlNetworkSession *)networkSession {
     if (!_networkSession) {
-        _networkSession = [JDNetworkSession sessionWithConfiguation:[JDNetworkSessionConfiguration new]];
+        _networkSession = [EMASCurlNetworkSession sessionWithConfiguation:[EMASCurlNetworkSessionConfiguration new]];
     }
     return _networkSession;
 }

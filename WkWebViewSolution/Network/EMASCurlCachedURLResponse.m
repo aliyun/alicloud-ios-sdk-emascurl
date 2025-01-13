@@ -1,10 +1,10 @@
 //
-//  JDCachedURLResponse.m
-//  JDBHybridModule
+//  EMASCurlCachedURLResponse.m
+//  EMASCurlBHybridModule
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,9 +25,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDCachedURLResponse.h"
-#import "JDUtils.h"
-@interface JDCachedURLResponse ()
+#import "EMASCurlCachedURLResponse.h"
+#import "EMASCurlUtils.h"
+@interface EMASCurlCachedURLResponse ()
 @property (readwrite, copy) NSHTTPURLResponse *response;
 
 @property (readwrite, copy) NSData *data;
@@ -42,7 +42,7 @@ SOFTWARE.
 
 @end
 
-@implementation JDCachedURLResponse{
+@implementation EMASCurlCachedURLResponse{
     BOOL _canSave;
 }
 
@@ -74,11 +74,11 @@ SOFTWARE.
 - (void)updateWithResponse:(NSDictionary *)newHeaderFields {
     NSMutableDictionary *headerFieldsM = [self.response.allHeaderFields mutableCopy];
     [newHeaderFields enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSString * _Nonnull value, BOOL * _Nonnull stop) {
-        if (!JDValidStr(key) || !JDValidStr(value)) {
+        if (!EMASCurlValidStr(key) || !EMASCurlValidStr(value)) {
             return;
         }
         NSString *oldValue = self.response.allHeaderFields[key];
-        if (!JDValidStr(oldValue)) {
+        if (!EMASCurlValidStr(oldValue)) {
             return;
         }
         headerFieldsM[key] = value;
@@ -95,7 +95,7 @@ SOFTWARE.
     }
     
     [self parseEtag];
-    if (JDValidStr(self.etag)) {
+    if (EMASCurlValidStr(self.etag)) {
         return;
     }
     
@@ -108,7 +108,7 @@ SOFTWARE.
         return;
     }
     NSString *contentType = _response.allHeaderFields[@"Content-Type"];
-    if (!JDValidStr(contentType)) {
+    if (!EMASCurlValidStr(contentType)) {
         _canSave = NO;
         return;
     }
@@ -127,7 +127,7 @@ SOFTWARE.
     }
     // Etag
     [self parseEtag];
-    if (JDValidStr(self.etag)) {
+    if (EMASCurlValidStr(self.etag)) {
         return;
     }
     // Last-Modified
@@ -136,7 +136,7 @@ SOFTWARE.
 
 - (void)parseCacheControl {
     NSString *cacheControl = _response.allHeaderFields[@"Cache-Control"];
-    if (!JDValidStr(cacheControl)) {
+    if (!EMASCurlValidStr(cacheControl)) {
         _canSave = NO;
         return;
     }
@@ -173,7 +173,7 @@ SOFTWARE.
 
 - (void)parseEtag {
     NSString *etag = _response.allHeaderFields[@"Etag"];
-    if (!JDValidStr(etag)) {
+    if (!EMASCurlValidStr(etag)) {
 
         return;
     }
@@ -183,7 +183,7 @@ SOFTWARE.
 
 - (void)parseLastModified {
     NSString *lastModified = _response.allHeaderFields[@"Last-Modified"];
-    if (!JDValidStr(lastModified)) {
+    if (!EMASCurlValidStr(lastModified)) {
 
         return;
     }
@@ -195,7 +195,7 @@ SOFTWARE.
 #pragma mark - NSCopying
 
 - (id)copyWithZone:(nullable NSZone *)zone {
-    JDCachedURLResponse *cacheResponse = [[[self class] allocWithZone:zone] initWithResponse:_response
+    EMASCurlCachedURLResponse *cacheResponse = [[[self class] allocWithZone:zone] initWithResponse:_response
                                                                                         data:_data];
     cacheResponse.timestamp = self.timestamp;
     cacheResponse.maxAge = self.maxAge;

@@ -1,10 +1,10 @@
 //
-//  JDCacheIterator.h
-//  JDHybrid
+//  EMASCurlCacheIterator.h
+//  EMASCurlHybrid
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,13 +27,13 @@ SOFTWARE.
 
 #import <Foundation/Foundation.h>
 #import <WebKit/WebKit.h>
-#import "JDResourceMatcherManager.h"
-#import "JDUtils.h"
+#import "EMASCurlResourceMatcherManager.h"
+#import "EMASCurlUtils.h"
 
 NS_ASSUME_NONNULL_BEGIN
 API_AVAILABLE(ios(LimitVersion))
 
-@protocol JDResourceMatcherIteratorProtocol <NSObject>
+@protocol EMASCurlResourceMatcherIteratorProtocol <NSObject>
 
 - (void)didReceiveResponse:(NSURLResponse *)response urlSchemeTask:(id<WKURLSchemeTask>)urlSchemeTask;
 
@@ -45,23 +45,23 @@ API_AVAILABLE(ios(LimitVersion))
 
 - (void)didRedirectWithResponse:(NSURLResponse *)response
                      newRequest:(NSURLRequest *)redirectRequest
-               redirectDecision:(JDNetRedirectDecisionCallback)redirectDecisionCallback
+               redirectDecision:(EMASCurlNetRedirectDecisionCallback)redirectDecisionCallback
                   urlSchemeTask:(id<WKURLSchemeTask>)urlSchemeTask;
 
 @end
 
-@protocol JDResourceMatcherIteratorDataSource <NSObject>
+@protocol EMASCurlResourceMatcherIteratorDataSource <NSObject>
 
-- (NSArray<id<JDResourceMatcherImplProtocol>> *)liveResMatchers;
+- (NSArray<id<EMASCurlResourceMatcherImplProtocol>> *)liveResMatchers;
 
 @end
 
 API_AVAILABLE(ios(LimitVersion))
-@interface JDResourceMatcherIterator : NSObject
+@interface EMASCurlResourceMatcherIterator : NSObject
 
-@property (nonatomic, weak) id<JDResourceMatcherIteratorProtocol> iteratorDelagate;
+@property (nonatomic, weak) id<EMASCurlResourceMatcherIteratorProtocol> iteratorDelagate;
 
-@property (nonatomic, weak) id<JDResourceMatcherIteratorDataSource> iteratorDataSource;
+@property (nonatomic, weak) id<EMASCurlResourceMatcherIteratorDataSource> iteratorDataSource;
 
 - (void)startWithUrlSchemeTask:(id<WKURLSchemeTask>)urlSchemeTask;
 

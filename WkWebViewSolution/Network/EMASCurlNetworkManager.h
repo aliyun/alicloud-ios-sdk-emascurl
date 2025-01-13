@@ -1,9 +1,9 @@
 //
-//  JDNetworkManager.h
+//  EMASCurlNetworkManager.h
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,20 +25,20 @@ SOFTWARE.
  */
 
 #import <Foundation/Foundation.h>
-#import "JDCacheProtocol.h"
+#import "EMASCurlCacheProtocol.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class JDNetworkAsyncOperation;
+@class EMASCurlNetworkAsyncOperation;
 
-@interface JDNetworkCallBackWorker : NSObject
+@interface EMASCurlNetworkCallBackWorker : NSObject
 
 @end
 
 typedef NSInteger RequestTaskIdentifier;
 
 
-@interface JDNetworkManager : NSObject
+@interface EMASCurlNetworkManager : NSObject
 
 + (void)start; // 网络框架预热
 
@@ -47,19 +47,19 @@ typedef NSInteger RequestTaskIdentifier;
 - (void)setUpInternalURLSessionWithConfiguration:(NSURLSessionConfiguration *)urlSessionConfiguration;
 
 - (RequestTaskIdentifier)startWithRequest:(NSURLRequest *)request
-                         responseCallback:(JDNetResponseCallback)responseCallback
-                             dataCallback:(JDNetDataCallback)dataCallback
-                          successCallback:(JDNetSuccessCallback)successCallback
-                             failCallback:(JDNetFailCallback)failCallback
-                         redirectCallback:(JDNetRedirectCallback)redirectCallback ;
+                         responseCallback:(EMASCurlNetResponseCallback)responseCallback
+                             dataCallback:(EMASCurlNetDataCallback)dataCallback
+                          successCallback:(EMASCurlNetSuccessCallback)successCallback
+                             failCallback:(EMASCurlNetFailCallback)failCallback
+                         redirectCallback:(EMASCurlNetRedirectCallback)redirectCallback ;
 
 - (RequestTaskIdentifier)startWithRequest:(NSURLRequest *)request
-                         responseCallback:(JDNetResponseCallback)responseCallback
-                         progressCallBack:(nullable JDNetProgressCallBack)progressCallBack
-                             dataCallback:(JDNetDataCallback)dataCallback
-                          successCallback:(JDNetSuccessCallback)successCallback
-                             failCallback:(JDNetFailCallback)failCallback
-                         redirectCallback:(JDNetRedirectCallback)redirectCallback ;
+                         responseCallback:(EMASCurlNetResponseCallback)responseCallback
+                         progressCallBack:(nullable EMASCurlNetProgressCallBack)progressCallBack
+                             dataCallback:(EMASCurlNetDataCallback)dataCallback
+                          successCallback:(EMASCurlNetSuccessCallback)successCallback
+                             failCallback:(EMASCurlNetFailCallback)failCallback
+                         redirectCallback:(EMASCurlNetRedirectCallback)redirectCallback ;
 
 - (void)cancelWithRequestIdentifier:(RequestTaskIdentifier)requestTaskIdentifier ;
 

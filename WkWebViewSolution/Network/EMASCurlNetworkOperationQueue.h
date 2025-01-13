@@ -1,10 +1,10 @@
 //
-//  JDNetworkOperationQueue.h
-//  JDBJDModule
+//  EMASCurlNetworkOperationQueue.h
+//  EMASCurlBJDModule
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,12 @@ SOFTWARE.
  */
 
 #import <Foundation/Foundation.h>
-#import "JDCacheProtocol.h"
-#import "JDNetworkSession.h"
+#import "EMASCurlCacheProtocol.h"
+#import "EMASCurlNetworkSession.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol JDNetworkURLCacheHandle <NSObject>
+@protocol EMASCurlNetworkURLCacheHandle <NSObject>
 
 /// 是否启用缓存
 - (BOOL)URLCacheEnable;
@@ -47,26 +47,26 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 
-@interface JDNetworkAsyncOperation : NSOperation
+@interface EMASCurlNetworkAsyncOperation : NSOperation
 
-@property (nonatomic, copy) JDNetResponseCallback responseCallback;
-@property (nonatomic, copy) JDNetDataCallback dataCallback;
-@property (nonatomic, copy) JDNetSuccessCallback successCallback;
-@property (nonatomic, copy) JDNetFailCallback failCallback;
-@property (nonatomic, copy) JDNetRedirectCallback redirectCallback;
-@property (nonatomic, copy) JDNetProgressCallBack progressCallback;
-@property (nonatomic, weak) id<JDNetworkURLCacheHandle> URLCacheHandler;
+@property (nonatomic, copy) EMASCurlNetResponseCallback responseCallback;
+@property (nonatomic, copy) EMASCurlNetDataCallback dataCallback;
+@property (nonatomic, copy) EMASCurlNetSuccessCallback successCallback;
+@property (nonatomic, copy) EMASCurlNetFailCallback failCallback;
+@property (nonatomic, copy) EMASCurlNetRedirectCallback redirectCallback;
+@property (nonatomic, copy) EMASCurlNetProgressCallBack progressCallback;
+@property (nonatomic, weak) id<EMASCurlNetworkURLCacheHandle> URLCacheHandler;
 
 - (instancetype)initWithRequest:(NSURLRequest *)request canCache:(BOOL)canCache;
 
 @end
 
 
-@interface JDNetworkOperationQueue : NSObject
+@interface EMASCurlNetworkOperationQueue : NSObject
 
 + (instancetype)defaultQueue ;
 
-- (void)addOperation:(JDNetworkAsyncOperation *)operation ;
+- (void)addOperation:(EMASCurlNetworkAsyncOperation *)operation ;
 
 @end
 

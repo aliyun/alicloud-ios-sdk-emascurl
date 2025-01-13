@@ -1,10 +1,10 @@
 //
-//  JDNetworkOperationQueue.m
-//  JDBJDModule
+//  EMASCurlNetworkOperationQueue.m
+//  EMASCurlBJDModule
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDNetworkOperationQueue.h"
-#import "JDNetworkManager.h"
-#import "JDURLCache.h"
-#import "JDUtils.h"
-@interface JDNetworkAsyncOperation ()
+#import "EMASCurlNetworkOperationQueue.h"
+#import "EMASCurlNetworkManager.h"
+#import "EMASCurlURLCache.h"
+#import "EMASCurlUtils.h"
+@interface EMASCurlNetworkAsyncOperation ()
 
 @property (nonatomic, assign, getter=isExecuting) BOOL executing;
 @property (nonatomic, assign, getter=isFinished) BOOL finished;
@@ -46,7 +46,7 @@ SOFTWARE.
 @end
 
 
-@implementation JDNetworkAsyncOperation
+@implementation EMASCurlNetworkAsyncOperation
 
 @synthesize executing = _executing;
 @synthesize finished = _finished;
@@ -76,7 +76,7 @@ SOFTWARE.
         [self.URLCacheHandler respondsToSelector:@selector(URLCacheEnable)] &&
         [self.URLCacheHandler URLCacheEnable] &&
         [requestM.HTTPMethod isEqualToString:@"GET"]) {
-            JDCachedURLResponse *cachedResponse = [[JDURLCache defaultCache] getCachedResponseWithURL:requestM.URL.absoluteString];
+            EMASCurlCachedURLResponse *cachedResponse = [[EMASCurlURLCache defaultCache] getCachedResponseWithURL:requestM.URL.absoluteString];
             if (cachedResponse && ![cachedResponse isExpired]) {
                 self.responseCallback(cachedResponse.response);
                 self.dataCallback(cachedResponse.data);
@@ -98,18 +98,18 @@ SOFTWARE.
             }
     }
     self.URLRequest = [requestM copy];
-    JDWeak(self)
-    self.currentRequestId = [[JDNetworkManager shareManager]
+    EMASCurlWeak(self)
+    self.currentRequestId = [[EMASCurlNetworkManager shareManager]
                              startWithRequest:self.URLRequest
                              responseCallback:^(NSURLResponse * _Nonnull response) {
-                                    JDStrong(self)
+                                    EMASCurlStrong(self)
                                     if (!self) {
                                         return;
                                     }
                                     if (self.canCache && [response isKindOfClass:[NSHTTPURLResponse class]]) {
                                         self.response = (NSHTTPURLResponse *)response;
                                         if (self.response.statusCode == 304 &&
-                                            [[JDURLCache defaultCache] getCachedResponseWithURL:self.URLRequest.URL.absoluteString]) {
+                                            [[EMASCurlURLCache defaultCache] getCachedResponseWithURL:self.URLRequest.URL.absoluteString]) {
                                             
                                         } else {
                                             self.responseCallback(response);
@@ -121,7 +121,7 @@ SOFTWARE.
                                 }
                              progressCallBack:self.progressCallback 
                              dataCallback:^(NSData * _Nonnull data) {
-                                    JDStrong(self)
+                                    EMASCurlStrong(self)
                                     if (!self) {
                                         return;
                                     }
@@ -133,7 +133,7 @@ SOFTWARE.
                                     }
                                 }
                              successCallback:^{
-                                    JDStrong(self)
+                                    EMASCurlStrong(self)
                                     if (!self) {
                                         return;
                                     }
@@ -143,8 +143,8 @@ SOFTWARE.
                                     }
         
                                     if (self.response.statusCode == 304 &&
-                                        [[JDURLCache defaultCache] getCachedResponseWithURL:self.URLRequest.URL.absoluteString]) {
-                                        JDCachedURLResponse *cachedResponse = [[JDURLCache defaultCache] updateCachedResponseWithURLResponse:self.response requestUrl:self.URLRequest.URL.absoluteString];
+                                        [[EMASCurlURLCache defaultCache] getCachedResponseWithURL:self.URLRequest.URL.absoluteString]) {
+                                        EMASCurlCachedURLResponse *cachedResponse = [[EMASCurlURLCache defaultCache] updateCachedResponseWithURLResponse:self.response requestUrl:self.URLRequest.URL.absoluteString];
                                         self.responseCallback(cachedResponse.response);
                                         self.dataCallback(cachedResponse.data);
                                         self.successCallback();
@@ -160,7 +160,7 @@ SOFTWARE.
                                         self.successCallback();
                                         return;
                                     }
-                                    [[JDURLCache defaultCache] cacheWithHTTPURLResponse:self.response data:self.data url:self.URLRequest.URL.absoluteString];
+                                    [[EMASCurlURLCache defaultCache] cacheWithHTTPURLResponse:self.response data:self.data url:self.URLRequest.URL.absoluteString];
                                     if (self.URLCacheHandler &&
                                         [self.URLCacheHandler respondsToSelector:@selector(updateCacheCapacityWithCost:)]) {
                                         [self.URLCacheHandler updateCacheCapacityWithCost:self.data.length];
@@ -168,7 +168,7 @@ SOFTWARE.
                                     self.successCallback();
                                 }
                              failCallback:^(NSError * _Nonnull error) {
-                                    JDStrong(self)
+                                    EMASCurlStrong(self)
                                     if (!self) {
                                         return;
                                     }
@@ -215,23 +215,23 @@ SOFTWARE.
     if (self.currentRequestId < 0) {
         return;
     }
-    [[JDNetworkManager shareManager] cancelWithRequestIdentifier:self.currentRequestId];
+    [[EMASCurlNetworkManager shareManager] cancelWithRequestIdentifier:self.currentRequestId];
 }
 
 @end
 
 
-@interface JDNetworkOperationQueue()
+@interface EMASCurlNetworkOperationQueue()
 @property (nonatomic, strong) NSOperationQueue *requestOperationQueue;
 @end
 
-@implementation JDNetworkOperationQueue
+@implementation EMASCurlNetworkOperationQueue
 
 + (instancetype)defaultQueue {
-    static JDNetworkOperationQueue *_defaultQueue;
+    static EMASCurlNetworkOperationQueue *_defaultQueue;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _defaultQueue = [[JDNetworkOperationQueue alloc] init];
+        _defaultQueue = [[EMASCurlNetworkOperationQueue alloc] init];
     });
     return _defaultQueue;
 }
@@ -241,12 +241,12 @@ SOFTWARE.
     if (self) {
         _requestOperationQueue = [NSOperationQueue new];
         _requestOperationQueue.maxConcurrentOperationCount = 6;
-        _requestOperationQueue.name = @"com.jdcache.networkoperation";
+        _requestOperationQueue.name = @"com.EMASCurlcache.networkoperation";
     }
     return self;
 }
 
-- (void)addOperation:(JDNetworkAsyncOperation *)operation {
+- (void)addOperation:(EMASCurlNetworkAsyncOperation *)operation {
     [self.requestOperationQueue addOperation:operation];
 }
 

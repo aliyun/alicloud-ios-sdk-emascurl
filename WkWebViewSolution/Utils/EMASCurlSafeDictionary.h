@@ -1,10 +1,10 @@
 //
-//  JDSafeDictionary.h
-//  JDache
+//  EMASCurlSafeDictionary.h
+//  EMASCurlache
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ SOFTWARE.
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface JDSafeDictionary <KeyType,ObjectType> : NSObject<NSCopying>
+@interface EMASCurlSafeDictionary <KeyType,ObjectType> : NSObject<NSCopying>
 
 + (instancetype)weakObjects;
 

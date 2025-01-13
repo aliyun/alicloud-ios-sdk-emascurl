@@ -1,10 +1,10 @@
 //
-//  JDNetworkSession.m
-//  JDBJDModule
+//  EMASCurlNetworkSession.m
+//  EMASCurlBJDModule
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,18 +25,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDNetworkSession.h"
-#import "JDNetworkOperationQueue.h"
-#import "JDNetworkManager.h"
-#import "JDSafeArray.h"
-#import "JDUtils.h"
+#import "EMASCurlNetworkSession.h"
+#import "EMASCurlNetworkOperationQueue.h"
+#import "EMASCurlNetworkManager.h"
+#import "EMASCurlSafeArray.h"
+#import "EMASCurlUtils.h"
 #import <os/lock.h>
 
 NSTimeInterval const kJDPriorityNormalTimeoutInterval = 15;
 NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
 
-#pragma mark - NetworkSession配置 (对相同的JDNetworkSession实例生效)
-@implementation JDNetworkSessionConfiguration
+#pragma mark - NetworkSession配置 (对相同的EMASCurlNetworkSession实例生效)
+@implementation EMASCurlNetworkSessionConfiguration
 - (instancetype)init
 {
     self = [super init];
@@ -52,32 +52,32 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
 
 #pragma mark - DataTask (建议一个请求对应一个该实例)
 
-@interface JDNetworkDataTask ()<JDNetworkURLCacheHandle>
+@interface EMASCurlNetworkDataTask ()<EMASCurlNetworkURLCacheHandle>
 @property (nullable, readwrite, copy) NSURLRequest  *originalRequest;
-@property (nonatomic, strong) JDNetworkAsyncOperation *operation;
+@property (nonatomic, strong) EMASCurlNetworkAsyncOperation *operation;
 @property (nonatomic, assign) BOOL isCancel;
 @property (nonatomic, assign) BOOL canCache;
 @property (nonatomic, assign) NSUInteger retryCount; // 已重试次数
 
-@property (nonatomic, strong) JDNetworkSessionConfiguration *configuration;
-@property (nonatomic, weak) JDNetworkSession *networkSession;
+@property (nonatomic, strong) EMASCurlNetworkSessionConfiguration *configuration;
+@property (nonatomic, weak) EMASCurlNetworkSession *networkSession;
 
-@property (nonatomic, copy) JDNetResponseCallback responseCallback;
-@property (nonatomic, copy) JDNetDataCallback dataCallback;
-@property (nonatomic, copy) JDNetSuccessCallback successCallback;
-@property (nonatomic, copy) JDNetFailCallback failCallback;
-@property (nonatomic, copy) JDNetRedirectCallback redirectCallback;
-@property (nonatomic, copy) JDNetProgressCallBack progressCallBack;
+@property (nonatomic, copy) EMASCurlNetResponseCallback responseCallback;
+@property (nonatomic, copy) EMASCurlNetDataCallback dataCallback;
+@property (nonatomic, copy) EMASCurlNetSuccessCallback successCallback;
+@property (nonatomic, copy) EMASCurlNetFailCallback failCallback;
+@property (nonatomic, copy) EMASCurlNetRedirectCallback redirectCallback;
+@property (nonatomic, copy) EMASCurlNetProgressCallBack progressCallBack;
 @end
 
-@implementation JDNetworkDataTask
+@implementation EMASCurlNetworkDataTask
 - (instancetype)initWithRequest:(NSURLRequest *)request
-                  configuration:(JDNetworkSessionConfiguration *)configuration {
+                  configuration:(EMASCurlNetworkSessionConfiguration *)configuration {
     self = [super init];
     if (self) {
         _originalRequest = request;
         _configuration = configuration;
-        _dataTaskPriority = JDNetworkDataTaskPriorityNormal;
+        _dataTaskPriority = EMASCurlNetworkDataTaskPriorityNormal;
         _retryLimit = configuration.retryLimit;
         _retryCount = 0;
         _isCancel = NO;
@@ -96,14 +96,14 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
     }
     self.originalRequest = [requestM copy];
     
-    JDNetworkAsyncOperation *operation = [[JDNetworkAsyncOperation alloc] initWithRequest:self.originalRequest canCache:self.canCache];
+    EMASCurlNetworkAsyncOperation *operation = [[EMASCurlNetworkAsyncOperation alloc] initWithRequest:self.originalRequest canCache:self.canCache];
     operation.responseCallback = self.responseCallback;
     operation.dataCallback = self.dataCallback;
     operation.successCallback = self.successCallback;
     operation.progressCallback = self.progressCallBack;
-    JDWeak(self)
+    EMASCurlWeak(self)
     operation.failCallback = ^(NSError * _Nonnull error) {
-        JDStrong(self)
+        EMASCurlStrong(self)
         if (error.code != -999) {
         }
         if (!self) {
@@ -122,10 +122,10 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
     operation.redirectCallback = self.redirectCallback;
     operation.URLCacheHandler = self;
     switch (self.dataTaskPriority) {
-        case JDNetworkDataTaskPriorityVeryHigh:
+        case EMASCurlNetworkDataTaskPriorityVeryHigh:
             operation.queuePriority = NSOperationQueuePriorityVeryHigh;
             break;
-        case JDNetworkDataTaskPriorityHigh:
+        case EMASCurlNetworkDataTaskPriorityHigh:
             operation.queuePriority = NSOperationQueuePriorityHigh;
             break;
         default:
@@ -133,7 +133,7 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
             break;
     }
     self.operation = operation;
-    [[JDNetworkOperationQueue defaultQueue] addOperation:operation];
+    [[EMASCurlNetworkOperationQueue defaultQueue] addOperation:operation];
 }
 
 - (void)cancel {
@@ -152,7 +152,7 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
     if (!self.networkSession) {
         return;
     }
-    JDNetworkDataTask *retryDataTask = [self.networkSession
+    EMASCurlNetworkDataTask *retryDataTask = [self.networkSession
                                         dataTaskWithRequest:self.originalRequest
                                         responseCallback:self.responseCallback
                                         dataCallback:self.dataCallback
@@ -164,11 +164,11 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
     }
     retryDataTask.retryLimit = self.retryLimit;
     retryDataTask.retryCount = self.retryCount;
-    retryDataTask.dataTaskPriority = JDNetworkDataTaskPriorityHigh;
+    retryDataTask.dataTaskPriority = EMASCurlNetworkDataTaskPriorityHigh;
     [retryDataTask resume];
 }
 
-#pragma mark - JDNetworkURLCacheHandle
+#pragma mark - EMASCurlNetworkURLCacheHandle
 
 - (BOOL)URLCacheEnable {
     return YES;
@@ -185,63 +185,63 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
 @end
 
 #pragma mark - NetworkSession (建议一个webview实例对应一个该实例)
-@interface JDNetworkSession ()
-@property (nonatomic, strong) JDNetworkSessionConfiguration *configuration;
-@property (nonatomic, strong) JDSafeArray<JDNetworkDataTask *> *tasksArrayM;
+@interface EMASCurlNetworkSession ()
+@property (nonatomic, strong) EMASCurlNetworkSessionConfiguration *configuration;
+@property (nonatomic, strong) EMASCurlSafeArray<EMASCurlNetworkDataTask *> *tasksArrayM;
 
 @property (nonatomic, assign) NSUInteger currentCacheCount; // 当前缓存数量
 @property (nonatomic, assign) NSUInteger currentCacheCost; // 当前缓存容量
 
 @end
 
-@implementation JDNetworkSession{
+@implementation EMASCurlNetworkSession{
     os_unfair_lock _tasksArraylock;
 }
 
-+ (instancetype)sessionWithConfiguation:(JDNetworkSessionConfiguration *)configuration  {
++ (instancetype)sessionWithConfiguation:(EMASCurlNetworkSessionConfiguration *)configuration  {
     return [[self alloc] initWithConfiguation:configuration];
 }
 
-- (instancetype)initWithConfiguation:(JDNetworkSessionConfiguration *)configuration{
+- (instancetype)initWithConfiguation:(EMASCurlNetworkSessionConfiguration *)configuration{
     self = [super init];
     if (self) {
         _tasksArraylock = OS_UNFAIR_LOCK_INIT;
         _configuration = configuration;
-        _tasksArrayM = [JDSafeArray strongObjects];
+        _tasksArrayM = [EMASCurlSafeArray strongObjects];
         _currentCacheCost = 0;
         _currentCacheCount = 0;
     }
     return self;
 }
 
-- (nullable JDNetworkDataTask *)dataTaskWithRequest:(NSURLRequest *)request
-                                   responseCallback:(JDNetResponseCallback)responseCallback
-                                       dataCallback:(JDNetDataCallback)dataCallback
-                                    successCallback:(JDNetSuccessCallback)successCallback
-                                       failCallback:(JDNetFailCallback)failCallback
-                                   redirectCallback:(JDNetRedirectCallback)redirectCallback {
+- (nullable EMASCurlNetworkDataTask *)dataTaskWithRequest:(NSURLRequest *)request
+                                   responseCallback:(EMASCurlNetResponseCallback)responseCallback
+                                       dataCallback:(EMASCurlNetDataCallback)dataCallback
+                                    successCallback:(EMASCurlNetSuccessCallback)successCallback
+                                       failCallback:(EMASCurlNetFailCallback)failCallback
+                                   redirectCallback:(EMASCurlNetRedirectCallback)redirectCallback {
     
     return [self dataTaskWithRequest:request responseCallback:responseCallback progressCallBack:nil dataCallback:dataCallback successCallback:successCallback failCallback:failCallback redirectCallback:redirectCallback];
     
 }
 
-- (JDNetworkDataTask *)dataTaskWithRequest:(NSURLRequest *)request
-                          responseCallback:(JDNetResponseCallback)responseCallback
-                          progressCallBack:(JDNetProgressCallBack)progressCallBack
-                              dataCallback:(JDNetDataCallback)dataCallback
-                           successCallback:(JDNetSuccessCallback)successCallback
-                              failCallback:(JDNetFailCallback)failCallback
-                          redirectCallback:(JDNetRedirectCallback)redirectCallback
+- (EMASCurlNetworkDataTask *)dataTaskWithRequest:(NSURLRequest *)request
+                          responseCallback:(EMASCurlNetResponseCallback)responseCallback
+                          progressCallBack:(EMASCurlNetProgressCallBack)progressCallBack
+                              dataCallback:(EMASCurlNetDataCallback)dataCallback
+                           successCallback:(EMASCurlNetSuccessCallback)successCallback
+                              failCallback:(EMASCurlNetFailCallback)failCallback
+                          redirectCallback:(EMASCurlNetRedirectCallback)redirectCallback
 {
-    JDNetworkDataTask *dataTask = [[JDNetworkDataTask alloc] initWithRequest:request
+    EMASCurlNetworkDataTask *dataTask = [[EMASCurlNetworkDataTask alloc] initWithRequest:request
                                                                configuration:self.configuration];
     dataTask.responseCallback = responseCallback;
     dataTask.dataCallback = dataCallback;
-    JDWeak(dataTask)
-    JDWeak(self)
+    EMASCurlWeak(dataTask)
+    EMASCurlWeak(self)
     dataTask.successCallback = ^{
-        JDStrong(dataTask)
-        JDStrong(self)
+        EMASCurlStrong(dataTask)
+        EMASCurlStrong(self)
         if (!self || !dataTask) {
             return;
         }
@@ -251,8 +251,8 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
         [self cancelTask:dataTask];
     };
     dataTask.failCallback = ^(NSError * _Nonnull error) {
-        JDStrong(dataTask)
-        JDStrong(self)
+        EMASCurlStrong(dataTask)
+        EMASCurlStrong(self)
         if (!self || !dataTask) {
             return;
         }
@@ -268,7 +268,7 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
     BOOL notGet = ![request.HTTPMethod.lowercaseString isEqualToString:@"get"];
     NSString *mainUrl = request.mainDocumentURL.absoluteString;
     NSString *requestUrl = request.URL.absoluteString;
-    BOOL isMainUrl = [JDUtils isValidStr:mainUrl] && [JDUtils isEqualURLA:requestUrl withURLB:mainUrl];
+    BOOL isMainUrl = [EMASCurlUtils isValidStr:mainUrl] && [EMASCurlUtils isEqualURLA:requestUrl withURLB:mainUrl];
     
     if (notGet || isMainUrl) { // 不是get请求或者是mainURL，明显不缓存
         dataTask.canCache = NO;
@@ -305,7 +305,7 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
     }
 }
 
-- (void)cancelTask:(JDNetworkDataTask *)task {
+- (void)cancelTask:(EMASCurlNetworkDataTask *)task {
     [task cancel];
     os_unfair_lock_lock(&_tasksArraylock);
     [self.tasksArrayM removeObject:task];
@@ -317,12 +317,12 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
     if (self.tasksArrayM.count == 0) {
         return;
     }
-    NSArray<JDNetworkDataTask *> *dataTaskArr = [NSArray array];
+    NSArray<EMASCurlNetworkDataTask *> *dataTaskArr = [NSArray array];
     os_unfair_lock_lock(&_tasksArraylock);
     dataTaskArr = [self.tasksArrayM copy];
     os_unfair_lock_unlock(&_tasksArraylock);
     
-    for (JDNetworkDataTask *task in dataTaskArr) {
+    for (EMASCurlNetworkDataTask *task in dataTaskArr) {
         [task cancel];
         os_unfair_lock_lock(&_tasksArraylock);
         [self.tasksArrayM removeObject:task];

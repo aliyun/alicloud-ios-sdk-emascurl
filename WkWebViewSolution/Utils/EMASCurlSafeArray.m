@@ -1,10 +1,10 @@
 //
-//  JDSafeArray.m
-//  JDache
+//  EMASCurlSafeArray.m
+//  EMASCurlache
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,10 +25,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDSafeArray.h"
+#import "EMASCurlSafeArray.h"
 #import <pthread.h>
 
-#define JDSafeArrayLock(v,...)\
+#define EMASCurlSafeArrayLock(v,...)\
 pthread_mutex_lock(&_lock);\
 [_arrM addPointer:nil];\
 [_arrM compact];\
@@ -36,7 +36,7 @@ __VA_ARGS__;\
 pthread_mutex_unlock(&_lock);\
 return v;
 
-@implementation JDSafeArray{
+@implementation EMASCurlSafeArray{
     pthread_mutex_t _lock;
     pthread_mutexattr_t _attr;
     NSPointerArray * _arrM;
@@ -67,25 +67,25 @@ return v;
 }
 
 - (instancetype)init{
-    return [JDSafeArray strongObjects];
+    return [EMASCurlSafeArray strongObjects];
 }
 
 
 - (NSUInteger)count{
     NSInteger count;
-    JDSafeArrayLock(count,count=_arrM.count)
+    EMASCurlSafeArrayLock(count,count=_arrM.count)
 }
 
 - (BOOL)containsObject:(id)anObject{
     if (anObject == nil) return NO;
     BOOL isContain;
-    JDSafeArrayLock(isContain,isContain=[[_arrM allObjects] containsObject:anObject])
+    EMASCurlSafeArrayLock(isContain,isContain=[[_arrM allObjects] containsObject:anObject])
 }
 
 - (nullable id)objectAtIndex:(NSUInteger)index{
     if (index < 0 || index >= self.count) return nil;
     id obj;
-    JDSafeArrayLock(obj,obj=[_arrM pointerAtIndex:index])
+    EMASCurlSafeArrayLock(obj,obj=[_arrM pointerAtIndex:index])
 }
 
 - (id)objectAtIndexedSubscript:(NSUInteger)idx{
@@ -96,25 +96,25 @@ return v;
     if (![otherArray isKindOfClass:[NSArray class]]) {
         return;
     }
-    JDSafeArrayLock(,NO,[otherArray enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+    EMASCurlSafeArrayLock(,NO,[otherArray enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         [_arrM addPointer:(__bridge void *)obj];
     }])
 }
 
 - (void)removeAllObjects{
-    JDSafeArrayLock(,while(_arrM.count > 0){
+    EMASCurlSafeArrayLock(,while(_arrM.count > 0){
         [_arrM removePointerAtIndex:0];
     })
 }
 
 - (void)addObject:(id)anObject{
     if (anObject == nil) return;
-    JDSafeArrayLock(,[_arrM addPointer:(__bridge void *)anObject])
+    EMASCurlSafeArrayLock(,[_arrM addPointer:(__bridge void *)anObject])
 }
 
 - (void)insertObject:(id)anObject atIndex:(NSUInteger)index{
     if (anObject == nil || index < 0 || index >= self.count) return;
-    JDSafeArrayLock(,[_arrM insertPointer:(__bridge void *)anObject atIndex:index])
+    EMASCurlSafeArrayLock(,[_arrM insertPointer:(__bridge void *)anObject atIndex:index])
 }
 
 - (void)removeLastObject{
@@ -123,17 +123,17 @@ return v;
 
 - (void)removeObjectAtIndex:(NSUInteger)index{
     if (index < 0 || index >= self.count) return;
-    JDSafeArrayLock(,[_arrM removePointerAtIndex:index])
+    EMASCurlSafeArrayLock(,[_arrM removePointerAtIndex:index])
 }
 
 - (void)replaceObjectAtIndex:(NSUInteger)index withObject:(id)anObject{
     if (anObject == nil || index < 0 || index >= self.count) return;
-    JDSafeArrayLock(,[_arrM replacePointerAtIndex:index withPointer:(__bridge void *)anObject])
+    EMASCurlSafeArrayLock(,[_arrM replacePointerAtIndex:index withPointer:(__bridge void *)anObject])
 }
 
 - (void)removeObject:(id)anObject{
     if (anObject == nil) return;
-    JDSafeArrayLock(,
+    EMASCurlSafeArrayLock(,
                     NSInteger index = [_arrM.allObjects indexOfObject:anObject];
                     if(index != NSNotFound){
                         [_arrM removePointerAtIndex:index];
@@ -146,7 +146,7 @@ return v;
 }
 
 - (void)enumerateObjectsWithOptions:(NSEnumerationOptions)opts usingBlock:(void (NS_NOESCAPE ^)(id obj, NSUInteger idx, BOOL *stop))block{
-    JDSafeArrayLock(,BOOL stop = NO;
+    EMASCurlSafeArrayLock(,BOOL stop = NO;
                     NSInteger count = self.count - 1;
                     NSArray *allObjs = _arrM.allObjects;
                     for (NSInteger i = 0; i < self.count; i++) {
@@ -162,7 +162,7 @@ return v;
 
 - (NSArray *)values{
     NSArray *array;
-    JDSafeArrayLock(array,array=_arrM.allObjects)
+    EMASCurlSafeArrayLock(array,array=_arrM.allObjects)
 }
 
 - (NSUInteger)indexOfObject:(id)anObject{
@@ -170,7 +170,7 @@ return v;
         return NSNotFound;
     }
     NSInteger index;
-    JDSafeArrayLock(index,index = [_arrM.allObjects indexOfObject:anObject]);
+    EMASCurlSafeArrayLock(index,index = [_arrM.allObjects indexOfObject:anObject]);
 }
 
 - (void)dealloc
@@ -184,4 +184,4 @@ return v;
 }
 
 @end
-#undef JDSafeArrayLock
+#undef EMASCurlSafeArrayLock

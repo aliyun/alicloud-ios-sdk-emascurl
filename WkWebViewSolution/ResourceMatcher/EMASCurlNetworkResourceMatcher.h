@@ -1,10 +1,10 @@
 //
-//  JDCache.m
-//  JDHybrid
+//  EMASCurlNetworkResourceMatcher.h
+//  EMASCurlHybrid
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,22 +26,12 @@ SOFTWARE.
  */
 
 #import <Foundation/Foundation.h>
-#import "JDCache.h"
-#import "JDUtils.h"
+#import "EMASCurlResourceMatcherManager.h"
 
-@implementation JDCache
+NS_ASSUME_NONNULL_BEGIN
 
-+ (JDCache *)shareInstance{
-    static JDCache *cache = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        cache = [JDCache new];
-    });
-    return cache;
-}
-
-- (void)setLogEnabled:(BOOL)logEnabled {
-    [JDUtils setLogEnable:logEnabled];
-}
+@interface EMASCurlNetworkResourceMatcher : NSObject<EMASCurlResourceMatcherImplProtocol>
 
 @end
+
+NS_ASSUME_NONNULL_END

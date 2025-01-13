@@ -1,10 +1,8 @@
-//
-//  JDCache.h
-//  JDHybrid
+
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,25 +23,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDCacheProtocol.h"
-#import "JDCacheLoader.h"
-#import "JDNetworkManager.h"
-#import "WKWebViewConfiguration+Loader.h"
-#import "JDUtils.h"
-#import "JDSafeArray.h"
-#import "JDSafeDictionary.h"
+#import <WebKit/WebKit.h>
 
 
-NS_ASSUME_NONNULL_BEGIN
+@interface EMASCurlWeakProxy : NSProxy<WKURLSchemeHandler>
 
-@interface JDCache : NSObject
+@property (nonatomic, weak, readonly, nullable) id target;
 
-+ (JDCache *)shareInstance;
-
-@property (nonatomic, strong) id <JDURLCacheDelegate> netCache; // 网络数据缓存
-
-@property (nonatomic, assign) BOOL LogEnabled; // log开关
+- (nonnull instancetype)initWithTarget:(nonnull id)target;
++ (nonnull instancetype)proxyWithTarget:(nonnull id)target;
 
 @end
-
-NS_ASSUME_NONNULL_END

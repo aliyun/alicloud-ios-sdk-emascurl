@@ -1,7 +1,7 @@
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,16 +31,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 #define xURLSchemeHandlerKey "xURLSchemeHandlerKey"
 
-#define JDValidStr(str) [JDUtils isValidStr:str]
-#define JDValidDic(dic) [JDUtils isValidDic:dic]
-#define JDValidArr(arr) [JDUtils isValidArr:arr]
-#define JDWeak(v) __weak typeof(v)weak##v = v;
-#define JDStrong(v) __strong typeof(weak##v)v = weak##v;
+#define EMASCurlValidStr(str) [EMASCurlUtils isValidStr:str]
+#define EMASCurlValidDic(dic) [EMASCurlUtils isValidDic:dic]
+#define EMASCurlValidArr(arr) [EMASCurlUtils isValidArr:arr]
+#define EMASCurlWeak(v) __weak typeof(v)weak##v = v;
+#define EMASCurlStrong(v) __strong typeof(weak##v)v = weak##v;
 
 //// log
-FOUNDATION_EXPORT void JDCacheLog(NSString * _Nonnull format, ...) ;
+FOUNDATION_EXPORT void EMASCurlCacheLog(NSString * _Nonnull format, ...) ;
 
-@interface JDUtils : NSObject
+@interface EMASCurlUtils : NSObject
 
 + (void)setLogEnable:(BOOL)enable ;
 

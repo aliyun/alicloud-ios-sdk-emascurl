@@ -1,7 +1,7 @@
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDUtils.h"
+#import "EMASCurlUtils.h"
 #import <mach/mach.h>
 #import <mach/mach_host.h>
 #import <sys/utsname.h>
@@ -30,7 +30,7 @@ SOFTWARE.
 static BOOL gJDCacheLogEnable = NO;
 
 //// log
-void JDCacheLog(NSString *format, ...) {
+void EMASCurlCacheLog(NSString *format, ...) {
     if (!gJDCacheLogEnable) {
         return;
     }
@@ -42,7 +42,7 @@ void JDCacheLog(NSString *format, ...) {
     va_end(args);
 }
 
-@implementation JDUtils
+@implementation EMASCurlUtils
 
 static NSDateFormatter *hybridDateFormatter = nil;
 
@@ -106,8 +106,8 @@ static NSDateFormatter *hybridDateFormatter = nil;
 + (BOOL)isEqualURLA:(NSString *)urlStrA withURLB:(NSString *)urlStrB{
     if (!urlStrA ||
         !urlStrB ||
-        !JDValidStr(urlStrA) ||
-        !JDValidStr(urlStrB)) {
+        !EMASCurlValidStr(urlStrA) ||
+        !EMASCurlValidStr(urlStrB)) {
         return NO;
     }
     
@@ -272,7 +272,7 @@ static NSDateFormatter *hybridDateFormatter = nil;
     if (![cookieProperties objectForKey:NSHTTPCookiePath]) {
         [cookieProperties setObject:@"/" forKey:NSHTTPCookiePath];
     }
-    if (JDValidStr(url.host) && ![cookieProperties objectForKey:NSHTTPCookieDomain]) {
+    if (EMASCurlValidStr(url.host) && ![cookieProperties objectForKey:NSHTTPCookieDomain]) {
         [cookieProperties setObject:url.host forKey:NSHTTPCookieDomain];
     }
     return [NSHTTPCookie cookieWithProperties:cookieProperties];

@@ -1,10 +1,10 @@
 //
-//  JDSchemeHandleManager.h
-//  JDHybrid
+//  EMASCurlHybridURLCache.h
+//  EMASCurlBHybridModule
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,25 +26,26 @@ SOFTWARE.
  */
 
 #import <Foundation/Foundation.h>
-#import <WebKit/WebKit.h>
-#import "JDCacheProtocol.h"
-#import "JDUtils.h"
+#import "EMASCurlCachedURLResponse.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-API_AVAILABLE(ios(LimitVersion))
-@protocol JDResourceMatcherManagerDelegate <NSObject>
+@interface EMASCurlURLCache : NSObject
 
-- (NSArray<id<JDResourceMatcherImplProtocol>> *)liveMatchers;
++ (instancetype)defaultCache;
 
-- (void)redirectWithRequest:(NSURLRequest *)redirectRequest;
+- (instancetype)initWithCacheName:(NSString *)cacheName;
 
-@end
+- (void)cacheWithHTTPURLResponse:(NSHTTPURLResponse *)response
+                            data:(NSData *)data
+                             url:(NSString *)url ;
 
-API_AVAILABLE(ios(LimitVersion))
-@interface JDResourceMatcherManager : NSObject
+- (nullable EMASCurlCachedURLResponse *)getCachedResponseWithURL:(NSString *)url ;
 
-@property (nonatomic, weak) id<JDResourceMatcherManagerDelegate> delegate;
+- (nullable EMASCurlCachedURLResponse *)updateCachedResponseWithURLResponse:(NSHTTPURLResponse *)newResponse
+                                                           requestUrl:(NSString *)url;
+
+- (void)clear;
 
 @end
 

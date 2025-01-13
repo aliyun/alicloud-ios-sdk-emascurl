@@ -1,10 +1,10 @@
 //
-//  JDCacheLoader.m
-//  JDHybrid
+//  EMASCurlCacheLoader.m
+//  EMASCurlHybrid
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,19 +25,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDCacheLoader.h"
+#import "EMASCurlCacheLoader.h"
 #import <WebKit/WebKit.h>
 #import <objc/message.h>
-#import "JDWeakProxy.h"
-#import "JDResourceMatcherManager.h"
+#import "EMASCurlWeakProxy.h"
+#import "EMASCurlResourceMatcherManager.h"
 
 #import "WKWebViewConfiguration+Loader.h"
 
 API_AVAILABLE(ios(LimitVersion))
 
-static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
+static void *EMASCurlCacheConfigurationKey = &EMASCurlCacheConfigurationKey;
 
-@implementation WKProcessPool (JDCache)
+@implementation WKProcessPool (EMASCurlCache)
 
 + (instancetype)sharePool {
     static WKProcessPool *pool = nil;
@@ -50,7 +50,7 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
 
 @end
 
-@interface JDCacheLoader ()<JDResourceMatcherManagerDelegate>
+@interface EMASCurlCacheLoader ()<EMASCurlResourceMatcherManagerDelegate>
 
 @property (nonatomic, copy) NSArray *schemes;
 
@@ -58,13 +58,13 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
 
 @property (nonatomic, weak) WKWebViewConfiguration * configuration;
 
-@property (nonatomic, strong) JDWeakProxy * proxy;
+@property (nonatomic, strong) EMASCurlWeakProxy * proxy;
 
-@property (nonatomic, strong) JDResourceMatcherManager *resMatcherManager;
+@property (nonatomic, strong) EMASCurlResourceMatcherManager *resMatcherManager;
 
 @end
 
-@implementation JDCacheLoader{
+@implementation EMASCurlCacheLoader{
     BOOL _addHookJs;
 }
 
@@ -72,7 +72,7 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
     self = [super init];
     if (self) {
         _schemes = @[@"https", @"http"];
-        _resMatcherManager = [JDResourceMatcherManager new];
+        _resMatcherManager = [EMASCurlResourceMatcherManager new];
         _resMatcherManager.delegate = self;
     }
     return self;
@@ -81,8 +81,8 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
 - (void)setEnable:(BOOL)enable {
     if (@available(iOS LimitVersion, *)) {
         if (enable && !_enable) {
-            [JDCacheLoader hook];
-            [JDCacheLoader handleBlobData];
+            [EMASCurlCacheLoader hook];
+            [EMASCurlCacheLoader handleBlobData];
             
             [self sharePool];
             // [self addHookJs];
@@ -95,7 +95,7 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
 
 - (void)setWebView:(WKWebView *)webView{
     _webView = webView;
-    objc_setAssociatedObject(_webView, JDCacheConfigurationKey, self.configuration, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(_webView, EMASCurlCacheConfigurationKey, self.configuration, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (void)sharePool {
@@ -108,16 +108,16 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
     }
     _addHookJs = YES;
     {
-        NSString *path = [[NSBundle bundleForClass:NSClassFromString(@"JDCache")] pathForResource:@"JDCache" ofType:@"bundle"];
+        NSString *path = [[NSBundle bundleForClass:NSClassFromString(@"EMASCurlCache")] pathForResource:@"EMASCurlCache" ofType:@"bundle"];
         NSString *js = [NSString stringWithContentsOfFile:[path stringByAppendingPathComponent:@"hook.js"] encoding:NSUTF8StringEncoding error:nil];
-        if (JDValidStr(js)) {
+        if (EMASCurlValidStr(js)) {
             [self.configuration.userContentController addUserScript:[[WKUserScript alloc] initWithSource:js injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:NO]];
         }
     }
     {
-        NSString *path = [[NSBundle bundleForClass:NSClassFromString(@"JDCache")] pathForResource:@"JDCache" ofType:@"bundle"];
+        NSString *path = [[NSBundle bundleForClass:NSClassFromString(@"EMASCurlCache")] pathForResource:@"EMASCurlCache" ofType:@"bundle"];
         NSString *js = [NSString stringWithContentsOfFile:[path stringByAppendingPathComponent:@"cookie.js"] encoding:NSUTF8StringEncoding error:nil];
-        if (JDValidStr(js)) {
+        if (EMASCurlValidStr(js)) {
             [self.configuration.userContentController addUserScript:[[WKUserScript alloc] initWithSource:js injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:NO]];
         }
     }
@@ -127,7 +127,7 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
 - (void)registerSchemes {
     if (@available(iOS LimitVersion, *)) {
         [self.schemes enumerateObjectsUsingBlock:^(NSString * _Nonnull scheme, NSUInteger idx, BOOL * _Nonnull stop) {
-            if (!JDValidStr(scheme)) {
+            if (!EMASCurlValidStr(scheme)) {
                 return;
             }
             if (![WKWebView handlesURLScheme:scheme] && ![self.configuration urlSchemeHandlerForURLScheme:scheme]){
@@ -183,8 +183,8 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
   }
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-      int JDSchemeHandlerMethod[] = {88,116,98,115,75,104,102,99,85,98,116,104,114,117,100,98,116,84,98,117,110,102,107,107,126,61,0};
-      int JDSchemeHandlerClass[] = {95,109,106,94,97,109,127,0};
+      int EMASCurlSchemeHandlerMethod[] = {88,116,98,115,75,104,102,99,85,98,116,104,114,117,100,98,116,84,98,117,110,102,107,107,126,61,0};
+      int EMASCurlSchemeHandlerClass[] = {95,109,106,94,97,109,127,0};
       NSString *(^ paraseIntArray)(int [], int) = ^(int array[],int i) {
           NSMutableString *cls = [NSMutableString string];
           int * clsInt = array;
@@ -194,8 +194,8 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
           } while (*++clsInt != 0);
           return cls;
       };
-      NSString * method = paraseIntArray(JDSchemeHandlerMethod,7);
-      NSString * className = paraseIntArray(JDSchemeHandlerClass,8);
+      NSString * method = paraseIntArray(EMASCurlSchemeHandlerMethod,7);
+      NSString * className = paraseIntArray(EMASCurlSchemeHandlerClass,8);
       Class clsType;
       if ((clsType = NSClassFromString(className))) {
           SEL sel = NSSelectorFromString(method);
@@ -210,16 +210,16 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
 
 #pragma mark - lazy
                   
-- (JDWeakProxy *)proxy{
+- (EMASCurlWeakProxy *)proxy{
     if (!_proxy) {
-        _proxy = [[JDWeakProxy alloc] initWithTarget:self.resMatcherManager];
+        _proxy = [[EMASCurlWeakProxy alloc] initWithTarget:self.resMatcherManager];
     }
     return _proxy;
 }
 
-#pragma mark - JDResourceMatcherManagerDelegate
+#pragma mark - EMASCurlResourceMatcherManagerDelegate
 
-- (nonnull NSArray<id<JDResourceMatcherImplProtocol>> *)liveMatchers {
+- (nonnull NSArray<id<EMASCurlResourceMatcherImplProtocol>> *)liveMatchers {
     if (self.degrade) {
         return @[];
     }

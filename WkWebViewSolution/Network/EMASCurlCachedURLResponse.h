@@ -1,10 +1,10 @@
 //
-//  JDHybridURLCache.h
-//  JDBHybridModule
+//  EMASCurlCachedURLResponse.h
+//  EMASCurlBHybridModule
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,26 +26,32 @@ SOFTWARE.
  */
 
 #import <Foundation/Foundation.h>
-#import "JDCachedURLResponse.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface JDURLCache : NSObject
+@interface EMASCurlCachedURLResponse : NSObject<NSCopying, NSCoding>
 
-+ (instancetype)defaultCache;
+@property (readonly, copy) NSHTTPURLResponse *response;
 
-- (instancetype)initWithCacheName:(NSString *)cacheName;
+@property (readonly, copy) NSData *data;
 
-- (void)cacheWithHTTPURLResponse:(NSHTTPURLResponse *)response
-                            data:(NSData *)data
-                             url:(NSString *)url ;
+@property (readonly, assign) unsigned long long timestamp;
 
-- (nullable JDCachedURLResponse *)getCachedResponseWithURL:(NSString *)url ;
+@property (readonly, assign) unsigned long long maxAge;
 
-- (nullable JDCachedURLResponse *)updateCachedResponseWithURLResponse:(NSHTTPURLResponse *)newResponse
-                                                           requestUrl:(NSString *)url;
+@property (readonly, copy) NSString *etag;
 
-- (void)clear;
+@property (readonly, copy) NSString *lastModified;
+
+
+- (instancetype)initWithResponse:(NSHTTPURLResponse *)response
+                            data:(NSData *)data;
+
+- (void)updateWithResponse:(NSDictionary *)newHeaderFields ;
+
+- (BOOL)canCache ;
+
+- (BOOL)isExpired ;
 
 @end
 

@@ -1,10 +1,10 @@
 //
-//  JDCachedURLResponse.h
-//  JDBHybridModule
+//  EMASCurlCache.h
+//  EMASCurlHybrid
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,33 +25,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import <Foundation/Foundation.h>
+#import "EMASCurlCacheProtocol.h"
+#import "EMASCurlCacheLoader.h"
+#import "EMASCurlNetworkManager.h"
+#import "WKWebViewConfiguration+Loader.h"
+#import "EMASCurlUtils.h"
+#import "EMASCurlSafeArray.h"
+#import "EMASCurlSafeDictionary.h"
+
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface JDCachedURLResponse : NSObject<NSCopying, NSCoding>
+@interface EMASCurlCache : NSObject
 
-@property (readonly, copy) NSHTTPURLResponse *response;
++ (EMASCurlCache *)shareInstance;
 
-@property (readonly, copy) NSData *data;
+@property (nonatomic, strong) id <EMASCurlURLCacheDelegate> netCache; // 网络数据缓存
 
-@property (readonly, assign) unsigned long long timestamp;
-
-@property (readonly, assign) unsigned long long maxAge;
-
-@property (readonly, copy) NSString *etag;
-
-@property (readonly, copy) NSString *lastModified;
-
-
-- (instancetype)initWithResponse:(NSHTTPURLResponse *)response
-                            data:(NSData *)data;
-
-- (void)updateWithResponse:(NSDictionary *)newHeaderFields ;
-
-- (BOOL)canCache ;
-
-- (BOOL)isExpired ;
+@property (nonatomic, assign) BOOL LogEnabled; // log开关
 
 @end
 

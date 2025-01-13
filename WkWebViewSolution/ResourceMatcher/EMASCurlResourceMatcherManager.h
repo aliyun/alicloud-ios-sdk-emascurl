@@ -1,8 +1,10 @@
-
+//
+//  EMASCurlSchemeHandleManager.h
+//  EMASCurlHybrid
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +25,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+#import <Foundation/Foundation.h>
 #import <WebKit/WebKit.h>
+#import "EMASCurlCacheProtocol.h"
+#import "EMASCurlUtils.h"
 
+NS_ASSUME_NONNULL_BEGIN
 
-@interface JDWeakProxy : NSProxy<WKURLSchemeHandler>
+API_AVAILABLE(ios(LimitVersion))
+@protocol EMASCurlResourceMatcherManagerDelegate <NSObject>
 
-@property (nonatomic, weak, readonly, nullable) id target;
+- (NSArray<id<EMASCurlResourceMatcherImplProtocol>> *)liveMatchers;
 
-- (nonnull instancetype)initWithTarget:(nonnull id)target;
-+ (nonnull instancetype)proxyWithTarget:(nonnull id)target;
+- (void)redirectWithRequest:(NSURLRequest *)redirectRequest;
 
 @end
+
+API_AVAILABLE(ios(LimitVersion))
+@interface EMASCurlResourceMatcherManager : NSObject
+
+@property (nonatomic, weak) id<EMASCurlResourceMatcherManagerDelegate> delegate;
+
+@end
+
+NS_ASSUME_NONNULL_END

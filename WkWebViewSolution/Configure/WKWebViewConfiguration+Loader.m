@@ -1,10 +1,10 @@
 //
 //  WKWebViewConfiguration+Loader.m
-//  JDHybrid
+//  EMASCurlHybrid
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,25 +27,25 @@ SOFTWARE.
 
 #import "WKWebViewConfiguration+Loader.h"
 #import <objc/runtime.h>
-#import "JDUtils.h"
+#import "EMASCurlUtils.h"
 
-@interface JDCacheLoader (Private)
+@interface EMASCurlCacheLoader (Private)
 
 @property (nonatomic, weak) WKWebViewConfiguration * configuration;
 
 @end
 
-static void *JDCacheLoaderKey = &JDCacheLoaderKey;
+static void *EMASCurlCacheLoaderKey = &EMASCurlCacheLoaderKey;
 
 @implementation WKWebViewConfiguration (Loader)
 
-- (nullable JDCacheLoader *)loader API_AVAILABLE(ios(LimitVersion)){
+- (nullable EMASCurlCacheLoader *)loader API_AVAILABLE(ios(LimitVersion)){
     if (@available(iOS LimitVersion, *)) {
-        JDCacheLoader* loader = objc_getAssociatedObject(self, JDCacheLoaderKey);
+        EMASCurlCacheLoader* loader = objc_getAssociatedObject(self, EMASCurlCacheLoaderKey);
         if (!loader) {
-            loader = [JDCacheLoader new];
+            loader = [EMASCurlCacheLoader new];
             loader.configuration = self;
-            objc_setAssociatedObject(self, JDCacheLoaderKey, loader, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            objc_setAssociatedObject(self, EMASCurlCacheLoaderKey, loader, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             return loader;
         }
         return loader;

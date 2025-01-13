@@ -1,10 +1,10 @@
 //
-//  JDSafeDictionary.m
-//  JDache
+//  EMASCurlSafeDictionary.m
+//  EMASCurlache
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,17 +25,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDSafeDictionary.h"
+#import "EMASCurlSafeDictionary.h"
 #import <pthread.h>
 
-#define JDSafeDictionaryLock(v,...)\
+#define EMASCurlSafeDictionaryLock(v,...)\
 pthread_mutex_lock(&_lock);\
 __VA_ARGS__;\
 pthread_mutex_unlock(&_lock);\
 return v;
 
 
-@implementation JDSafeDictionary{
+@implementation EMASCurlSafeDictionary{
     pthread_mutex_t _lock;
     pthread_mutexattr_t _attr;
     NSMapTable * _dicM;
@@ -65,55 +65,55 @@ return v;
 
 - (instancetype)init
 {
-    return [JDSafeDictionary strongObjects];
+    return [EMASCurlSafeDictionary strongObjects];
 }
 
 - (void)removeObjectForKey:(id)aKey{
     if (aKey!=nil) {
-        JDSafeDictionaryLock(, [_dicM removeObjectForKey:aKey])
+        EMASCurlSafeDictionaryLock(, [_dicM removeObjectForKey:aKey])
     }
 }
 - (void)setObject:(id)anObject forKey:(id)aKey{
     if (anObject == nil) return;
-    JDSafeDictionaryLock(,[_dicM setObject:anObject forKey:aKey])
+    EMASCurlSafeDictionaryLock(,[_dicM setObject:anObject forKey:aKey])
 }
 - (void)removeAllObjects{
-    JDSafeDictionaryLock(,[_dicM removeAllObjects])
+    EMASCurlSafeDictionaryLock(,[_dicM removeAllObjects])
 }
 - (void)addEntriesFromDictionary:(NSDictionary *)otherDictionary{
     if (![otherDictionary isKindOfClass:[NSDictionary class]]) return;
-    JDSafeDictionaryLock(,[otherDictionary enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+    EMASCurlSafeDictionaryLock(,[otherDictionary enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
         [_dicM setObject:obj forKey:key];
     }])
 }
 - (NSDictionary *)dictionary{
     id obj;
-    JDSafeDictionaryLock(obj,obj = _dicM.dictionaryRepresentation);
+    EMASCurlSafeDictionaryLock(obj,obj = _dicM.dictionaryRepresentation);
 }
 
 - (NSArray *)allKeys{
     id obj;
-    JDSafeDictionaryLock(obj,obj = [_dicM.dictionaryRepresentation allKeys]);
+    EMASCurlSafeDictionaryLock(obj,obj = [_dicM.dictionaryRepresentation allKeys]);
 }
 
 - (NSArray *)allValues{
     id obj;
-    JDSafeDictionaryLock(obj,obj = [_dicM.dictionaryRepresentation allValues]);
+    EMASCurlSafeDictionaryLock(obj,obj = [_dicM.dictionaryRepresentation allValues]);
 }
 
 - (NSInteger)count{
     NSInteger count;
-    JDSafeDictionaryLock(count,count = [_dicM.dictionaryRepresentation count]);
+    EMASCurlSafeDictionaryLock(count,count = [_dicM.dictionaryRepresentation count]);
 }
 
 - (NSArray *)allKeysForObject:(id)anObject{
     id obj;
-    JDSafeDictionaryLock(obj,obj = [_dicM.dictionaryRepresentation allKeysForObject:anObject])
+    EMASCurlSafeDictionaryLock(obj,obj = [_dicM.dictionaryRepresentation allKeysForObject:anObject])
 }
 
 - (id)objectForKey:(id)aKey{
     id obj;
-    JDSafeDictionaryLock(obj,obj = [_dicM objectForKey:aKey])
+    EMASCurlSafeDictionaryLock(obj,obj = [_dicM objectForKey:aKey])
 }
 
 - (nullable id)objectForKeyedSubscript:(id)key{
@@ -126,7 +126,7 @@ return v;
     [self enumerateKeysAndObjectsWithOptions:NSEnumerationConcurrent usingBlock:block];
 }
 - (void)enumerateKeysAndObjectsWithOptions:(NSEnumerationOptions)opts usingBlock:(void (NS_NOESCAPE ^)(id key, id obj, BOOL *stop))block{
-    JDSafeDictionaryLock(, [_dicM.dictionaryRepresentation enumerateKeysAndObjectsWithOptions:opts usingBlock:block])
+    EMASCurlSafeDictionaryLock(, [_dicM.dictionaryRepresentation enumerateKeysAndObjectsWithOptions:opts usingBlock:block])
 }
 - (id)copyWithZone:(NSZone *)zone{
     return self.dictionary;
@@ -137,4 +137,4 @@ return v;
     pthread_mutex_destroy(&_lock);
 }
 @end
-#undef JDSafeDictionaryLock
+#undef EMASCurlSafeDictionaryLock

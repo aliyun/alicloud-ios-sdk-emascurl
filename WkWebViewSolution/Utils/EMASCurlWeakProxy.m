@@ -1,7 +1,7 @@
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
  
-#import "JDWeakProxy.h"
+#import "EMASCurlWeakProxy.h"
 
-@implementation JDWeakProxy
+@implementation EMASCurlWeakProxy
 
 - (instancetype)initWithTarget:(id)target {
     _target = target;
@@ -32,7 +32,7 @@ SOFTWARE.
 }
 
 + (instancetype)proxyWithTarget:(id)target {
-    return [[JDWeakProxy alloc] initWithTarget:target];
+    return [[EMASCurlWeakProxy alloc] initWithTarget:target];
 }
 
 - (id)forwardingTargetForSelector:(SEL)selector {

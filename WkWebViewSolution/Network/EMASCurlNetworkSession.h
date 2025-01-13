@@ -1,10 +1,10 @@
 //
-//  JDNetworkSession.h
-//  JDBJDModule
+//  EMASCurlNetworkSession.h
+//  EMASCurlBJDModule
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,11 +26,11 @@ SOFTWARE.
  */
 
 #import <Foundation/Foundation.h>
-#import "JDCacheProtocol.h"
+#import "EMASCurlCacheProtocol.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface JDNetworkSessionConfiguration: NSObject
+@interface EMASCurlNetworkSessionConfiguration: NSObject
 
 @property (nonatomic, assign) NSUInteger cacheCountLimit; // 缓存数量限制
 
@@ -42,17 +42,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-typedef NS_ENUM(NSInteger, JDNetworkDataTaskPriority) {
-    JDNetworkDataTaskPriorityNormal = 1,
-    JDNetworkDataTaskPriorityHigh,
-    JDNetworkDataTaskPriorityVeryHigh,
+typedef NS_ENUM(NSInteger, EMASCurlNetworkDataTaskPriority) {
+    EMASCurlNetworkDataTaskPriorityNormal = 1,
+    EMASCurlNetworkDataTaskPriorityHigh,
+    EMASCurlNetworkDataTaskPriorityVeryHigh,
 };
 
-@interface JDNetworkDataTask : NSObject
+@interface EMASCurlNetworkDataTask : NSObject
 
 @property (nullable, readonly, copy) NSURLRequest  *originalRequest;
 
-@property (nonatomic) JDNetworkDataTaskPriority dataTaskPriority; // 任务优先级
+@property (nonatomic) EMASCurlNetworkDataTaskPriority dataTaskPriority; // 任务优先级
 
 @property (nonatomic, assign) NSUInteger retryLimit; // 最大重试次数
 
@@ -63,25 +63,25 @@ typedef NS_ENUM(NSInteger, JDNetworkDataTaskPriority) {
 @end
 
 NS_CLASS_AVAILABLE_IOS(10_0)
-@interface JDNetworkSession : NSObject
+@interface EMASCurlNetworkSession : NSObject
 
 @property (nonatomic, copy, nullable) NSString *mainUrl; // 页面主URL
 
-+ (instancetype)sessionWithConfiguation:(JDNetworkSessionConfiguration *)configuration ;
++ (instancetype)sessionWithConfiguation:(EMASCurlNetworkSessionConfiguration *)configuration ;
 
-- (nullable JDNetworkDataTask *)dataTaskWithRequest:(NSURLRequest *)request
-                                   responseCallback:(JDNetResponseCallback)responseCallback
-                                       dataCallback:(JDNetDataCallback)dataCallback
-                                    successCallback:(JDNetSuccessCallback)successCallback
-                                       failCallback:(JDNetFailCallback)failCallback
-                                   redirectCallback:(JDNetRedirectCallback)redirectCallback ;
-- (nullable JDNetworkDataTask *)dataTaskWithRequest:(NSURLRequest *)request
-                                   responseCallback:(nullable JDNetResponseCallback)responseCallback
-                                   progressCallBack:(nullable JDNetProgressCallBack)progressCallBack
-                                       dataCallback:(JDNetDataCallback)dataCallback
-                                    successCallback:(JDNetSuccessCallback)successCallback
-                                       failCallback:(JDNetFailCallback)failCallback
-                                   redirectCallback:(JDNetRedirectCallback)redirectCallback ;
+- (nullable EMASCurlNetworkDataTask *)dataTaskWithRequest:(NSURLRequest *)request
+                                   responseCallback:(EMASCurlNetResponseCallback)responseCallback
+                                       dataCallback:(EMASCurlNetDataCallback)dataCallback
+                                    successCallback:(EMASCurlNetSuccessCallback)successCallback
+                                       failCallback:(EMASCurlNetFailCallback)failCallback
+                                   redirectCallback:(EMASCurlNetRedirectCallback)redirectCallback ;
+- (nullable EMASCurlNetworkDataTask *)dataTaskWithRequest:(NSURLRequest *)request
+                                   responseCallback:(nullable EMASCurlNetResponseCallback)responseCallback
+                                   progressCallBack:(nullable EMASCurlNetProgressCallBack)progressCallBack
+                                       dataCallback:(EMASCurlNetDataCallback)dataCallback
+                                    successCallback:(EMASCurlNetSuccessCallback)successCallback
+                                       failCallback:(EMASCurlNetFailCallback)failCallback
+                                   redirectCallback:(EMASCurlNetRedirectCallback)redirectCallback ;
 
 /// 是否超过缓存限制
 /// @param cost 本地待缓存大小
@@ -92,7 +92,7 @@ NS_CLASS_AVAILABLE_IOS(10_0)
 - (void)updateCacheCapacityWithCost:(NSUInteger)cost ;
 
 /// 取消任务
-- (void)cancelTask:(JDNetworkDataTask *)task;
+- (void)cancelTask:(EMASCurlNetworkDataTask *)task;
 
 /// 取消所有任务
 - (void)cancelAllTasks ;

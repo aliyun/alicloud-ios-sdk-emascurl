@@ -1,10 +1,10 @@
 //
 //  WKWebViewConfiguration+Loader.h
-//  JDHybrid
+//  EMASCurlHybrid
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@ SOFTWARE.
  */
 
 #import <WebKit/WebKit.h>
-#import "JDCacheLoader.h"
+#import "EMASCurlCacheLoader.h"
 
 
 NS_ASSUME_NONNULL_BEGIN
@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
 API_AVAILABLE(ios(LimitVersion))
 @interface WKWebViewConfiguration (Loader)
 
-@property (nonatomic, strong, readonly, nullable) JDCacheLoader *loader;
+@property (nonatomic, strong, readonly, nullable) EMASCurlCacheLoader *loader;
 
 @end
 

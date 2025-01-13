@@ -1,10 +1,10 @@
 //
-//  JDNetworkManager.m
-//  JDBJDModule
+//  EMASCurlNetworkManager.m
+//  EMASCurlBJDModule
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,23 +25,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import "JDNetworkManager.h"
-#import "JDSafeDictionary.h"
+#import "EMASCurlNetworkManager.h"
+#import "EMASCurlSafeDictionary.h"
 #import <WebKit/Webkit.h>
-@interface JDNetworkCallBackWorker ()
-@property (nonatomic, copy) JDNetResponseCallback responseCallback;
-@property (nonatomic, copy) JDNetDataCallback dataCallback;
-@property (nonatomic, copy) JDNetSuccessCallback successCallback;
-@property (nonatomic, copy) JDNetFailCallback failCallback;
-@property (nonatomic, copy) JDNetRedirectCallback redirectCallback;
-@property (nonatomic, copy) JDNetProgressCallBack progressCallBack;
+@interface EMASCurlNetworkCallBackWorker ()
+@property (nonatomic, copy) EMASCurlNetResponseCallback responseCallback;
+@property (nonatomic, copy) EMASCurlNetDataCallback dataCallback;
+@property (nonatomic, copy) EMASCurlNetSuccessCallback successCallback;
+@property (nonatomic, copy) EMASCurlNetFailCallback failCallback;
+@property (nonatomic, copy) EMASCurlNetRedirectCallback redirectCallback;
+@property (nonatomic, copy) EMASCurlNetProgressCallBack progressCallBack;
 @end
-@implementation JDNetworkCallBackWorker
-- (instancetype)initWithResponseCallback:(JDNetResponseCallback)responseCallback
-                            dataCallback:(JDNetDataCallback)dataCallback
-                         successCallback:(JDNetSuccessCallback)successCallback
-                            failCallback:(JDNetFailCallback)failCallback
-                        redirectCallback:(JDNetRedirectCallback)redirectCallback {
+@implementation EMASCurlNetworkCallBackWorker
+- (instancetype)initWithResponseCallback:(EMASCurlNetResponseCallback)responseCallback
+                            dataCallback:(EMASCurlNetDataCallback)dataCallback
+                         successCallback:(EMASCurlNetSuccessCallback)successCallback
+                            failCallback:(EMASCurlNetFailCallback)failCallback
+                        redirectCallback:(EMASCurlNetRedirectCallback)redirectCallback {
     self = [super init];
     if (self) {
         _responseCallback = responseCallback;
@@ -54,33 +54,33 @@ SOFTWARE.
 }
 @end
 
-@interface JDNetworkManager ()<NSURLSessionTaskDelegate, NSURLSessionDataDelegate>
+@interface EMASCurlNetworkManager ()<NSURLSessionTaskDelegate, NSURLSessionDataDelegate>
 @property (nonatomic, strong) NSURLSession *URLSession;
 @property (nonatomic, strong) NSOperationQueue *requestCallbackQueue;
-@property (nonatomic, strong) JDSafeDictionary *taskToCallBackWorkerMap;
-@property (nonatomic, strong) JDSafeDictionary *taskidToDataTaskMap;
+@property (nonatomic, strong) EMASCurlSafeDictionary *taskToCallBackWorkerMap;
+@property (nonatomic, strong) EMASCurlSafeDictionary *taskidToDataTaskMap;
 @end
 
-@implementation JDNetworkManager
+@implementation EMASCurlNetworkManager
 
 + (void)start {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        __unused JDNetworkManager *manager = [JDNetworkManager shareManager];
+        __unused EMASCurlNetworkManager *manager = [EMASCurlNetworkManager shareManager];
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-variable"
         __unused NSOperationQueue *operationQueue = manager.requestCallbackQueue;
-        __unused JDSafeDictionary *operationMap = manager.taskToCallBackWorkerMap;
-        __unused JDSafeDictionary *dataTaskMap = manager.taskidToDataTaskMap;
+        __unused EMASCurlSafeDictionary *operationMap = manager.taskToCallBackWorkerMap;
+        __unused EMASCurlSafeDictionary *dataTaskMap = manager.taskidToDataTaskMap;
 #pragma clang diagnostic pop
     });
 }
 
 + (instancetype)shareManager {
-    static JDNetworkManager *_shareManager;
+    static EMASCurlNetworkManager *_shareManager;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _shareManager = [[JDNetworkManager alloc] init];
+        _shareManager = [[EMASCurlNetworkManager alloc] init];
     });
     return _shareManager;
 }
@@ -108,11 +108,11 @@ SOFTWARE.
 }
 
 - (RequestTaskIdentifier)startWithRequest:(NSURLRequest *)request
-                         responseCallback:(JDNetResponseCallback)responseCallback
-                             dataCallback:(JDNetDataCallback)dataCallback
-                          successCallback:(JDNetSuccessCallback)successCallback
-                             failCallback:(JDNetFailCallback)failCallback
-                         redirectCallback:(JDNetRedirectCallback)redirectCallback {
+                         responseCallback:(EMASCurlNetResponseCallback)responseCallback
+                             dataCallback:(EMASCurlNetDataCallback)dataCallback
+                          successCallback:(EMASCurlNetSuccessCallback)successCallback
+                             failCallback:(EMASCurlNetFailCallback)failCallback
+                         redirectCallback:(EMASCurlNetRedirectCallback)redirectCallback {
     return [self startWithRequest:request
                  responseCallback:responseCallback
                  progressCallBack:nil
@@ -124,12 +124,12 @@ SOFTWARE.
 
 
 - (RequestTaskIdentifier)startWithRequest:(NSURLRequest *)request
-                         responseCallback:(JDNetResponseCallback)responseCallback
-                         progressCallBack:(JDNetProgressCallBack)progressCallBack
-                             dataCallback:(JDNetDataCallback)dataCallback
-                          successCallback:(JDNetSuccessCallback)successCallback
-                             failCallback:(JDNetFailCallback)failCallback
-                         redirectCallback:(JDNetRedirectCallback)redirectCallback {
+                         responseCallback:(EMASCurlNetResponseCallback)responseCallback
+                         progressCallBack:(EMASCurlNetProgressCallBack)progressCallBack
+                             dataCallback:(EMASCurlNetDataCallback)dataCallback
+                          successCallback:(EMASCurlNetSuccessCallback)successCallback
+                             failCallback:(EMASCurlNetFailCallback)failCallback
+                         redirectCallback:(EMASCurlNetRedirectCallback)redirectCallback {
 
     if (!self.URLSession) {
         @synchronized (self) {
@@ -138,7 +138,7 @@ SOFTWARE.
     }
 
     NSURLSessionDataTask *dataTask = [self.URLSession dataTaskWithRequest:request];
-    JDNetworkCallBackWorker *cbworker = [[JDNetworkCallBackWorker alloc]
+    EMASCurlNetworkCallBackWorker *cbworker = [[EMASCurlNetworkCallBackWorker alloc]
                                          initWithResponseCallback:responseCallback
                                          dataCallback:dataCallback
                                          successCallback:successCallback
@@ -159,21 +159,21 @@ SOFTWARE.
         _requestCallbackQueue = [NSOperationQueue new];
         _requestCallbackQueue.qualityOfService = NSQualityOfServiceUserInitiated;
         _requestCallbackQueue.maxConcurrentOperationCount = 1;
-        _requestCallbackQueue.name = @"com.jd.networkcallback";
+        _requestCallbackQueue.name = @"com.EMASCurl.networkcallback";
     }
     return _requestCallbackQueue;
 }
 
-- (JDSafeDictionary *)taskToCallBackWorkerMap {
+- (EMASCurlSafeDictionary *)taskToCallBackWorkerMap {
     if (!_taskToCallBackWorkerMap) {
-        _taskToCallBackWorkerMap = [JDSafeDictionary new];
+        _taskToCallBackWorkerMap = [EMASCurlSafeDictionary new];
     }
     return _taskToCallBackWorkerMap;
 }
 
-- (JDSafeDictionary *)taskidToDataTaskMap {
+- (EMASCurlSafeDictionary *)taskidToDataTaskMap {
     if (!_taskidToDataTaskMap) {
-        _taskidToDataTaskMap = [JDSafeDictionary new];
+        _taskidToDataTaskMap = [EMASCurlSafeDictionary new];
     }
     return _taskidToDataTaskMap;
 }
@@ -182,7 +182,7 @@ SOFTWARE.
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSHTTPURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler{
     [self syncCookieToWKWithResponse:response];
-    JDNetworkCallBackWorker *cbworker = [self.taskToCallBackWorkerMap objectForKey:@(dataTask.taskIdentifier)];
+    EMASCurlNetworkCallBackWorker *cbworker = [self.taskToCallBackWorkerMap objectForKey:@(dataTask.taskIdentifier)];
     if (cbworker) {
         cbworker.responseCallback(response);
     }
@@ -190,14 +190,14 @@ SOFTWARE.
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data{
-    JDNetworkCallBackWorker *cbworker = [self.taskToCallBackWorkerMap objectForKey:@(dataTask.taskIdentifier)];
+    EMASCurlNetworkCallBackWorker *cbworker = [self.taskToCallBackWorkerMap objectForKey:@(dataTask.taskIdentifier)];
     if (cbworker) {
         cbworker.dataCallback(data);
     }
 }
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error{
-    JDNetworkCallBackWorker *cbworker = [self.taskToCallBackWorkerMap objectForKey:@(task.taskIdentifier)];
+    EMASCurlNetworkCallBackWorker *cbworker = [self.taskToCallBackWorkerMap objectForKey:@(task.taskIdentifier)];
     if (!cbworker) return;
     if (error) {
         cbworker.failCallback(error);
@@ -211,7 +211,7 @@ SOFTWARE.
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLRequest *)request completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler{
     [self syncCookieToWKWithResponse:response];
-    JDNetworkCallBackWorker *cbworker = [self.taskToCallBackWorkerMap objectForKey:@(task.taskIdentifier)];
+    EMASCurlNetworkCallBackWorker *cbworker = [self.taskToCallBackWorkerMap objectForKey:@(task.taskIdentifier)];
     void(^redirectDecisionCallback)(BOOL) = ^(BOOL canPass) {
         if (canPass) {
             completionHandler(request);
@@ -225,7 +225,7 @@ SOFTWARE.
 }
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend{
-    JDNetworkCallBackWorker *cbworker = [self.taskToCallBackWorkerMap objectForKey:@(task.taskIdentifier)];
+    EMASCurlNetworkCallBackWorker *cbworker = [self.taskToCallBackWorkerMap objectForKey:@(task.taskIdentifier)];
     if (cbworker.progressCallBack) {
         cbworker.progressCallBack(task.countOfBytesSent,task.countOfBytesExpectedToSend);
     }

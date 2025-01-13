@@ -1,10 +1,10 @@
 //
-//  JDCacheLoader.h
-//  JDHybrid
+//  EMASCurlCache.m
+//  EMASCurlHybrid
 /*
  MIT License
 
-Copyright (c) 2022 JD.com, Inc.
+Copyright (c) 2022 EMASCurl.com, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,24 +26,22 @@ SOFTWARE.
  */
 
 #import <Foundation/Foundation.h>
-#import "JDCacheProtocol.h"
-#import "JDUtils.h"
+#import "EMASCurlCache.h"
+#import "EMASCurlUtils.h"
 
+@implementation EMASCurlCache
 
-NS_ASSUME_NONNULL_BEGIN
++ (EMASCurlCache *)shareInstance{
+    static EMASCurlCache *cache = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        cache = [EMASCurlCache new];
+    });
+    return cache;
+}
 
-API_AVAILABLE(ios(LimitVersion))
-@interface JDCacheLoader : NSObject
-
-@property (nonatomic, assign) BOOL enable; // 开启Hybrid功能(默认为NO)
-
-@property (nonatomic, assign) BOOL degrade; // 降级（降级后不会匹配离线资源）
-
-/// 匹配器数组
-/// 设置后JDCache会在拦截到请求后，依次在匹配器中查找资源，直到匹配为止；
-/// 若全部没有匹配，则走原生网络请求
-@property (nonatomic, copy) NSArray<id<JDResourceMatcherImplProtocol>> *matchers;
+- (void)setLogEnabled:(BOOL)logEnabled {
+    [EMASCurlUtils setLogEnable:logEnabled];
+}
 
 @end
-
-NS_ASSUME_NONNULL_END
