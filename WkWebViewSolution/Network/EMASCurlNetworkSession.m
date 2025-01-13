@@ -8,8 +8,8 @@
 #import "EMASCurlUtils.h"
 #import <os/lock.h>
 
-NSTimeInterval const kJDPriorityNormalTimeoutInterval = 15;
-NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
+NSTimeInterval const kEMASCurlPriorityNormalTimeoutInterval = 15;
+NSTimeInterval const kEMASCurlPriorityVeryHighTimeoutInterval = 1;
 
 #pragma mark - NetworkSession配置 (对相同的EMASCurlNetworkSession实例生效)
 @implementation EMASCurlNetworkSessionConfiguration
@@ -20,7 +20,7 @@ NSTimeInterval const kJDPriorityVeryHighTimeoutInterval = 1;
         _cacheCountLimit = 0;
         _cacheCostLimit = 0;
         _retryLimit = 0;
-        _networkTimeoutInterval = kJDPriorityNormalTimeoutInterval;
+        _networkTimeoutInterval = kEMASCurlPriorityNormalTimeoutInterval;
     }
     return self;
 }

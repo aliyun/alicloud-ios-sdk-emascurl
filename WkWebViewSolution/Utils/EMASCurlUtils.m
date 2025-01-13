@@ -4,11 +4,11 @@
 #import <mach/mach_host.h>
 #import <sys/utsname.h>
 
-static BOOL gJDCacheLogEnable = NO;
+static BOOL gEMASCurlCacheLogEnable = NO;
 
 //// log
 void EMASCurlCacheLog(NSString *format, ...) {
-    if (!gJDCacheLogEnable) {
+    if (!gEMASCurlCacheLogEnable) {
         return;
     }
     va_list args;
@@ -32,7 +32,7 @@ static NSDateFormatter *hybridDateFormatter = nil;
 }
 
 + (void)setLogEnable:(BOOL)enable {
-    gJDCacheLogEnable = enable;
+    gEMASCurlCacheLogEnable = enable;
 }
 
 + (BOOL)isValidStr:(NSString *)str{
