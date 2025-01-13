@@ -40,14 +40,6 @@ typedef void(^JDNetRedirectCallback)(NSURLResponse * _Nonnull response,
 typedef void(^JDNetProgressCallBack)(int64_t nowBytes,int64_t total);
 
 
-typedef NS_ENUM(NSUInteger, JDCacheErrorCode) {
-    JDCacheErrorCodePreloadUnstart = 90001, // 预加载未开始
-    JDCacheErrorCodeTimeout, // 超时
-    JDCacheErrorCodeNotFind, // 资源未找到
-    JDCacheErrorCodePreloadError, // 预加载失败
-    JDCacheErrorCodeOther // 其他
-};
-
 /// 匹配器须遵守此协议并实现方法
 @protocol JDResourceMatcherImplProtocol <NSObject>
 

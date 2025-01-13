@@ -28,7 +28,6 @@ SOFTWARE.
 #import "JDResourceMatcherManager.h"
 #import "JDUtils.h"
 #import "JDNetworkResourceMatcher.h"
-#import "JDPreloadHtmlMatcher.h"
 #import "JDResourceMatcherIterator.h"
 #import <os/lock.h>
 #import "JDUtils.h"

@@ -30,7 +30,7 @@
 		9492D6972D3021EA00008A84 /* JDNetworkOperationQueue.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6802D3021EA00008A84 /* JDNetworkOperationQueue.m */; };
 		9492D6982D3021EA00008A84 /* JDURLCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6842D3021EA00008A84 /* JDURLCache.m */; };
 		9492D6992D3021EA00008A84 /* JDSafeArray.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6872D3021EA00008A84 /* JDSafeArray.m */; };
-		9492D69A2D3021EA00008A84 /* JDNetworkManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D67D2D3021EA00008A84 /* JDNetworkManager.h */; };
+		9492D69A2D3021EA00008A84 /* JDNetworkManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D67D2D3021EA00008A84 /* JDNetworkManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		9492D69B2D3021EA00008A84 /* JDSafeDictionary.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D6882D3021EA00008A84 /* JDSafeDictionary.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		9492D69C2D3021EA00008A84 /* JDCachedURLResponse.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D67B2D3021EA00008A84 /* JDCachedURLResponse.h */; };
 		9492D69D2D3021EA00008A84 /* JDSafeArray.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D6862D3021EA00008A84 /* JDSafeArray.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -48,16 +48,13 @@
 		9492D6B42D3022A700008A84 /* WKWebViewConfiguration+Loader.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6B12D3022A700008A84 /* WKWebViewConfiguration+Loader.m */; };
 		9492D6B52D3022A700008A84 /* JDCacheLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D6AE2D3022A700008A84 /* JDCacheLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		9492D6B62D3022A700008A84 /* WKWebViewConfiguration+Loader.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D6B02D3022A700008A84 /* WKWebViewConfiguration+Loader.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		9492D6BA2D3022C200008A84 /* JDCachePreload.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6B82D3022C200008A84 /* JDCachePreload.m */; };
-		9492D6BB2D3022C200008A84 /* JDCachePreload.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D6B72D3022C200008A84 /* JDCachePreload.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		9492D6C52D3022D200008A84 /* JDResourceMatcherIterator.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6C12D3022D200008A84 /* JDResourceMatcherIterator.m */; };
-		9492D6C62D3022D200008A84 /* JDPreloadHtmlMatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6BF2D3022D200008A84 /* JDPreloadHtmlMatcher.m */; };
 		9492D6C72D3022D200008A84 /* JDNetworkResourceMatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6BD2D3022D200008A84 /* JDNetworkResourceMatcher.m */; };
 		9492D6C82D3022D200008A84 /* JDResourceMatcherManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6C32D3022D200008A84 /* JDResourceMatcherManager.m */; };
 		9492D6C92D3022D200008A84 /* JDNetworkResourceMatcher.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D6BC2D3022D200008A84 /* JDNetworkResourceMatcher.h */; };
-		9492D6CA2D3022D200008A84 /* JDPreloadHtmlMatcher.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D6BE2D3022D200008A84 /* JDPreloadHtmlMatcher.h */; };
 		9492D6CB2D3022D200008A84 /* JDResourceMatcherIterator.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D6C02D3022D200008A84 /* JDResourceMatcherIterator.h */; };
 		9492D6CC2D3022D200008A84 /* JDResourceMatcherManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 9492D6C22D3022D200008A84 /* JDResourceMatcherManager.h */; };
+		9492D8242D34318200008A84 /* NetworkCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D8232D34318200008A84 /* NetworkCache.m */; };
 		949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */; };
 		949539152D0FC531001FE850 /* EMASCurlSimpleTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539142D0FC531001FE850 /* EMASCurlSimpleTest.m */; };
 		949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539162D1020B7001FE850 /* EMASCurlUploadTest.m */; };
@@ -129,16 +126,14 @@
 		9492D6AF2D3022A700008A84 /* JDCacheLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JDCacheLoader.m; sourceTree = "<group>"; };
 		9492D6B02D3022A700008A84 /* WKWebViewConfiguration+Loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WKWebViewConfiguration+Loader.h"; sourceTree = "<group>"; };
 		9492D6B12D3022A700008A84 /* WKWebViewConfiguration+Loader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "WKWebViewConfiguration+Loader.m"; sourceTree = "<group>"; };
-		9492D6B72D3022C200008A84 /* JDCachePreload.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JDCachePreload.h; sourceTree = "<group>"; };
-		9492D6B82D3022C200008A84 /* JDCachePreload.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JDCachePreload.m; sourceTree = "<group>"; };
 		9492D6BC2D3022D200008A84 /* JDNetworkResourceMatcher.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JDNetworkResourceMatcher.h; sourceTree = "<group>"; };
 		9492D6BD2D3022D200008A84 /* JDNetworkResourceMatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JDNetworkResourceMatcher.m; sourceTree = "<group>"; };
-		9492D6BE2D3022D200008A84 /* JDPreloadHtmlMatcher.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JDPreloadHtmlMatcher.h; sourceTree = "<group>"; };
-		9492D6BF2D3022D200008A84 /* JDPreloadHtmlMatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JDPreloadHtmlMatcher.m; sourceTree = "<group>"; };
 		9492D6C02D3022D200008A84 /* JDResourceMatcherIterator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JDResourceMatcherIterator.h; sourceTree = "<group>"; };
 		9492D6C12D3022D200008A84 /* JDResourceMatcherIterator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JDResourceMatcherIterator.m; sourceTree = "<group>"; };
 		9492D6C22D3022D200008A84 /* JDResourceMatcherManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JDResourceMatcherManager.h; sourceTree = "<group>"; };
 		9492D6C32D3022D200008A84 /* JDResourceMatcherManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JDResourceMatcherManager.m; sourceTree = "<group>"; };
+		9492D8222D34318200008A84 /* NetworkCache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NetworkCache.h; sourceTree = "<group>"; };
+		9492D8232D34318200008A84 /* NetworkCache.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NetworkCache.m; sourceTree = "<group>"; };
 		949538C92D0E7736001FE850 /* EMASCurlTestConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlTestConstants.h; sourceTree = "<group>"; };
 		949538CC2D0F1CB3001FE850 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlDownloadTest.m; sourceTree = "<group>"; };
@@ -288,6 +283,8 @@
 				6F3F60352CD0E0890014025B /* ViewController.m */,
 				9492D6A42D30226200008A84 /* RequestDemoController.h */,
 				9492D6A52D30226200008A84 /* RequestDemoController.m */,
+				9492D8222D34318200008A84 /* NetworkCache.h */,
+				9492D8232D34318200008A84 /* NetworkCache.m */,
 				9492D6A62D30226200008A84 /* WkWebViewDemoController.h */,
 				9492D6A72D30226200008A84 /* WkWebViewDemoController.m */,
 			);
@@ -329,12 +326,11 @@
 		9492D6902D3021EA00008A84 /* WkWebViewSolution */ = {
 			isa = PBXGroup;
 			children = (
-				9492D6C42D3022D200008A84 /* ResourceMatcher */,
-				9492D6B92D3022C200008A84 /* Preload */,
-				9492D6B22D3022A700008A84 /* Configure */,
-				9492D68F2D3021EA00008A84 /* JDCacheProtocol.h */,
 				9492D6AA2D30228D00008A84 /* JDCache.h */,
 				9492D6AB2D30228D00008A84 /* JDCache.m */,
+				9492D68F2D3021EA00008A84 /* JDCacheProtocol.h */,
+				9492D6C42D3022D200008A84 /* ResourceMatcher */,
+				9492D6B22D3022A700008A84 /* Configure */,
 				9492D6852D3021EA00008A84 /* Network */,
 				9492D68E2D3021EA00008A84 /* Utils */,
 			);
@@ -352,22 +348,11 @@
 			path = Configure;
 			sourceTree = "<group>";
 		};
-		9492D6B92D3022C200008A84 /* Preload */ = {
-			isa = PBXGroup;
-			children = (
-				9492D6B72D3022C200008A84 /* JDCachePreload.h */,
-				9492D6B82D3022C200008A84 /* JDCachePreload.m */,
-			);
-			path = Preload;
-			sourceTree = "<group>";
-		};
 		9492D6C42D3022D200008A84 /* ResourceMatcher */ = {
 			isa = PBXGroup;
 			children = (
 				9492D6BC2D3022D200008A84 /* JDNetworkResourceMatcher.h */,
 				9492D6BD2D3022D200008A84 /* JDNetworkResourceMatcher.m */,
-				9492D6BE2D3022D200008A84 /* JDPreloadHtmlMatcher.h */,
-				9492D6BF2D3022D200008A84 /* JDPreloadHtmlMatcher.m */,
 				9492D6C02D3022D200008A84 /* JDResourceMatcherIterator.h */,
 				9492D6C12D3022D200008A84 /* JDResourceMatcherIterator.m */,
 				9492D6C22D3022D200008A84 /* JDResourceMatcherManager.h */,
@@ -394,12 +379,11 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9492D69A2D3021EA00008A84 /* JDNetworkManager.h in Headers */,
 				9492D6AD2D30228D00008A84 /* JDCache.h in Headers */,
+				9492D69A2D3021EA00008A84 /* JDNetworkManager.h in Headers */,
 				9492D6A02D3021EA00008A84 /* JDCacheProtocol.h in Headers */,
 				9492D6B52D3022A700008A84 /* JDCacheLoader.h in Headers */,
 				9492D6B62D3022A700008A84 /* WKWebViewConfiguration+Loader.h in Headers */,
-				9492D6BB2D3022C200008A84 /* JDCachePreload.h in Headers */,
 				9492D69F2D3021EA00008A84 /* JDUtils.h in Headers */,
 				9492D69D2D3021EA00008A84 /* JDSafeArray.h in Headers */,
 				9492D69B2D3021EA00008A84 /* JDSafeDictionary.h in Headers */,
@@ -408,7 +392,6 @@
 				9492D6A12D3021EA00008A84 /* JDURLCache.h in Headers */,
 				9492D6A22D3021EA00008A84 /* JDNetworkSession.h in Headers */,
 				9492D6C92D3022D200008A84 /* JDNetworkResourceMatcher.h in Headers */,
-				9492D6CA2D3022D200008A84 /* JDPreloadHtmlMatcher.h in Headers */,
 				9492D6CB2D3022D200008A84 /* JDResourceMatcherIterator.h in Headers */,
 				9492D6CC2D3022D200008A84 /* JDResourceMatcherManager.h in Headers */,
 				9492D6A32D3021EA00008A84 /* JDWeakProxy.h in Headers */,
@@ -468,6 +451,7 @@
 				6F3F5FF32CD0DB6E0014025B /* Sources */,
 				6F3F5FF42CD0DB6E0014025B /* Frameworks */,
 				6F3F5FF52CD0DB6E0014025B /* Resources */,
+				B6104D0899E0506A8BDD5047 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -547,6 +531,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		B6104D0899E0506A8BDD5047 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		E47199EE6DAF4B10E966261D /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -576,7 +577,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9492D6BA2D3022C200008A84 /* JDCachePreload.m in Sources */,
 				9492D6912D3021EA00008A84 /* JDSafeDictionary.m in Sources */,
 				9492D6922D3021EA00008A84 /* JDWeakProxy.m in Sources */,
 				9492D6B32D3022A700008A84 /* JDCacheLoader.m in Sources */,
@@ -589,7 +589,6 @@
 				9492D6972D3021EA00008A84 /* JDNetworkOperationQueue.m in Sources */,
 				9492D6982D3021EA00008A84 /* JDURLCache.m in Sources */,
 				9492D6C52D3022D200008A84 /* JDResourceMatcherIterator.m in Sources */,
-				9492D6C62D3022D200008A84 /* JDPreloadHtmlMatcher.m in Sources */,
 				9492D6C72D3022D200008A84 /* JDNetworkResourceMatcher.m in Sources */,
 				9492D6C82D3022D200008A84 /* JDResourceMatcherManager.m in Sources */,
 				9492D6992D3021EA00008A84 /* JDSafeArray.m in Sources */,
@@ -619,6 +618,7 @@
 				9492D6A92D30226200008A84 /* WkWebViewDemoController.m in Sources */,
 				6F3F60372CD0E0890014025B /* AppDelegate.m in Sources */,
 				6F3F60382CD0E0890014025B /* main.m in Sources */,
+				9492D8242D34318200008A84 /* NetworkCache.m in Sources */,
 				6F3F60392CD0E0890014025B /* SceneDelegate.m in Sources */,
 				6F3F603A2CD0E0890014025B /* ViewController.m in Sources */,
 			);

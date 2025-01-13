@@ -32,17 +32,8 @@ SOFTWARE.
 #import "JDResourceMatcherManager.h"
 
 #import "WKWebViewConfiguration+Loader.h"
-#import "JDPreloadHtmlMatcher.h"
 
 API_AVAILABLE(ios(LimitVersion))
-
-@interface JDCachePreload (JDCache)
-
-@property (nonatomic, assign, readonly) BOOL havePreload;
-
-- (JDPreloadHtmlMatcher *)defaultPreloadMatcher;
-
-@end
 
 static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
 
@@ -100,10 +91,6 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
         }
         _enable = enable;
     }
-}
-
-- (void)setPreload:(JDCachePreload *)preload {
-    _preload = preload;
 }
 
 - (void)setWebView:(WKWebView *)webView{
@@ -174,7 +161,6 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
                 WKWebView *webview = oldImp(obj,sel,frame,configuration);
                 if (configuration.loader.enable) {
                     configuration.loader.webView = webview;
-                    [configuration.loader.preload startPreload];
                 }
                 return webview;
             });
@@ -237,12 +223,7 @@ static void *JDCacheConfigurationKey = &JDCacheConfigurationKey;
     if (self.degrade) {
         return @[];
     }
-    NSMutableArray<id<JDResourceMatcherImplProtocol>> *matchersM = [NSMutableArray arrayWithArray:self.matchers];
-    if (self.preload) {
-        JDPreloadHtmlMatcher *preloadMatcher = [self.preload defaultPreloadMatcher];
-        [matchersM insertObject:preloadMatcher atIndex:0];
-    }
-    return [matchersM copy];
+    return [NSMutableArray arrayWithArray:self.matchers];
 }
 
 - (void)redirectWithRequest:(NSURLRequest *)redirectRequest {

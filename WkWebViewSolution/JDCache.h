@@ -25,11 +25,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#import <Foundation/Foundation.h>
 #import "JDCacheProtocol.h"
 #import "JDCacheLoader.h"
+#import "JDNetworkManager.h"
 #import "WKWebViewConfiguration+Loader.h"
-#import "JDCachePreload.h"
 #import "JDUtils.h"
 #import "JDSafeArray.h"
 #import "JDSafeDictionary.h"

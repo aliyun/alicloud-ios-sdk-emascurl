@@ -85,21 +85,12 @@ SOFTWARE.
     return _shareManager;
 }
 
-- (instancetype)init
-{
-    self = [super init];
-    if (self) {
-        NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
-        //        sessionConfig.timeoutIntervalForRequest = 0.5;
-        //        sessionConfig.timeoutIntervalForResource = 15;
-        sessionConfig.HTTPShouldUsePipelining = YES;
-        sessionConfig.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
-        _URLSession = [NSURLSession sessionWithConfiguration:sessionConfig
-                                                    delegate:self
-                                               delegateQueue:self.requestCallbackQueue];
-        
-    }
-    return self;
+- (void)configURLSession:(NSURLSessionConfiguration *)urlSessionConfiguration {
+    urlSessionConfiguration.HTTPShouldUsePipelining = YES;
+    urlSessionConfiguration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+    _URLSession = [NSURLSession sessionWithConfiguration:urlSessionConfiguration
+                                                delegate:self
+                                           delegateQueue:self.requestCallbackQueue];
 }
 
 - (void)cancelWithRequestIdentifier:(RequestTaskIdentifier)requestTaskIdentifier {
@@ -139,7 +130,13 @@ SOFTWARE.
                           successCallback:(JDNetSuccessCallback)successCallback
                              failCallback:(JDNetFailCallback)failCallback
                          redirectCallback:(JDNetRedirectCallback)redirectCallback {
-    
+
+    if (!self.URLSession) {
+        @synchronized (self) {
+            [self configURLSession:[NSURLSessionConfiguration defaultSessionConfiguration]];
+        }
+    }
+
     NSURLSessionDataTask *dataTask = [self.URLSession dataTaskWithRequest:request];
     JDNetworkCallBackWorker *cbworker = [[JDNetworkCallBackWorker alloc]
                                          initWithResponseCallback:responseCallback

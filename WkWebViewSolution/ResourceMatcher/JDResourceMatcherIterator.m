@@ -67,38 +67,7 @@ SOFTWARE.
     } dataCallback:^(NSData * _Nonnull data) {
         [self.iteratorDelagate didReceiveData:data urlSchemeTask:urlSchemeTask];
     } failCallback:^(NSError * _Nonnull error) {
-        switch (error.code) {
-            case JDCacheErrorCodePreloadUnstart:
-            case JDCacheErrorCodeTimeout:
-            case JDCacheErrorCodeNotFind:
-            case JDCacheErrorCodePreloadError:
-            {
-                // 网络请求
-                NSString *reason = @"";
-                switch (error.code) {
-                    case JDCacheErrorCodePreloadUnstart:
-                        reason = @"预加载未开始";
-                        break;
-                    case JDCacheErrorCodeTimeout:
-                        reason = @"预加载超时";
-                        break;
-                    case JDCacheErrorCodeNotFind:
-                        reason = @"未找到资源";
-                        break;
-                    case JDCacheErrorCodePreloadError:
-                        reason = @"html预加载失败";
-                        break;
-                }
-                JDCacheLog(@"（重试）从网络请求获取数据，重试原因：%@, url: %@", reason, urlSchemeTask.request.URL.absoluteString);
-                [self networkRequestWithUrlSchemeTask:urlSchemeTask];
-            }
-                break;
-            default:
-            {
-                [self.iteratorDelagate didFailWithError:error urlSchemeTask:urlSchemeTask];
-            }
-                break;
-        }
+        [self.iteratorDelagate didFailWithError:error urlSchemeTask:urlSchemeTask];
     } successCallback:^{
         [self.iteratorDelagate didFinishWithUrlSchemeTask:urlSchemeTask];
     } redirectCallback:^(NSURLResponse * _Nonnull response,

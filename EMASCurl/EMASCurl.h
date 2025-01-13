@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 #import <EMASCurl/EMASCurlProtocol.h>
+#import <EMASCurl/JDCache.h>
 
 //! Project version number for EMASCurl.
 FOUNDATION_EXPORT double EMASCurlVersionNumber;
