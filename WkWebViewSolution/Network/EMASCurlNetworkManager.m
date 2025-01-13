@@ -193,6 +193,7 @@
             completionHandler(request);
         } else {
             [task cancel];
+            completionHandler(nil);
         }
     };
     if (cbworker) {

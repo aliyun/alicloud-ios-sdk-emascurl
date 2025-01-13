@@ -54,6 +54,7 @@
     NSURLSessionConfiguration *urlSessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol setDebugLogEnabled:YES];
     [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
+    [EMASCurlProtocol setHTTPVersion:HTTP2];
     [EMASCurlProtocol setDNSResolver:[SampleDnsResolver class]];
     [EMASCurlProtocol installIntoSessionConfiguration:urlSessionConfig];
 
@@ -62,7 +63,8 @@
     self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:configuration];
     [self.view addSubview:self.webView];
     
-    NSURL *url = [NSURL URLWithString:@"https://mooc1-api.chaoxing.com/mooc-ans/exam/test/transfer/examlist?cxanalyzetag=hp"];
+    // NSURL *url = [NSURL URLWithString:@"https://www.aliyun.com"];
+    NSURL *url = [NSURL URLWithString:@"https://emogine.insights.1688.com/page-targeting/rule-smartservice.console.aliyun.com.json"];
     NSURLRequest *request = [NSURLRequest requestWithURL:url];
     [self.webView loadRequest:request];
 }

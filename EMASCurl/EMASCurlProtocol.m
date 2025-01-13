@@ -651,12 +651,20 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         if (isRedirectionStatusCode(statusCode)) {
             if (!s_enableBuiltInRedirection) {
                 // 关闭了重定向支持，则把重定向信息往外传递
-                NSString *location = protocol.currentResponse.headers[@"Location"];
+                __block NSString *location = nil;
+                [protocol.currentResponse.headers enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSString * _Nonnull obj, BOOL * _Nonnull stop) {
+                    if ([key caseInsensitiveCompare:@"Location"] == NSOrderedSame) {
+                        location = obj;
+                        *stop = YES;
+                    }
+                }];
                 if (location) {
                     NSURL *locationURL = [NSURL URLWithString:location relativeToURL:protocol.request.URL];
                     NSMutableURLRequest *redirectedRequest = [protocol.request mutableCopy];
                     [redirectedRequest setURL:locationURL];
                     [protocol.client URLProtocol:protocol wasRedirectedToRequest:redirectedRequest redirectResponse:httpResponse];
+                } else {
+
                 }
             }
             [protocol.currentResponse reset];

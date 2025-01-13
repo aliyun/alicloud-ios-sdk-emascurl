@@ -20,7 +20,7 @@
 
     // 使用阿里云HTTPDN控制台分配的AccountId构造全局实例
     // 全局只需要初始化一次
-    HttpDnsService *httpdns = [[HttpDnsService alloc] initWithAccountID:139540];
+    HttpDnsService *httpdns = [[HttpDnsService alloc] initWithAccountID:139450];
 
     // 若开启了鉴权访问，则需要到控制台获得鉴权密钥并在初始化时进行配置
     // HttpDnsService *httpdns = [[HttpDnsService alloc] initWithAccountID:xxxxxx secretKey:@"your secret key"];
