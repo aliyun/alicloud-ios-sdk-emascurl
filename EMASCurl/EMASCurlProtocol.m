@@ -98,6 +98,8 @@ static NSString *s_caFilePath;
 
 static BOOL s_enableBuiltInCookieStorage;
 
+static BOOL s_enableBuiltInRedirection;
+
 static NSString *s_proxyServer;
 
 static Class<EMASCurlProtocolDNSResolver> s_dnsResolverClass;
@@ -140,6 +142,10 @@ static bool s_enableDebugLog;
     if (!enabled) {
         [[EMASCurlManager sharedInstance] disableCookieSharing];
     }
+}
+
++ (void)setBuiltInRedirectionEnabled:(BOOL)enabled {
+    s_enableBuiltInRedirection = enabled;
 }
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
@@ -192,8 +198,8 @@ static bool s_enableDebugLog;
     s_enableDebugLog = NO;
 
     s_enableBuiltInGzip = YES;
-
     s_enableBuiltInCookieStorage = YES;
+    s_enableBuiltInRedirection = YES;
 
     // 设置定时任务读取proxy
     [self startProxyUpdatingTimer];
@@ -513,7 +519,12 @@ static bool s_enableDebugLog;
     }
 
     // 开启重定向
-    curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
+    if (s_enableBuiltInRedirection) {
+        curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
+    } else {
+        curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 0L);
+    }
+
     // 为了线程安全，设置NOSIGNAL
     curl_easy_setopt(easyHandle, CURLOPT_NOSIGNAL, 1L);
 }
@@ -625,17 +636,27 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         NSInteger statusCode = protocol.currentResponse.statusCode;
         NSString *reasonPhrase = protocol.currentResponse.reasonPhrase;
 
+        NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
+                                                                      statusCode:protocol.currentResponse.statusCode
+                                                                     HTTPVersion:protocol.currentResponse.httpVersion
+                                                                    headerFields:protocol.currentResponse.headers];
         if (isRedirectionStatusCode(statusCode)) {
+            if (!s_enableBuiltInRedirection) {
+                // 关闭了重定向支持，则把重定向信息往外传递
+                NSString *location = protocol.currentResponse.headers[@"Location"];
+                if (location) {
+                    NSURL *locationURL = [NSURL URLWithString:location relativeToURL:protocol.request.URL];
+                    NSMutableURLRequest *redirectedRequest = [protocol.request mutableCopy];
+                    [redirectedRequest setURL:locationURL];
+                    [protocol.client URLProtocol:protocol wasRedirectedToRequest:redirectedRequest redirectResponse:httpResponse];
+                }
+            }
             [protocol.currentResponse reset];
         } else if (isInformationalStatusCode(statusCode)) {
             [protocol.currentResponse reset];
         } else if (isConnectEstablishedStatusCode(statusCode, reasonPhrase)) {
             [protocol.currentResponse reset];
         } else {
-            NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
-                                                                          statusCode:protocol.currentResponse.statusCode
-                                                                         HTTPVersion:protocol.currentResponse.httpVersion
-                                                                        headerFields:protocol.currentResponse.headers];
             [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageAllowed];
             protocol.currentResponse.isFinalResponse = YES;
         }

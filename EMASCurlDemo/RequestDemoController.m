@@ -1,7 +1,7 @@
 #import "RequestDemoController.h"
 #import <EMASCurl/EMASCurl.h>
 
-@interface RequestDemoController ()
+@interface RequestDemoController () <NSURLSessionDataDelegate>
 @property (nonatomic, strong) UIButton *getButton;
 @property (nonatomic, strong) UIButton *uploadButton;
 @property (nonatomic, strong) UITextView *resultTextView;
@@ -25,9 +25,12 @@
     configuration.timeoutIntervalForResource = 300;
 
     [EMASCurlProtocol setDebugLogEnabled:YES];
+    [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
     [EMASCurlProtocol installIntoSessionConfiguration:configuration];
 
-    self.session = [NSURLSession sessionWithConfiguration:configuration];
+    self.session = [NSURLSession sessionWithConfiguration:configuration
+                                               delegate:self
+                                          delegateQueue:[NSOperationQueue mainQueue]];
 }
 
 - (void)setupUI {
@@ -56,23 +59,11 @@
 }
 
 - (void)getButtonTapped {
-    NSString *urlString = @"https://httpbin.org/get";
+    NSString *urlString = @"https://mooc1-api.chaoxing.com/mooc-ans/exam/test/transfer/examlist?cxanalyzetag=hp";
     NSURL *url = [NSURL URLWithString:urlString];
 
-    NSURLSessionDataTask *task = [self.session dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        if (error) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                self.resultTextView.text = [NSString stringWithFormat:@"Error: %@", error.localizedDescription];
-            });
-            return;
-        }
-
-        NSString *result = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.resultTextView.text = result;
-        });
-    }];
-
+    self.resultTextView.text = @""; // Clear previous results
+    NSURLSessionDataTask *task = [self.session dataTaskWithURL:url];
     [task resume];
 }
 
@@ -86,23 +77,53 @@
     NSString *sampleText = @"Hello, this is a test upload!";
     NSData *uploadData = [sampleText dataUsingEncoding:NSUTF8StringEncoding];
 
-    NSURLSessionUploadTask *uploadTask = [self.session uploadTaskWithRequest:request
-                                                             fromData:uploadData
-                                                    completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        if (error) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                self.resultTextView.text = [NSString stringWithFormat:@"Upload Error: %@", error.localizedDescription];
-            });
-            return;
-        }
-
-        NSString *result = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.resultTextView.text = result;
-        });
-    }];
-
+    self.resultTextView.text = @""; // Clear previous results
+    NSURLSessionUploadTask *uploadTask = [self.session uploadTaskWithRequest:request fromData:uploadData];
     [uploadTask resume];
+}
+
+#pragma mark - NSURLSessionDataDelegate
+
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler {
+    // Called when the request first receives a response
+    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+
+    NSUInteger code = 0;
+    if (httpResponse) {
+        code = httpResponse.statusCode;
+    }
+
+    NSLog(@">>> %@ didRecievedResponse - %lu", dataTask.currentRequest.URL.absoluteString, code);
+
+    completionHandler(NSURLSessionResponseAllow);
+}
+
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data {
+    // Called as data arrives
+    NSString *receivedString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    self.resultTextView.text = [self.resultTextView.text stringByAppendingString:receivedString];
+}
+
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
+    NSLog(@">>> %@ didComplete - ", task.currentRequest.URL.absoluteString);
+
+    if (error) {
+        self.resultTextView.text = [NSString stringWithFormat:@"Error: %@", error.localizedDescription];
+    }
+}
+
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLRequest *)request completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler {
+
+    NSLog(@">>> %@ willRedirect - ", task.currentRequest.URL.absoluteString);
+
+    // Log redirect information
+    NSString *redirectInfo = [NSString stringWithFormat:@"Redirecting from: %@\nTo: %@\n\n",
+                            task.originalRequest.URL,
+                            request.URL];
+    self.resultTextView.text = [self.resultTextView.text stringByAppendingString:redirectInfo];
+
+    // Allow the redirect by passing the new request to the completion handler
+    completionHandler(request);
 }
 
 @end

@@ -85,10 +85,10 @@ SOFTWARE.
     return _shareManager;
 }
 
-- (void)configURLSession:(NSURLSessionConfiguration *)urlSessionConfiguration {
-    urlSessionConfiguration.HTTPShouldUsePipelining = YES;
-    urlSessionConfiguration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
-    _URLSession = [NSURLSession sessionWithConfiguration:urlSessionConfiguration
+- (void)setUpInternalURLSessionWithConfiguration:(NSURLSessionConfiguration *)sessionConfiguration {
+    sessionConfiguration.HTTPShouldUsePipelining = YES;
+    sessionConfiguration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+    _URLSession = [NSURLSession sessionWithConfiguration:sessionConfiguration
                                                 delegate:self
                                            delegateQueue:self.requestCallbackQueue];
 }
@@ -133,7 +133,7 @@ SOFTWARE.
 
     if (!self.URLSession) {
         @synchronized (self) {
-            [self configURLSession:[NSURLSessionConfiguration defaultSessionConfiguration]];
+            [self setUpInternalURLSessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
         }
     }
 
@@ -157,6 +157,7 @@ SOFTWARE.
 - (NSOperationQueue *)requestCallbackQueue {
     if (!_requestCallbackQueue) {
         _requestCallbackQueue = [NSOperationQueue new];
+        _requestCallbackQueue.qualityOfService = NSQualityOfServiceUserInitiated;
         _requestCallbackQueue.maxConcurrentOperationCount = 1;
         _requestCallbackQueue.name = @"com.jd.networkcallback";
     }

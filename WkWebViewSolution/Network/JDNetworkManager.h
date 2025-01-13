@@ -44,7 +44,7 @@ typedef NSInteger RequestTaskIdentifier;
 
 + (instancetype)shareManager;
 
-- (void)configURLSession:(NSURLSessionConfiguration *)urlSessionConfiguration;
+- (void)setUpInternalURLSessionWithConfiguration:(NSURLSessionConfiguration *)urlSessionConfiguration;
 
 - (RequestTaskIdentifier)startWithRequest:(NSURLRequest *)request
                          responseCallback:(JDNetResponseCallback)responseCallback

@@ -92,6 +92,9 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 // 若关闭，则依赖cookie能力时，需要自行处理请求/响应中的cookie字段
 + (void)setBuiltInCookieStorageEnabled:(BOOL)enabled;
 
+// 是否开启内部重定向支持
++ (void)setBuiltInRedirectionEnabled:(BOOL)enabled;
+
 // 设置是否开启调试日志
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled;
 
