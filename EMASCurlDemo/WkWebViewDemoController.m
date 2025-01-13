@@ -49,7 +49,7 @@
     WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
     configuration.loader.enable = YES;
 
-    [JDCache shareInstance].netCache = [[NetworkCache alloc] initWithName:@"emas.curl.demo.cache"];
+    [EMASCurlCache shareInstance].netCache = [[NetworkCache alloc] initWithName:@"emas.curl.demo.cache"];
 
     NSURLSessionConfiguration *urlSessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol setDebugLogEnabled:YES];
@@ -57,7 +57,7 @@
     [EMASCurlProtocol setDNSResolver:[SampleDnsResolver class]];
     [EMASCurlProtocol installIntoSessionConfiguration:urlSessionConfig];
 
-    [[JDNetworkManager shareManager] setUpInternalURLSessionWithConfiguration:urlSessionConfig];
+    [[EMASCurlNetworkManager shareManager] setUpInternalURLSessionWithConfiguration:urlSessionConfig];
 
     self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:configuration];
     [self.view addSubview:self.webView];

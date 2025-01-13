@@ -4,6 +4,8 @@
 build/
 out/
 DerivedData/
+*.DS_Store
+.DS_Store
 #
 # Xcode 9 and later
 DerivedData

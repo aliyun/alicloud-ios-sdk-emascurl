@@ -241,11 +241,19 @@ static bool s_enableDebugLog;
     if ([[request.URL absoluteString] isEqual:@"about:blank"]) {
         return NO;
     }
+
     // 不是http或https，则不拦截
     if (!([request.URL.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame ||
          [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)) {
         return NO;
     }
+
+    NSString *userAgent = [request valueForHTTPHeaderField:@"User-Agent"];
+    if (userAgent && [userAgent containsString:@"HttpdnsSDK"]) {
+        // 不拦截来自Httpdns SDK的请求
+        return NO;
+    }
+
     return YES;
 }
 

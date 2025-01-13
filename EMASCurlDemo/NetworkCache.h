@@ -10,7 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface NetworkCache : NSObject<JDURLCacheDelegate>
+@interface NetworkCache : NSObject<EMASCurlURLCacheDelegate>
 
 - (instancetype)initWithName:(NSString *)name;
 
