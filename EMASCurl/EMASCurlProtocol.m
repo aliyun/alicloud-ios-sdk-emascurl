@@ -82,6 +82,8 @@ static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCur
 
 @property (nonatomic, copy) EMASCurlMetricsObserverBlock metricsObserverBlock;
 
+@property (nonatomic, assign) double resolveDomainTimeInterval;
+
 @end
 
 static HTTPVersion s_httpVersion;
@@ -178,6 +180,7 @@ static bool s_enableDebugLog;
         _totalBytesSent = 0;
         _totalBytesExpected = 0;
         _currentResponse = [CurlHTTPResponse new];
+        _resolveDomainTimeInterval = -1;
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
@@ -331,7 +334,11 @@ static bool s_enableDebugLog;
     double startTransferTime = 0;
     double totalTime = 0;
 
-    curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+    if (self.resolveDomainTimeInterval > 0) {
+        nameLookupTime = self.resolveDomainTimeInterval;
+    } else {
+        curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+    }
     curl_easy_getinfo(self.easyHandle, CURLINFO_CONNECT_TIME, &connectTime);
     curl_easy_getinfo(self.easyHandle, CURLINFO_APPCONNECT_TIME, &appConnectTime);
     curl_easy_getinfo(self.easyHandle, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
@@ -425,7 +432,7 @@ static bool s_enableDebugLog;
     // 用read_cb回调函数来读取需要传输的数据
     curl_easy_setopt(easyHandle, CURLOPT_READFUNCTION, read_cb);
     // self传给read_cb函数的void *userp参数
-    curl_easy_setopt(easyHandle, CURLOPT_READDATA, self);
+    curl_easy_setopt(easyHandle, CURLOPT_READDATA, (__bridge void *)self);
 
     NSString *contentLength = [request valueForHTTPHeaderField:@"Content-Length"];
     if (!contentLength) {
@@ -480,7 +487,10 @@ static bool s_enableDebugLog;
 
     // 假如设置了自定义resolve，则使用
     if (s_dnsResolverClass) {
-        [self configCustomDNSResolver:easyHandle];
+        NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
+        if ([self preResolveDomain:easyHandle]) {
+            self.resolveDomainTimeInterval = [[NSDate date] timeIntervalSince1970] - startTime;
+        }
     }
 
     @synchronized ([EMASCurlProtocol class]) {
@@ -537,10 +547,10 @@ static bool s_enableDebugLog;
     curl_easy_setopt(easyHandle, CURLOPT_NOSIGNAL, 1L);
 }
 
-- (void)configCustomDNSResolver:(CURL *)easyHandle {
+- (BOOL)preResolveDomain:(CURL *)easyHandle {
     NSURL *url = self.request.URL;
     if (!url || !url.host) {
-        return;
+        return NO;
     }
 
     NSString *host = url.host;
@@ -556,13 +566,13 @@ static bool s_enableDebugLog;
         } else if ([scheme isEqualToString:@"http"]) {
             resolvedPort = 80;
         } else {
-            return;
+            return NO;
         }
     }
 
     NSString *address = [s_dnsResolverClass resolveDomain:host];
     if (!address) {
-        return;
+        return NO;
     }
 
     // Format: +{host}:{port}:{ips}
@@ -574,7 +584,9 @@ static bool s_enableDebugLog;
     self.resolveList = curl_slist_append(self.resolveList, [hostPortAddressString UTF8String]);
     if (self.resolveList) {
         curl_easy_setopt(easyHandle, CURLOPT_RESOLVE, self.resolveList);
+        return YES;
     }
+    return NO;
 }
 
 // 将拦截到的request中的header字段，转换为一个curl list
