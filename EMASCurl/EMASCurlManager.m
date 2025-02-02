@@ -100,12 +100,14 @@ typedef struct {
     _completionMap[easyKey] = completion;
 
     [_condition lock];
-    curl_multi_add_handle(_multiHandle, easyHandle);
 
     if (_enableCookieSharing) {
-        // 不使用内置cookie共享机制
+        // 使用内置cookie共享机制
         curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
     }
+
+    curl_multi_add_handle(_multiHandle, easyHandle);
+
     [_condition signal];
     [_condition unlock];
 }
@@ -114,8 +116,8 @@ typedef struct {
     @autoreleasepool {
         [_condition lock];
         while (!_shouldStop) {
-            [_condition waitUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
             [self performCurlActions];
+            [_condition waitUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
         }
         [_condition unlock];
     }
