@@ -7,6 +7,7 @@
 
 #import "EMASCurlProtocol.h"
 #import "EMASCurlManager.h"
+#import "EMASCurlCookieStorage.h"
 #import <curl/curl.h>
 
 #define HTTP_METHOD_GET @"GET"
@@ -482,6 +483,13 @@ static bool s_enableDebugLog;
         }
     }
 
+    // 设置cookie
+    EMASCurlCookieStorage *cookieStorage = [EMASCurlCookieStorage sharedStorage];
+    NSString *cookieString = [cookieStorage cookieStringForURL:self.request.URL];
+    if (cookieString) {
+        curl_easy_setopt(easyHandle, CURLOPT_COOKIE, [cookieString UTF8String]);
+    }
+
     dispatch_sync(s_serialQueue, ^{
         // 设置proxy
         if (s_proxyServer) {
@@ -624,6 +632,12 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         if (delimiterRange.location != NSNotFound) {
             NSString *key = [headerLine substringToIndex:delimiterRange.location];
             NSString *value = [headerLine substringFromIndex:delimiterRange.location + delimiterRange.length];
+
+            // 设置cookie
+            if ([key caseInsensitiveCompare:@"set-cookie"] == NSOrderedSame) {
+                EMASCurlCookieStorage *cookieStorage = [EMASCurlCookieStorage sharedStorage];
+                [cookieStorage setCookieWithString:value forURL:protocol.request.URL];
+            }
 
             if (protocol.currentResponse.headers[key]) {
                 NSString *existingValue = protocol.currentResponse.headers[key];
