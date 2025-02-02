@@ -247,3 +247,6 @@ __pycache__/
 
 # vscode
 .vscode
+
+# windsurf rules
+.windsurfrules

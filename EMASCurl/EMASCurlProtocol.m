@@ -98,8 +98,6 @@ static bool s_enableBuiltInGzip;
 
 static NSString *s_caFilePath;
 
-static BOOL s_enableBuiltInCookieStorage;
-
 static NSString *s_proxyServer;
 static dispatch_queue_t s_serialQueue;
 
@@ -135,14 +133,6 @@ static bool s_enableDebugLog;
 
 + (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath {
     s_caFilePath = selfSignedCAFilePath;
-}
-
-+ (void)setBuiltInCookieStorageEnabled:(BOOL)enabled {
-    s_enableBuiltInCookieStorage = enabled;
-
-    if (!enabled) {
-        [[EMASCurlManager sharedInstance] disableCookieSharing];
-    }
 }
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
@@ -196,8 +186,6 @@ static bool s_enableDebugLog;
     s_enableDebugLog = NO;
 
     s_enableBuiltInGzip = YES;
-
-    s_enableBuiltInCookieStorage = YES;
 
     s_proxyServer = nil;
     static dispatch_once_t onceToken;
@@ -479,12 +467,6 @@ static bool s_enableDebugLog;
         NSBundle *resourceBundle = [NSBundle bundleWithURL:bundleURL];
         NSString *filePath = [resourceBundle pathForResource:@"cacert" ofType:@"pem"];
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [filePath UTF8String]);
-    }
-
-    if (s_enableBuiltInCookieStorage) {
-        char * cookieFilePath = getPersistentCookieFilePath();
-        curl_easy_setopt(easyHandle, CURLOPT_COOKIEFILE, cookieFilePath);
-        curl_easy_setopt(easyHandle, CURLOPT_COOKIEJAR, cookieFilePath);
     }
 
     // 是否设置自定义根证书
@@ -785,42 +767,6 @@ static int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, v
             break;
     }
     return 0;
-}
-
-static char * getPersistentCookieFilePath(void) {
-    static dispatch_once_t onceToken;
-    static NSString *cookieFilePath = nil;
-    dispatch_once(&onceToken, ^{
-        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
-        NSString *applicationSupportDirectory = [paths firstObject];
-
-        if (![[NSFileManager defaultManager] fileExistsAtPath:applicationSupportDirectory]) {
-            NSError *error = nil;
-            [[NSFileManager defaultManager] createDirectoryAtPath:applicationSupportDirectory
-                                      withIntermediateDirectories:YES
-                                                       attributes:nil
-                                                            error:&error];
-            if (error) {
-                return;
-            }
-        }
-
-        NSString *cookieDirectory = [applicationSupportDirectory stringByAppendingPathComponent:@"EMASCurl"];
-        if (![[NSFileManager defaultManager] fileExistsAtPath:cookieDirectory]) {
-            [[NSFileManager defaultManager] createDirectoryAtPath:cookieDirectory
-                                      withIntermediateDirectories:YES
-                                                       attributes:nil
-                                                            error:nil];
-        }
-
-        cookieFilePath = [cookieDirectory stringByAppendingPathComponent:@"cookies.store"];
-    });
-
-    if (!cookieFilePath) {
-        return "";
-    }
-
-    return (char *)[cookieFilePath UTF8String];
 }
 
 @end

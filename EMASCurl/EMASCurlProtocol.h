@@ -88,10 +88,6 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 // 设置CA证书文件路径，在使用自签名证书做测试时使用
 + (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath;
 
-// 是否开启内部Cookie存储，默认开启，但只支持到[RFC 6265]标准
-// 若关闭，则依赖cookie能力时，需要自行处理请求/响应中的cookie字段
-+ (void)setBuiltInCookieStorageEnabled:(BOOL)enabled;
-
 // 设置是否开启调试日志
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled;
 
