@@ -46,6 +46,12 @@
     [super viewDidLoad];
     self.title = @"WebView Demo";
 
+    // Add reload button to navigation bar
+    UIBarButtonItem *reloadButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh
+                                                                                target:self
+                                                                                action:@selector(reloadWebView)];
+    self.navigationItem.rightBarButtonItem = reloadButton;
+
     WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
     configuration.loader.enable = YES;
 
@@ -54,19 +60,22 @@
     NSURLSessionConfiguration *urlSessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol setDebugLogEnabled:YES];
     [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
-    [EMASCurlProtocol setHTTPVersion:HTTP2];
-    [EMASCurlProtocol setDNSResolver:[SampleDnsResolver class]];
+    // [EMASCurlProtocol setHTTPVersion:HTTP2];
+    // [EMASCurlProtocol setDNSResolver:[SampleDnsResolver class]];
     [EMASCurlProtocol installIntoSessionConfiguration:urlSessionConfig];
 
     [[EMASCurlNetworkManager shareManager] setUpInternalURLSessionWithConfiguration:urlSessionConfig];
 
     self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:configuration];
     [self.view addSubview:self.webView];
-    
-    // NSURL *url = [NSURL URLWithString:@"https://www.aliyun.com"];
-    NSURL *url = [NSURL URLWithString:@"https://emogine.insights.1688.com/page-targeting/rule-smartservice.console.aliyun.com.json"];
+
+    NSURL *url = [NSURL URLWithString:@"http://blog.sample.com"];
     NSURLRequest *request = [NSURLRequest requestWithURL:url];
     [self.webView loadRequest:request];
+}
+
+- (void)reloadWebView {
+    [self.webView reload];
 }
 
 - (void)viewDidLayoutSubviews {
