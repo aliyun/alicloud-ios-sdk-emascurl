@@ -101,6 +101,7 @@ static NSString *s_caFilePath;
 static BOOL s_enableBuiltInCookieStorage;
 
 static NSString *s_proxyServer;
+static dispatch_queue_t s_serialQueue;
 
 static Class<EMASCurlProtocolDNSResolver> s_dnsResolverClass;
 
@@ -198,6 +199,12 @@ static bool s_enableDebugLog;
 
     s_enableBuiltInCookieStorage = YES;
 
+    s_proxyServer = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        s_serialQueue = dispatch_queue_create("com.alicloud.emascurl.serialQueue", DISPATCH_QUEUE_SERIAL);
+    });
+
     // 设置定时任务读取proxy
     [self startProxyUpdatingTimer];
 }
@@ -216,21 +223,35 @@ static bool s_enableDebugLog;
 + (void)updateProxySettings {
     CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
     if (!proxySettings) {
-        return;
-    }
-    NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
-    if (!(proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable])) {
+        dispatch_sync(s_serialQueue, ^{
+            s_proxyServer = nil;
+        });
         CFRelease(proxySettings);
         return;
     }
+
+    NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
+    if (!(proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable])) {
+        dispatch_sync(s_serialQueue, ^{
+            s_proxyServer = nil;
+        });
+        CFRelease(proxySettings);
+        return;
+    }
+
     NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
     NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
 
     if (httpProxy && httpPort) {
-        @synchronized (self) {
+        dispatch_sync(s_serialQueue, ^{
             s_proxyServer = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
-        }
+        });
+    } else {
+        dispatch_sync(s_serialQueue, ^{
+            s_proxyServer = nil;
+        });
     }
+
     CFRelease(proxySettings);
 }
 
@@ -479,12 +500,12 @@ static bool s_enableDebugLog;
         }
     }
 
-    @synchronized ([EMASCurlProtocol class]) {
+    dispatch_sync(s_serialQueue, ^{
         // 设置proxy
         if (s_proxyServer) {
             curl_easy_setopt(easyHandle, CURLOPT_PROXY, [s_proxyServer UTF8String]);
         }
-    }
+    });
 
     // 设置debug回调函数以输出日志
     if (s_enableDebugLog) {
