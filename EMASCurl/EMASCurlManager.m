@@ -24,12 +24,6 @@ typedef struct {
 
 @end
 
-@interface EMASCurlManager () {
-    BOOL _enableCookieSharing;
-}
-
-@end
-
 @implementation EMASCurlManager
 
 + (instancetype)sharedInstance {
@@ -49,10 +43,9 @@ typedef struct {
         _multiHandle = curl_multi_init();
         curl_multi_setopt(_multiHandle, CURLMOPT_SOCKETDATA, (__bridge void *)self);
 
-        // 考虑客户端场景，在同一个App内共享cookie、dns、tcp连接是合理的
+        // cookie手动管理，所以这里不共享
         // 如果有需求，需要做实例隔离，整个架构要重新设计
         _shareHandle = curl_share_init();
-        curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
         curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
         curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
         curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_CONNECT);
@@ -62,8 +55,6 @@ typedef struct {
 
         _condition = [[NSCondition alloc] init];
         _shouldStop = NO;
-
-        _enableCookieSharing = YES;
 
         _networkThread = [[NSThread alloc] initWithTarget:self selector:@selector(networkThreadEntry) object:nil];
         _networkThread.qualityOfService = NSQualityOfServiceUserInitiated;
@@ -84,10 +75,6 @@ typedef struct {
     curl_global_cleanup();
 }
 
-- (void)disableCookieSharing {
-    _enableCookieSharing = NO;
-}
-
 - (void)stop {
     [_condition lock];
     _shouldStop = YES;
@@ -101,10 +88,7 @@ typedef struct {
 
     [_condition lock];
 
-    if (_enableCookieSharing) {
-        // 使用内置cookie共享机制
-        curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
-    }
+    curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
 
     curl_multi_add_handle(_multiHandle, easyHandle);
 

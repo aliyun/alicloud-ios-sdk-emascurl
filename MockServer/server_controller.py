@@ -49,6 +49,33 @@ def create_app():
         """
         return {"message": "Hello World!"}
 
+    @app.get("/cookie/set")
+    async def set_cookie():
+        """
+        Set a test cookie with a fixed value
+        """
+        response = JSONResponse({"status": "cookie_set"})
+        response.set_cookie(
+            key="test_cookie",
+            value="cookie_value_123",
+            max_age=3600,
+            path="/",
+            domain=None,
+            secure=False,
+            httponly=True
+        )
+        return response
+
+    @app.get("/cookie/verify")
+    async def verify_cookie(request: Request):
+        """
+        Verify if the test cookie exists and has the correct value
+        """
+        cookie = request.cookies.get("test_cookie")
+        if cookie == "cookie_value_123":
+            return {"status": "valid_cookie"}
+        return {"status": "invalid_cookie"}
+
     @app.api_route("/echo", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
     async def echo(request: Request):
         """

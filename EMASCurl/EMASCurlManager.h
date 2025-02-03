@@ -12,8 +12,6 @@
 
 + (instancetype)sharedInstance;
 
-- (void)disableCookieSharing;
-
 - (void)enqueueNewEasyHandle:(CURL *)easyHandle
                   completion:(void (^)(BOOL, NSError *))completion;
 
