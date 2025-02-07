@@ -5,16 +5,16 @@
 //  Created by xuyecan on 2025/1/13.
 //
 
-#import "NetworkCache.h"
+#import "DemoCache.h"
 #import <YYCache/YYCache.h>
 
-@interface NetworkCache ()
+@interface DemoCache ()
 
 @property (nonatomic, strong) YYCache * cache;
 
 @end
 
-@implementation NetworkCache
+@implementation DemoCache
 
 - (instancetype)initWithName:(NSString *)name
 {
@@ -25,19 +25,19 @@
     return self;
 }
 
-- (void)setObject:(id<NSCoding>)object forKey:(NSString *)key{
+- (void)setObject:(id<NSCoding>)object forKey:(NSString *)key {
     [_cache setObject:object forKey:key];
 }
 
-- (id <NSCoding>)objectForKey:(NSString *)key{
+- (id <NSCoding>)objectForKey:(NSString *)key {
     return [_cache objectForKey:key];
 }
 
-- (void)removeObjectForKey:(NSString *)key{
+- (void)removeObjectForKey:(NSString *)key {
     [_cache removeObjectForKey:key];
 }
 
-- (void)removeAllObjects{
+- (void)removeAllObjects {
     [_cache removeAllObjects];
 }
 @end

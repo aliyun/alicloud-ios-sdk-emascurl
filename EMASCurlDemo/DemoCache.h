@@ -7,10 +7,11 @@
 
 #import <Foundation/Foundation.h>
 #import <EMASCurl/EMASCurl.h>
+#import <EMASCurl/EMASCurlWebCacheProtocol.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface NetworkCache : NSObject<EMASCurlURLCacheDelegate>
+@interface DemoCache : NSObject<EMASCurlWebCacheProtocol>
 
 - (instancetype)initWithName:(NSString *)name;
 

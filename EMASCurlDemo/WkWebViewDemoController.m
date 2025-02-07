@@ -1,7 +1,9 @@
 #import "WkWebViewDemoController.h"
-#import "NetworkCache.h"
+#import "DemoCache.h"
 #import <WebKit/WebKit.h>
 #import <EMASCurl/EMASCurl.h>
+#import <EMASCurl/EMASCurlWebUrlSchemeHandler.h>
+#import <EMASCurl/EMASCurlWebContentLoader.h>
 #import <AlicloudHttpDNS/AlicloudHttpDNS.h>
 
 
@@ -53,9 +55,6 @@
     self.navigationItem.rightBarButtonItem = reloadButton;
 
     WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
-    configuration.loader.enable = YES;
-
-    [EMASCurlCache shareInstance].netCache = [[NetworkCache alloc] initWithName:@"emas.curl.demo.cache"];
 
     NSURLSessionConfiguration *urlSessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol setDebugLogEnabled:YES];
@@ -64,12 +63,23 @@
     // [EMASCurlProtocol setDNSResolver:[SampleDnsResolver class]];
     [EMASCurlProtocol installIntoSessionConfiguration:urlSessionConfig];
 
-    [[EMASCurlNetworkManager shareManager] setUpInternalURLSessionWithConfiguration:urlSessionConfig];
+    DemoCache *demoCache = [[DemoCache alloc] initWithName:@"com.alicloud.emascurl.cache"];
+
+    EMASCurlWebUrlSchemeHandler *urlSchemeHandler = [[EMASCurlWebUrlSchemeHandler alloc]
+                                                  initWithSessionConfiguration:urlSessionConfig
+                                                  cacheDelegate:demoCache];
+
+    [EMASCurlWebContentLoader initializeInterception];
+
+    [configuration setURLSchemeHandler:urlSchemeHandler forURLScheme:@"http"];
+    [configuration setURLSchemeHandler:urlSchemeHandler forURLScheme:@"https"];
+    [configuration enableCookieHandler];
 
     self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:configuration];
     [self.view addSubview:self.webView];
 
-    NSURL *url = [NSURL URLWithString:@"http://blog.sample.com"];
+    NSURL *url = [NSURL URLWithString:@"https://m.taobao.com"];
+    // NSURL *url = [NSURL URLWithString:@"http://blog.sample.com"];
     NSURLRequest *request = [NSURLRequest requestWithURL:url];
     [self.webView loadRequest:request];
 }
@@ -80,7 +90,7 @@
 
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
-    self.webView.frame = self.view.bounds;
+    self.webView.frame = self.view.safeAreaLayoutGuide.layoutFrame;
 }
 
 @end
