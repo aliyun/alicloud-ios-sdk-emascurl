@@ -66,8 +66,8 @@ frameworks_group = project.main_group['Frameworks']
 
 # 定义要检查和删除的路径
 paths_to_remove = [
-  './out/libcurl-HTTP2.xcframework',
-  './out/libcurl-HTTP3.xcframework'
+  './precompiled/libcurl-HTTP2.xcframework',
+  './precompiled/libcurl-HTTP3.xcframework'
 ]
 
 # 删除之前可能添加到构建阶段的 xcframework 文件

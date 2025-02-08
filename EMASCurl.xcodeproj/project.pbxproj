@@ -10,7 +10,6 @@
 		243BB9ECD47350A60179CEE9 /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */; };
 		5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */; };
 		6F3F5FED2CD0DB520014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
-		6F3F60122CD0DB7D0014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
 		6F3F60232CD0E07F0014025B /* EMASCurl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6F3F601F2CD0E07F0014025B /* EMASCurl.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6F3F60242CD0E07F0014025B /* EMASCurlProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 6F3F60202CD0E07F0014025B /* EMASCurlProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6F3F60252CD0E07F0014025B /* EMASCurlProtocol.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F3F60212CD0E07F0014025B /* EMASCurlProtocol.m */; };
@@ -21,19 +20,6 @@
 		6F3F603B2CD0E0890014025B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F602B2CD0E0890014025B /* Assets.xcassets */; };
 		6F3F603D2CD0E0890014025B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F602E2CD0E0890014025B /* LaunchScreen.storyboard */; };
 		6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60312CD0E0890014025B /* Main.storyboard */; };
-		945E21E82D352BF7007BA1C9 /* EMASCurlWebRequestExecutor.m in Sources */ = {isa = PBXBuildFile; fileRef = 945E21D02D352BF7007BA1C9 /* EMASCurlWebRequestExecutor.m */; };
-		945E21E92D352BF7007BA1C9 /* EMASCurlWebNetworkManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 945E21D42D352BF7007BA1C9 /* EMASCurlWebNetworkManager.m */; };
-		945E21F02D352BF7007BA1C9 /* EMASCurlWebURLResponseCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 945E21D62D352BF7007BA1C9 /* EMASCurlWebURLResponseCache.m */; };
-		945E21F12D352BF7007BA1C9 /* EMASCurlWebURLResponse.m in Sources */ = {isa = PBXBuildFile; fileRef = 945E21CE2D352BF7007BA1C9 /* EMASCurlWebURLResponse.m */; };
-		945E21F52D352BF7007BA1C9 /* WKWebViewConfiguration+Loader.m in Sources */ = {isa = PBXBuildFile; fileRef = 945E21C82D352BF7007BA1C9 /* WKWebViewConfiguration+Loader.m */; };
-		945E21F62D352BF7007BA1C9 /* EMASCurlWebUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 945E21E42D352BF7007BA1C9 /* EMASCurlWebUtils.m */; };
-		945E21FA2D352BF7007BA1C9 /* WKWebViewConfiguration+Loader.h in Headers */ = {isa = PBXBuildFile; fileRef = 945E21C72D352BF7007BA1C9 /* WKWebViewConfiguration+Loader.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		945E21FB2D352BF7007BA1C9 /* EMASCurlWebNetworkManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 945E21D32D352BF7007BA1C9 /* EMASCurlWebNetworkManager.h */; };
-		945E21FE2D352BF7007BA1C9 /* EMASCurlWebRequestExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = 945E21CF2D352BF7007BA1C9 /* EMASCurlWebRequestExecutor.h */; };
-		945E22002D352BF7007BA1C9 /* EMASCurlWebCacheProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 945E21CC2D352BF7007BA1C9 /* EMASCurlWebCacheProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		945E22012D352BF7007BA1C9 /* EMASCurlWebURLResponseCache.h in Headers */ = {isa = PBXBuildFile; fileRef = 945E21D52D352BF7007BA1C9 /* EMASCurlWebURLResponseCache.h */; };
-		945E22032D352BF7007BA1C9 /* EMASCurlWebUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 945E21E32D352BF7007BA1C9 /* EMASCurlWebUtils.h */; };
-		945E22062D352BF7007BA1C9 /* EMASCurlWebURLResponse.h in Headers */ = {isa = PBXBuildFile; fileRef = 945E21CD2D352BF7007BA1C9 /* EMASCurlWebURLResponse.h */; };
 		9492D6A82D30226200008A84 /* RequestDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6A52D30226200008A84 /* RequestDemoController.m */; };
 		9492D6A92D30226200008A84 /* WkWebViewDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6A72D30226200008A84 /* WkWebViewDemoController.m */; };
 		9492D8242D34318200008A84 /* DemoCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D8232D34318200008A84 /* DemoCache.m */; };
@@ -46,18 +32,33 @@
 		949788D82D4FAA0D0042BE44 /* EMASCurlCookieStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 949788D72D4FAA0D0042BE44 /* EMASCurlCookieStorage.m */; };
 		949788D92D4FAA0D0042BE44 /* EMASCurlCookieStorage.h in Headers */ = {isa = PBXBuildFile; fileRef = 949788D62D4FAA0D0042BE44 /* EMASCurlCookieStorage.h */; };
 		949789052D4FE2DB0042BE44 /* EMASCurlCookieTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949789042D4FE2DB0042BE44 /* EMASCurlCookieTest.m */; };
-		949789DA2D50ED640042BE44 /* EMASCurlWebUrlSchemeHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 949789D92D50ED640042BE44 /* EMASCurlWebUrlSchemeHandler.m */; };
-		949789DB2D50ED640042BE44 /* EMASCurlWebUrlSchemeHandler.h in Headers */ = {isa = PBXBuildFile; fileRef = 949789D82D50ED640042BE44 /* EMASCurlWebUrlSchemeHandler.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		94978A0C2D5200410042BE44 /* EMASCurlWebContentLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978A0B2D5200410042BE44 /* EMASCurlWebContentLoader.m */; };
-		94978A0D2D5200410042BE44 /* EMASCurlWebContentLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978A0A2D5200410042BE44 /* EMASCurlWebContentLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		94978A642D53086C0042BE44 /* EMASCurlWebDataTask.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978A632D53086C0042BE44 /* EMASCurlWebDataTask.m */; };
-		94978A652D53086C0042BE44 /* EMASCurlWebDataTask.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978A622D53086C0042BE44 /* EMASCurlWebDataTask.h */; };
-		94978A692D5313240042BE44 /* EMASCurlWebConstant.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978A662D5313240042BE44 /* EMASCurlWebConstant.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		94978A6C2D5313E50042BE44 /* EMASCurlWebLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978A6B2D5313E50042BE44 /* EMASCurlWebLogger.m */; };
-		94978A6D2D5313E50042BE44 /* EMASCurlWebLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978A6A2D5313E50042BE44 /* EMASCurlWebLogger.h */; };
-		94978A792D55CDDB0042BE44 /* cookie.js in Resources */ = {isa = PBXBuildFile; fileRef = 94978A6E2D55B5BA0042BE44 /* cookie.js */; };
-		94978A822D55DDDC0042BE44 /* EMASCurlWebBundle.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 94978A752D55CDB30042BE44 /* EMASCurlWebBundle.bundle */; };
-		94978A832D55FC100042BE44 /* EMASCurlWebBundle.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 94978A752D55CDB30042BE44 /* EMASCurlWebBundle.bundle */; };
+		94978BA12D572DE80042BE44 /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
+		94978BAF2D57301A0042BE44 /* EMASCurlWeb.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 94978BA92D57301A0042BE44 /* EMASCurlWeb.framework */; };
+		94978C4F2D57309F0042BE44 /* EMASCurlWebBundle.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 94978A752D55CDB30042BE44 /* EMASCurlWebBundle.bundle */; };
+		94978CE32D5742BB0042BE44 /* EMASCurlWeb.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CCB2D5742BB0042BE44 /* EMASCurlWeb.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		94978CE42D5742BB0042BE44 /* EMASCurlWebCacheProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CCC2D5742BB0042BE44 /* EMASCurlWebCacheProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		94978CE52D5742BB0042BE44 /* EMASCurlWebConstant.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CCD2D5742BB0042BE44 /* EMASCurlWebConstant.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		94978CE62D5742BB0042BE44 /* EMASCurlWebContentLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CCE2D5742BB0042BE44 /* EMASCurlWebContentLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		94978CE72D5742BB0042BE44 /* EMASCurlWebDataTask.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CD02D5742BB0042BE44 /* EMASCurlWebDataTask.h */; };
+		94978CE82D5742BB0042BE44 /* EMASCurlWebLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CD22D5742BB0042BE44 /* EMASCurlWebLogger.h */; };
+		94978CE92D5742BB0042BE44 /* EMASCurlWebNetworkManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CD42D5742BB0042BE44 /* EMASCurlWebNetworkManager.h */; };
+		94978CEA2D5742BB0042BE44 /* EMASCurlWebRequestExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CD62D5742BB0042BE44 /* EMASCurlWebRequestExecutor.h */; };
+		94978CEB2D5742BB0042BE44 /* EMASCurlWebURLResponse.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CD82D5742BB0042BE44 /* EMASCurlWebURLResponse.h */; };
+		94978CEC2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CDA2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.h */; };
+		94978CED2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CDC2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		94978CEE2D5742BB0042BE44 /* EMASCurlWebUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CDE2D5742BB0042BE44 /* EMASCurlWebUtils.h */; };
+		94978CEF2D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CE02D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		94978CF02D5742BB0042BE44 /* EMASCurlWebContentLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CCF2D5742BB0042BE44 /* EMASCurlWebContentLoader.m */; };
+		94978CF12D5742BB0042BE44 /* EMASCurlWebDataTask.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CD12D5742BB0042BE44 /* EMASCurlWebDataTask.m */; };
+		94978CF22D5742BB0042BE44 /* EMASCurlWebLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CD32D5742BB0042BE44 /* EMASCurlWebLogger.m */; };
+		94978CF32D5742BB0042BE44 /* EMASCurlWebNetworkManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CD52D5742BB0042BE44 /* EMASCurlWebNetworkManager.m */; };
+		94978CF42D5742BB0042BE44 /* EMASCurlWebRequestExecutor.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CD72D5742BB0042BE44 /* EMASCurlWebRequestExecutor.m */; };
+		94978CF52D5742BB0042BE44 /* EMASCurlWebURLResponse.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CD92D5742BB0042BE44 /* EMASCurlWebURLResponse.m */; };
+		94978CF62D5742BB0042BE44 /* EMASCurlWebURLResponseCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CDB2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.m */; };
+		94978CF72D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CDD2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.m */; };
+		94978CF82D5742BB0042BE44 /* EMASCurlWebUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CDF2D5742BB0042BE44 /* EMASCurlWebUtils.m */; };
+		94978CF92D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CE12D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m */; };
+		94978CFB2D5742BB0042BE44 /* cookie.js in Resources */ = {isa = PBXBuildFile; fileRef = 94978CCA2D5742BB0042BE44 /* cookie.js */; };
 		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
 		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
 /* End PBXBuildFile section */
@@ -77,7 +78,21 @@
 			remoteGlobalIDString = 94978A742D55CDB30042BE44;
 			remoteInfo = EMASCurlWebBundle;
 		};
-		94978A7E2D55CECD0042BE44 /* PBXContainerItemProxy */ = {
+		94978BAD2D57301A0042BE44 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6F3F5FD12CD0DB200014025B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 94978BA82D57301A0042BE44;
+			remoteInfo = EMASCurlWeb;
+		};
+		94978C4A2D57307C0042BE44 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6F3F5FD12CD0DB200014025B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6F3F5FD92CD0DB200014025B;
+			remoteInfo = EMASCurl;
+		};
+		94978C4D2D5730990042BE44 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 6F3F5FD12CD0DB200014025B /* Project object */;
 			proxyType = 1;
@@ -108,19 +123,6 @@
 		6F3F60352CD0E0890014025B /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "./out/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
-		945E21C72D352BF7007BA1C9 /* WKWebViewConfiguration+Loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WKWebViewConfiguration+Loader.h"; sourceTree = "<group>"; };
-		945E21C82D352BF7007BA1C9 /* WKWebViewConfiguration+Loader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "WKWebViewConfiguration+Loader.m"; sourceTree = "<group>"; };
-		945E21CC2D352BF7007BA1C9 /* EMASCurlWebCacheProtocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebCacheProtocol.h; sourceTree = "<group>"; };
-		945E21CD2D352BF7007BA1C9 /* EMASCurlWebURLResponse.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebURLResponse.h; sourceTree = "<group>"; };
-		945E21CE2D352BF7007BA1C9 /* EMASCurlWebURLResponse.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebURLResponse.m; sourceTree = "<group>"; };
-		945E21CF2D352BF7007BA1C9 /* EMASCurlWebRequestExecutor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebRequestExecutor.h; sourceTree = "<group>"; };
-		945E21D02D352BF7007BA1C9 /* EMASCurlWebRequestExecutor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebRequestExecutor.m; sourceTree = "<group>"; };
-		945E21D32D352BF7007BA1C9 /* EMASCurlWebNetworkManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebNetworkManager.h; sourceTree = "<group>"; };
-		945E21D42D352BF7007BA1C9 /* EMASCurlWebNetworkManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebNetworkManager.m; sourceTree = "<group>"; };
-		945E21D52D352BF7007BA1C9 /* EMASCurlWebURLResponseCache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebURLResponseCache.h; sourceTree = "<group>"; };
-		945E21D62D352BF7007BA1C9 /* EMASCurlWebURLResponseCache.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebURLResponseCache.m; sourceTree = "<group>"; };
-		945E21E32D352BF7007BA1C9 /* EMASCurlWebUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebUtils.h; sourceTree = "<group>"; };
-		945E21E42D352BF7007BA1C9 /* EMASCurlWebUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebUtils.m; sourceTree = "<group>"; };
 		9492D6A42D30226200008A84 /* RequestDemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RequestDemoController.h; sourceTree = "<group>"; };
 		9492D6A52D30226200008A84 /* RequestDemoController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RequestDemoController.m; sourceTree = "<group>"; };
 		9492D6A62D30226200008A84 /* WkWebViewDemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WkWebViewDemoController.h; sourceTree = "<group>"; };
@@ -138,21 +140,35 @@
 		949788D62D4FAA0D0042BE44 /* EMASCurlCookieStorage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlCookieStorage.h; sourceTree = "<group>"; };
 		949788D72D4FAA0D0042BE44 /* EMASCurlCookieStorage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlCookieStorage.m; sourceTree = "<group>"; };
 		949789042D4FE2DB0042BE44 /* EMASCurlCookieTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlCookieTest.m; sourceTree = "<group>"; };
-		949789D82D50ED640042BE44 /* EMASCurlWebUrlSchemeHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebUrlSchemeHandler.h; sourceTree = "<group>"; };
-		949789D92D50ED640042BE44 /* EMASCurlWebUrlSchemeHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebUrlSchemeHandler.m; sourceTree = "<group>"; };
-		94978A0A2D5200410042BE44 /* EMASCurlWebContentLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebContentLoader.h; sourceTree = "<group>"; };
-		94978A0B2D5200410042BE44 /* EMASCurlWebContentLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebContentLoader.m; sourceTree = "<group>"; };
-		94978A622D53086C0042BE44 /* EMASCurlWebDataTask.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebDataTask.h; sourceTree = "<group>"; };
-		94978A632D53086C0042BE44 /* EMASCurlWebDataTask.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebDataTask.m; sourceTree = "<group>"; };
-		94978A662D5313240042BE44 /* EMASCurlWebConstant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebConstant.h; sourceTree = "<group>"; };
-		94978A6A2D5313E50042BE44 /* EMASCurlWebLogger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebLogger.h; sourceTree = "<group>"; };
-		94978A6B2D5313E50042BE44 /* EMASCurlWebLogger.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebLogger.m; sourceTree = "<group>"; };
-		94978A6E2D55B5BA0042BE44 /* cookie.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = cookie.js; sourceTree = "<group>"; };
 		94978A752D55CDB30042BE44 /* EMASCurlWebBundle.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EMASCurlWebBundle.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		94978BA92D57301A0042BE44 /* EMASCurlWeb.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EMASCurlWeb.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		94978CCA2D5742BB0042BE44 /* cookie.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = cookie.js; sourceTree = "<group>"; };
+		94978CCB2D5742BB0042BE44 /* EMASCurlWeb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWeb.h; sourceTree = "<group>"; };
+		94978CCC2D5742BB0042BE44 /* EMASCurlWebCacheProtocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebCacheProtocol.h; sourceTree = "<group>"; };
+		94978CCD2D5742BB0042BE44 /* EMASCurlWebConstant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebConstant.h; sourceTree = "<group>"; };
+		94978CCE2D5742BB0042BE44 /* EMASCurlWebContentLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebContentLoader.h; sourceTree = "<group>"; };
+		94978CCF2D5742BB0042BE44 /* EMASCurlWebContentLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebContentLoader.m; sourceTree = "<group>"; };
+		94978CD02D5742BB0042BE44 /* EMASCurlWebDataTask.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebDataTask.h; sourceTree = "<group>"; };
+		94978CD12D5742BB0042BE44 /* EMASCurlWebDataTask.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebDataTask.m; sourceTree = "<group>"; };
+		94978CD22D5742BB0042BE44 /* EMASCurlWebLogger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebLogger.h; sourceTree = "<group>"; };
+		94978CD32D5742BB0042BE44 /* EMASCurlWebLogger.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebLogger.m; sourceTree = "<group>"; };
+		94978CD42D5742BB0042BE44 /* EMASCurlWebNetworkManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebNetworkManager.h; sourceTree = "<group>"; };
+		94978CD52D5742BB0042BE44 /* EMASCurlWebNetworkManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebNetworkManager.m; sourceTree = "<group>"; };
+		94978CD62D5742BB0042BE44 /* EMASCurlWebRequestExecutor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebRequestExecutor.h; sourceTree = "<group>"; };
+		94978CD72D5742BB0042BE44 /* EMASCurlWebRequestExecutor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebRequestExecutor.m; sourceTree = "<group>"; };
+		94978CD82D5742BB0042BE44 /* EMASCurlWebURLResponse.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebURLResponse.h; sourceTree = "<group>"; };
+		94978CD92D5742BB0042BE44 /* EMASCurlWebURLResponse.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebURLResponse.m; sourceTree = "<group>"; };
+		94978CDA2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebURLResponseCache.h; sourceTree = "<group>"; };
+		94978CDB2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebURLResponseCache.m; sourceTree = "<group>"; };
+		94978CDC2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebUrlSchemeHandler.h; sourceTree = "<group>"; };
+		94978CDD2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebUrlSchemeHandler.m; sourceTree = "<group>"; };
+		94978CDE2D5742BB0042BE44 /* EMASCurlWebUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebUtils.h; sourceTree = "<group>"; };
+		94978CDF2D5742BB0042BE44 /* EMASCurlWebUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebUtils.m; sourceTree = "<group>"; };
+		94978CE02D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WKWebViewConfiguration+Loader.h"; sourceTree = "<group>"; };
+		94978CE12D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "WKWebViewConfiguration+Loader.m"; sourceTree = "<group>"; };
 		94C5B5D82D071D86006BC856 /* EMASCurlManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlManager.h; sourceTree = "<group>"; };
 		94C5B5D92D071D86006BC856 /* EMASCurlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlManager.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
-		DC044DADBD1D286A25E7ABFA /* Pods_AVPlayerDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AVPlayerDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC63873258AC2D2C8BE72105 /* Pods-AVPlayerDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AVPlayerDemo.debug.xcconfig"; path = "Target Support Files/Pods-AVPlayerDemo/Pods-AVPlayerDemo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -212,12 +228,20 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6F3F60122CD0DB7D0014025B /* EMASCurl.framework in Frameworks */,
+				94978BA12D572DE80042BE44 /* EMASCurl.framework in Frameworks */,
+				94978BAF2D57301A0042BE44 /* EMASCurlWeb.framework in Frameworks */,
 				5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		94978A722D55CDB30042BE44 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94978BA62D57301A0042BE44 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -230,8 +254,8 @@
 		6F3F5FD02CD0DB200014025B = {
 			isa = PBXGroup;
 			children = (
-				9492D6902D3021EA00008A84 /* WkWebViewSolution */,
 				6F3F60222CD0E07F0014025B /* EMASCurl */,
+				94978CE22D5742BB0042BE44 /* EMASCurlWeb */,
 				6F3F60272CD0E0860014025B /* EMASCurlTests */,
 				6F3F60362CD0E0890014025B /* EMASCurlDemo */,
 				949538AA2D0C3BA3001FE850 /* MockServer */,
@@ -248,6 +272,7 @@
 				6F3F5FE92CD0DB520014025B /* EMASCurlTests.xctest */,
 				6F3F5FF72CD0DB6E0014025B /* EMASCurlDemo.app */,
 				94978A752D55CDB30042BE44 /* EMASCurlWebBundle.bundle */,
+				94978BA92D57301A0042BE44 /* EMASCurlWeb.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -257,7 +282,6 @@
 			children = (
 				226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */,
 				8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */,
-				DC044DADBD1D286A25E7ABFA /* Pods_AVPlayerDemo.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -316,34 +340,35 @@
 			path = EMASCurlDemo;
 			sourceTree = "<group>";
 		};
-		9492D6902D3021EA00008A84 /* WkWebViewSolution */ = {
+		94978CE22D5742BB0042BE44 /* EMASCurlWeb */ = {
 			isa = PBXGroup;
 			children = (
-				94978A662D5313240042BE44 /* EMASCurlWebConstant.h */,
-				94978A0A2D5200410042BE44 /* EMASCurlWebContentLoader.h */,
-				94978A0B2D5200410042BE44 /* EMASCurlWebContentLoader.m */,
-				945E21C72D352BF7007BA1C9 /* WKWebViewConfiguration+Loader.h */,
-				945E21C82D352BF7007BA1C9 /* WKWebViewConfiguration+Loader.m */,
-				949789D82D50ED640042BE44 /* EMASCurlWebUrlSchemeHandler.h */,
-				949789D92D50ED640042BE44 /* EMASCurlWebUrlSchemeHandler.m */,
-				945E21CC2D352BF7007BA1C9 /* EMASCurlWebCacheProtocol.h */,
-				945E21CD2D352BF7007BA1C9 /* EMASCurlWebURLResponse.h */,
-				945E21CE2D352BF7007BA1C9 /* EMASCurlWebURLResponse.m */,
-				945E21D52D352BF7007BA1C9 /* EMASCurlWebURLResponseCache.h */,
-				945E21D62D352BF7007BA1C9 /* EMASCurlWebURLResponseCache.m */,
-				945E21D32D352BF7007BA1C9 /* EMASCurlWebNetworkManager.h */,
-				945E21D42D352BF7007BA1C9 /* EMASCurlWebNetworkManager.m */,
-				94978A622D53086C0042BE44 /* EMASCurlWebDataTask.h */,
-				94978A632D53086C0042BE44 /* EMASCurlWebDataTask.m */,
-				945E21CF2D352BF7007BA1C9 /* EMASCurlWebRequestExecutor.h */,
-				945E21D02D352BF7007BA1C9 /* EMASCurlWebRequestExecutor.m */,
-				945E21E32D352BF7007BA1C9 /* EMASCurlWebUtils.h */,
-				945E21E42D352BF7007BA1C9 /* EMASCurlWebUtils.m */,
-				94978A6A2D5313E50042BE44 /* EMASCurlWebLogger.h */,
-				94978A6B2D5313E50042BE44 /* EMASCurlWebLogger.m */,
-				94978A6E2D55B5BA0042BE44 /* cookie.js */,
+				94978CCA2D5742BB0042BE44 /* cookie.js */,
+				94978CCB2D5742BB0042BE44 /* EMASCurlWeb.h */,
+				94978CCC2D5742BB0042BE44 /* EMASCurlWebCacheProtocol.h */,
+				94978CCD2D5742BB0042BE44 /* EMASCurlWebConstant.h */,
+				94978CCE2D5742BB0042BE44 /* EMASCurlWebContentLoader.h */,
+				94978CCF2D5742BB0042BE44 /* EMASCurlWebContentLoader.m */,
+				94978CD02D5742BB0042BE44 /* EMASCurlWebDataTask.h */,
+				94978CD12D5742BB0042BE44 /* EMASCurlWebDataTask.m */,
+				94978CD22D5742BB0042BE44 /* EMASCurlWebLogger.h */,
+				94978CD32D5742BB0042BE44 /* EMASCurlWebLogger.m */,
+				94978CD42D5742BB0042BE44 /* EMASCurlWebNetworkManager.h */,
+				94978CD52D5742BB0042BE44 /* EMASCurlWebNetworkManager.m */,
+				94978CD62D5742BB0042BE44 /* EMASCurlWebRequestExecutor.h */,
+				94978CD72D5742BB0042BE44 /* EMASCurlWebRequestExecutor.m */,
+				94978CD82D5742BB0042BE44 /* EMASCurlWebURLResponse.h */,
+				94978CD92D5742BB0042BE44 /* EMASCurlWebURLResponse.m */,
+				94978CDA2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.h */,
+				94978CDB2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.m */,
+				94978CDC2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.h */,
+				94978CDD2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.m */,
+				94978CDE2D5742BB0042BE44 /* EMASCurlWebUtils.h */,
+				94978CDF2D5742BB0042BE44 /* EMASCurlWebUtils.m */,
+				94978CE02D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h */,
+				94978CE12D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m */,
 			);
-			path = WkWebViewSolution;
+			path = EMASCurlWeb;
 			sourceTree = "<group>";
 		};
 		F020AA635FEA508BFC2214FC /* Pods */ = {
@@ -366,20 +391,28 @@
 			files = (
 				949788D92D4FAA0D0042BE44 /* EMASCurlCookieStorage.h in Headers */,
 				6F3F60232CD0E07F0014025B /* EMASCurl.h in Headers */,
-				94978A652D53086C0042BE44 /* EMASCurlWebDataTask.h in Headers */,
 				6F3F60242CD0E07F0014025B /* EMASCurlProtocol.h in Headers */,
-				945E22002D352BF7007BA1C9 /* EMASCurlWebCacheProtocol.h in Headers */,
-				94978A6D2D5313E50042BE44 /* EMASCurlWebLogger.h in Headers */,
-				94978A692D5313240042BE44 /* EMASCurlWebConstant.h in Headers */,
-				945E21FE2D352BF7007BA1C9 /* EMASCurlWebRequestExecutor.h in Headers */,
-				945E21FA2D352BF7007BA1C9 /* WKWebViewConfiguration+Loader.h in Headers */,
-				945E22032D352BF7007BA1C9 /* EMASCurlWebUtils.h in Headers */,
-				949789DB2D50ED640042BE44 /* EMASCurlWebUrlSchemeHandler.h in Headers */,
-				94978A0D2D5200410042BE44 /* EMASCurlWebContentLoader.h in Headers */,
-				945E21FB2D352BF7007BA1C9 /* EMASCurlWebNetworkManager.h in Headers */,
-				945E22012D352BF7007BA1C9 /* EMASCurlWebURLResponseCache.h in Headers */,
-				945E22062D352BF7007BA1C9 /* EMASCurlWebURLResponse.h in Headers */,
 				94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94978BA42D57301A0042BE44 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94978CE32D5742BB0042BE44 /* EMASCurlWeb.h in Headers */,
+				94978CE42D5742BB0042BE44 /* EMASCurlWebCacheProtocol.h in Headers */,
+				94978CE52D5742BB0042BE44 /* EMASCurlWebConstant.h in Headers */,
+				94978CE62D5742BB0042BE44 /* EMASCurlWebContentLoader.h in Headers */,
+				94978CE72D5742BB0042BE44 /* EMASCurlWebDataTask.h in Headers */,
+				94978CE82D5742BB0042BE44 /* EMASCurlWebLogger.h in Headers */,
+				94978CE92D5742BB0042BE44 /* EMASCurlWebNetworkManager.h in Headers */,
+				94978CEA2D5742BB0042BE44 /* EMASCurlWebRequestExecutor.h in Headers */,
+				94978CEB2D5742BB0042BE44 /* EMASCurlWebURLResponse.h in Headers */,
+				94978CEC2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.h in Headers */,
+				94978CED2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.h in Headers */,
+				94978CEE2D5742BB0042BE44 /* EMASCurlWebUtils.h in Headers */,
+				94978CEF2D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -438,8 +471,9 @@
 			buildRules = (
 			);
 			dependencies = (
+				94978C4B2D57307C0042BE44 /* PBXTargetDependency */,
 				94978A7D2D55CEC70042BE44 /* PBXTargetDependency */,
-				94978A7F2D55CECD0042BE44 /* PBXTargetDependency */,
+				94978BAE2D57301A0042BE44 /* PBXTargetDependency */,
 			);
 			name = EMASCurlDemo;
 			productName = EMASCurlDemo;
@@ -459,11 +493,30 @@
 			dependencies = (
 			);
 			name = EMASCurlWebBundle;
-			packageProductDependencies = (
-			);
 			productName = EMASCurlWebBundle;
 			productReference = 94978A752D55CDB30042BE44 /* EMASCurlWebBundle.bundle */;
 			productType = "com.apple.product-type.bundle";
+		};
+		94978BA82D57301A0042BE44 /* EMASCurlWeb */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 94978BB22D57301A0042BE44 /* Build configuration list for PBXNativeTarget "EMASCurlWeb" */;
+			buildPhases = (
+				94978BA42D57301A0042BE44 /* Headers */,
+				94978BA52D57301A0042BE44 /* Sources */,
+				94978BA62D57301A0042BE44 /* Frameworks */,
+				94978BA72D57301A0042BE44 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				94978C4E2D5730990042BE44 /* PBXTargetDependency */,
+			);
+			name = EMASCurlWeb;
+			packageProductDependencies = (
+			);
+			productName = EMASCurlWeb;
+			productReference = 94978BA92D57301A0042BE44 /* EMASCurlWeb.framework */;
+			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
@@ -486,6 +539,9 @@
 					94978A742D55CDB30042BE44 = {
 						CreatedOnToolsVersion = 16.2;
 					};
+					94978BA82D57301A0042BE44 = {
+						CreatedOnToolsVersion = 16.2;
+					};
 				};
 			};
 			buildConfigurationList = 6F3F5FD42CD0DB200014025B /* Build configuration list for PBXProject "EMASCurl" */;
@@ -503,6 +559,7 @@
 			projectRoot = "";
 			targets = (
 				6F3F5FD92CD0DB200014025B /* EMASCurl */,
+				94978BA82D57301A0042BE44 /* EMASCurlWeb */,
 				94978A742D55CDB30042BE44 /* EMASCurlWebBundle */,
 				6F3F5FE82CD0DB520014025B /* EMASCurlTests */,
 				6F3F5FF62CD0DB6E0014025B /* EMASCurlDemo */,
@@ -515,7 +572,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				94978A832D55FC100042BE44 /* EMASCurlWebBundle.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -530,7 +586,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				94978A822D55DDDC0042BE44 /* EMASCurlWebBundle.bundle in Resources */,
 				6F3F603B2CD0E0890014025B /* Assets.xcassets in Resources */,
 				6F3F603D2CD0E0890014025B /* LaunchScreen.storyboard in Resources */,
 				6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */,
@@ -541,7 +596,15 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				94978A792D55CDDB0042BE44 /* cookie.js in Resources */,
+				94978CFB2D5742BB0042BE44 /* cookie.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94978BA72D57301A0042BE44 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94978C4F2D57309F0042BE44 /* EMASCurlWebBundle.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -594,16 +657,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				945E21E82D352BF7007BA1C9 /* EMASCurlWebRequestExecutor.m in Sources */,
-				945E21E92D352BF7007BA1C9 /* EMASCurlWebNetworkManager.m in Sources */,
-				945E21F02D352BF7007BA1C9 /* EMASCurlWebURLResponseCache.m in Sources */,
-				945E21F12D352BF7007BA1C9 /* EMASCurlWebURLResponse.m in Sources */,
-				94978A642D53086C0042BE44 /* EMASCurlWebDataTask.m in Sources */,
-				945E21F62D352BF7007BA1C9 /* EMASCurlWebUtils.m in Sources */,
-				94978A0C2D5200410042BE44 /* EMASCurlWebContentLoader.m in Sources */,
-				949789DA2D50ED640042BE44 /* EMASCurlWebUrlSchemeHandler.m in Sources */,
-				94978A6C2D5313E50042BE44 /* EMASCurlWebLogger.m in Sources */,
-				945E21F52D352BF7007BA1C9 /* WKWebViewConfiguration+Loader.m in Sources */,
 				949788D82D4FAA0D0042BE44 /* EMASCurlCookieStorage.m in Sources */,
 				6F3F60252CD0E07F0014025B /* EMASCurlProtocol.m in Sources */,
 				94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */,
@@ -645,6 +698,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		94978BA52D57301A0042BE44 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94978CF02D5742BB0042BE44 /* EMASCurlWebContentLoader.m in Sources */,
+				94978CF12D5742BB0042BE44 /* EMASCurlWebDataTask.m in Sources */,
+				94978CF22D5742BB0042BE44 /* EMASCurlWebLogger.m in Sources */,
+				94978CF32D5742BB0042BE44 /* EMASCurlWebNetworkManager.m in Sources */,
+				94978CF42D5742BB0042BE44 /* EMASCurlWebRequestExecutor.m in Sources */,
+				94978CF52D5742BB0042BE44 /* EMASCurlWebURLResponse.m in Sources */,
+				94978CF62D5742BB0042BE44 /* EMASCurlWebURLResponseCache.m in Sources */,
+				94978CF72D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.m in Sources */,
+				94978CF82D5742BB0042BE44 /* EMASCurlWebUtils.m in Sources */,
+				94978CF92D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -658,10 +728,20 @@
 			target = 94978A742D55CDB30042BE44 /* EMASCurlWebBundle */;
 			targetProxy = 94978A7C2D55CEC70042BE44 /* PBXContainerItemProxy */;
 		};
-		94978A7F2D55CECD0042BE44 /* PBXTargetDependency */ = {
+		94978BAE2D57301A0042BE44 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 94978BA82D57301A0042BE44 /* EMASCurlWeb */;
+			targetProxy = 94978BAD2D57301A0042BE44 /* PBXContainerItemProxy */;
+		};
+		94978C4B2D57307C0042BE44 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6F3F5FD92CD0DB200014025B /* EMASCurl */;
+			targetProxy = 94978C4A2D57307C0042BE44 /* PBXContainerItemProxy */;
+		};
+		94978C4E2D5730990042BE44 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 94978A742D55CDB30042BE44 /* EMASCurlWebBundle */;
-			targetProxy = 94978A7E2D55CECD0042BE44 /* PBXContainerItemProxy */;
+			targetProxy = 94978C4D2D5730990042BE44 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -704,11 +784,15 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACH_O_TYPE = staticlib;
+				MACH_O_TYPE = mh_dylib;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lz",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alicloud.emas.EMASCurl;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -736,11 +820,15 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACH_O_TYPE = staticlib;
+				MACH_O_TYPE = mh_dylib;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lz",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alicloud.emas.EMASCurl;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -937,7 +1025,7 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -971,7 +1059,7 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1031,6 +1119,68 @@
 			};
 			name = Release;
 		};
+		94978BB32D57301A0042BE44 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				PRODUCT_BUNDLE_IDENTIFIER = com.alicloud.emascurl.EMASCurlWeb;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		94978BB42D57301A0042BE44 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				PRODUCT_BUNDLE_IDENTIFIER = com.alicloud.emascurl.EMASCurlWeb;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1075,6 +1225,15 @@
 			buildConfigurations = (
 				94978A772D55CDB40042BE44 /* Debug */,
 				94978A782D55CDB40042BE44 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		94978BB22D57301A0042BE44 /* Build configuration list for PBXNativeTarget "EMASCurlWeb" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				94978BB32D57301A0042BE44 /* Debug */,
+				94978BB42D57301A0042BE44 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

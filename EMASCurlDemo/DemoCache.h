@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 #import <EMASCurl/EMASCurl.h>
-#import <EMASCurl/EMASCurlWebCacheProtocol.h>
+#import <EMASCurlWeb/EMASCurlWeb.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

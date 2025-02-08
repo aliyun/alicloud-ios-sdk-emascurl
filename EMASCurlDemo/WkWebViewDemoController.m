@@ -2,8 +2,7 @@
 #import "DemoCache.h"
 #import <WebKit/WebKit.h>
 #import <EMASCurl/EMASCurl.h>
-#import <EMASCurl/EMASCurlWebUrlSchemeHandler.h>
-#import <EMASCurl/EMASCurlWebContentLoader.h>
+#import <EMASCurlWeb/EMASCurlWeb.h>
 #import <AlicloudHttpDNS/AlicloudHttpDNS.h>
 
 

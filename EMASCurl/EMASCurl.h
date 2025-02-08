@@ -6,13 +6,6 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <EMASCurl/EMASCurlProtocol.h>
-
-#import <EMASCurl/EMASCurlWebContentLoader.h>
-#import <EMASCurl/EMASCurlWebUrlSchemeHandler.h>
-#import <EMASCurl/WKWebViewConfiguration+Loader.h>
-#import <EMASCurl/EMASCurlWebCacheProtocol.h>
-#import <EMASCurl/EMASCurlWebConstant.h>
 
 //! Project version number for EMASCurl.
 FOUNDATION_EXPORT double EMASCurlVersionNumber;
@@ -22,4 +15,4 @@ FOUNDATION_EXPORT const unsigned char EMASCurlVersionString[];
 
 // In this header, you should import all the public headers of your framework using statements like #import <EMASCurl/PublicHeader.h>
 
-
+#import <EMASCurl/EMASCurlProtocol.h>

@@ -72,7 +72,7 @@ static void *kEMASCurlStoreWebViewWeakReferenceKey = &kEMASCurlStoreWebViewWeakR
 }
 
 - (void)enableCookieHandler {
-    NSString *bundlePath = [[NSBundle mainBundle] pathForResource:@"EMASCurlWebBundle" ofType:@"bundle"];
+    NSString *bundlePath = [[NSBundle bundleForClass:NSClassFromString(@"EMASCurlWebContentLoader")] pathForResource:@"EMASCurlWebBundle" ofType:@"bundle"];
     NSBundle *resourceBundle = [NSBundle bundleWithPath:bundlePath];
     NSString *filePath = [resourceBundle pathForResource:@"cookie" ofType:@"js"];
     NSString *scriptContent = [NSString stringWithContentsOfFile:filePath encoding:NSUTF8StringEncoding error:nil];
