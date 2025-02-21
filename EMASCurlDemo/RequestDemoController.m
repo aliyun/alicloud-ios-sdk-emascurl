@@ -71,6 +71,20 @@
     NSString *urlString = @"https://httpbin.org/post";
     NSURL *url = [NSURL URLWithString:urlString];
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
+    [EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
+        NSLog(@"Network Metrics:\n"
+              "Success: %d\n"
+              "Error: %@\n"
+              "DNS Lookup: %.2fms\n"
+              "Connect: %.2fms\n"
+              "App Connect: %.2fms\n"
+              "Pre-transfer: %.2fms\n"
+              "Start Transfer: %.2fms\n"
+              "Total: %.2fms",
+              success, error,
+              nameLookUpTimeMS, connectTimeMs, appConnectTimeMs,
+              preTransferTimeMs, startTransferTimeMs, totalTimeMs);
+    }];
     request.HTTPMethod = @"POST";
 
     // Create sample data to upload

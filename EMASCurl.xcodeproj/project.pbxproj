@@ -58,7 +58,7 @@
 		94978CFB2D5742BB0042BE44 /* cookie.js in Resources */ = {isa = PBXBuildFile; fileRef = 94978CCA2D5742BB0042BE44 /* cookie.js */; };
 		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
 		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
-		F49E8F29C5BFB18EA82FA4FE /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7550AA13D3ADD72163B2F6 /* libcurl-HTTP2.xcframework */; };
+		9ED156F40066301702A9AC72 /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7550AA13D3ADD72163B2F6 /* libcurl-HTTP2.xcframework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -204,7 +204,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F49E8F29C5BFB18EA82FA4FE /* libcurl-HTTP2.xcframework in Frameworks */,
+				9ED156F40066301702A9AC72 /* libcurl-HTTP2.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -279,8 +279,9 @@ static bool s_enableDebugLog;
     CURL *easyHandle = curl_easy_init();
     self.easyHandle = easyHandle;
     if (!easyHandle) {
-        [self observeNetworkMetric];
-        [self.client URLProtocol:self didFailWithError:[NSError errorWithDomain:@"fail to init easy handle" code:-1 userInfo:nil]];
+        NSError *error = [NSError errorWithDomain:@"fail to init easy handle." code:-1 userInfo:nil];
+        [self reportNetworkMetric:NO error:error];
+        [self.client URLProtocol:self didFailWithError:error];
         return;
     }
 
@@ -290,13 +291,13 @@ static bool s_enableDebugLog;
     NSError *error = nil;
     [self configEasyHandle:easyHandle error:&error];
     if (error) {
-        [self observeNetworkMetric];
+        [self reportNetworkMetric:NO error:error];
         [self.client URLProtocol:self didFailWithError:error];
         return;
     }
 
     [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error) {
-        [self observeNetworkMetric];
+        [self reportNetworkMetric:succeed error:error];
 
         if (succeed) {
             [self.client URLProtocolDidFinishLoading:self];
@@ -333,7 +334,7 @@ static bool s_enableDebugLog;
     }
 }
 
-- (void)observeNetworkMetric {
+- (void)reportNetworkMetric:(BOOL)success error:(NSError *)error {
     if (!self.metricsObserverBlock || !self.easyHandle) {
         return;
     }
@@ -357,6 +358,8 @@ static bool s_enableDebugLog;
     curl_easy_getinfo(self.easyHandle, CURLINFO_TOTAL_TIME, &totalTime);
 
     self.metricsObserverBlock(self.request,
+                              success,
+                              error,
                               nameLookupTime * 1000,
                               connectTime * 1000,
                               appConnectTime * 1000,
@@ -478,7 +481,7 @@ static bool s_enableDebugLog;
         NSBundle *mainBundle = [NSBundle mainBundle];
         NSURL *bundleURL = [mainBundle URLForResource:@"EMASCAResource" withExtension:@"bundle"];
         if (!bundleURL) {
-            *error = [NSError errorWithDomain:@"fail to load CA certificate" code:-3 userInfo:nil];
+            *error = [NSError errorWithDomain:@"fail to load CA certificate." code:-3 userInfo:nil];
             return;
         }
         NSBundle *resourceBundle = [NSBundle bundleWithURL:bundleURL];

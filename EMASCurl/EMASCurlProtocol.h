@@ -48,6 +48,8 @@ typedef void(^EMASCurlUploadProgressUpdateBlock)(NSURLRequest * _Nonnull request
 /// param @startTransferTimeMs 从开始到收到第一个字节的耗时，单位毫秒
 /// param @totalTimeMs 整个请求的总耗时，单位毫秒
 typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
+                                   BOOL success,
+                                   NSError * _Nullable error,
                                    double nameLookUpTimeMS,
                                    double connectTimeMs,
                                    double appConnectTimeMs,
