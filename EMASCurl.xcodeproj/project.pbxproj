@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		243BB9ECD47350A60179CEE9 /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */; };
 		5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */; };
 		6F3F5FED2CD0DB520014025B /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
 		6F3F60232CD0E07F0014025B /* EMASCurl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6F3F601F2CD0E07F0014025B /* EMASCurl.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -32,8 +31,6 @@
 		949788D82D4FAA0D0042BE44 /* EMASCurlCookieStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 949788D72D4FAA0D0042BE44 /* EMASCurlCookieStorage.m */; };
 		949788D92D4FAA0D0042BE44 /* EMASCurlCookieStorage.h in Headers */ = {isa = PBXBuildFile; fileRef = 949788D62D4FAA0D0042BE44 /* EMASCurlCookieStorage.h */; };
 		949789052D4FE2DB0042BE44 /* EMASCurlCookieTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949789042D4FE2DB0042BE44 /* EMASCurlCookieTest.m */; };
-		94978BA12D572DE80042BE44 /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
-		94978BAF2D57301A0042BE44 /* EMASCurlWeb.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 94978BA92D57301A0042BE44 /* EMASCurlWeb.framework */; };
 		94978C4F2D57309F0042BE44 /* EMASCurlWebBundle.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 94978A752D55CDB30042BE44 /* EMASCurlWebBundle.bundle */; };
 		94978CE32D5742BB0042BE44 /* EMASCurlWeb.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CCB2D5742BB0042BE44 /* EMASCurlWeb.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		94978CE42D5742BB0042BE44 /* EMASCurlWebCacheProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CCC2D5742BB0042BE44 /* EMASCurlWebCacheProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -59,8 +56,13 @@
 		94978CF82D5742BB0042BE44 /* EMASCurlWebUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CDF2D5742BB0042BE44 /* EMASCurlWebUtils.m */; };
 		94978CF92D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CE12D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m */; };
 		94978CFB2D5742BB0042BE44 /* cookie.js in Resources */ = {isa = PBXBuildFile; fileRef = 94978CCA2D5742BB0042BE44 /* cookie.js */; };
+		9497905A2D580AF60042BE44 /* EMASCurl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; };
+		9497905B2D580AF60042BE44 /* EMASCurl.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6F3F5FDA2CD0DB200014025B /* EMASCurl.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		9497905D2D580AF70042BE44 /* EMASCurlWeb.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 94978BA92D57301A0042BE44 /* EMASCurlWeb.framework */; };
+		9497905E2D580AF70042BE44 /* EMASCurlWeb.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 94978BA92D57301A0042BE44 /* EMASCurlWeb.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
 		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
+		F49E8F29C5BFB18EA82FA4FE /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7550AA13D3ADD72163B2F6 /* libcurl-HTTP2.xcframework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,6 +103,21 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		9497905C2D580AF60042BE44 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				9497905B2D580AF60042BE44 /* EMASCurl.framework in Embed Frameworks */,
+				9497905E2D580AF70042BE44 /* EMASCurlWeb.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_EMASCurlDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2DBA4A149115D13FCC136512 /* Pods-AVPlayerDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AVPlayerDemo.release.xcconfig"; path = "Target Support Files/Pods-AVPlayerDemo/Pods-AVPlayerDemo.release.xcconfig"; sourceTree = "<group>"; };
@@ -123,6 +140,7 @@
 		6F3F60352CD0E0890014025B /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "./out/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
+		8F7550AA13D3ADD72163B2F6 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "./precompiled/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
 		9492D6A42D30226200008A84 /* RequestDemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RequestDemoController.h; sourceTree = "<group>"; };
 		9492D6A52D30226200008A84 /* RequestDemoController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RequestDemoController.m; sourceTree = "<group>"; };
 		9492D6A62D30226200008A84 /* WkWebViewDemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WkWebViewDemoController.h; sourceTree = "<group>"; };
@@ -166,6 +184,7 @@
 		94978CDF2D5742BB0042BE44 /* EMASCurlWebUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebUtils.m; sourceTree = "<group>"; };
 		94978CE02D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WKWebViewConfiguration+Loader.h"; sourceTree = "<group>"; };
 		94978CE12D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "WKWebViewConfiguration+Loader.m"; sourceTree = "<group>"; };
+		94978EB22D57FFCC0042BE44 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "precompiled/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
 		94C5B5D82D071D86006BC856 /* EMASCurlManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlManager.h; sourceTree = "<group>"; };
 		94C5B5D92D071D86006BC856 /* EMASCurlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlManager.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
@@ -212,7 +231,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				243BB9ECD47350A60179CEE9 /* libcurl-HTTP2.xcframework in Frameworks */,
+				F49E8F29C5BFB18EA82FA4FE /* libcurl-HTTP2.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -228,8 +247,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				94978BA12D572DE80042BE44 /* EMASCurl.framework in Frameworks */,
-				94978BAF2D57301A0042BE44 /* EMASCurlWeb.framework in Frameworks */,
+				9497905A2D580AF60042BE44 /* EMASCurl.framework in Frameworks */,
+				9497905D2D580AF70042BE44 /* EMASCurlWeb.framework in Frameworks */,
 				5C5481264CFFDBFD5CB59195 /* Pods_EMASCurlDemo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -280,8 +299,10 @@
 		6F3F60112CD0DB7D0014025B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				94978EB22D57FFCC0042BE44 /* libcurl-HTTP2.xcframework */,
 				226913C558EE701DCE6DCA3F /* Pods_EMASCurlDemo.framework */,
 				8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */,
+				8F7550AA13D3ADD72163B2F6 /* libcurl-HTTP2.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -467,6 +488,7 @@
 				6F3F5FF42CD0DB6E0014025B /* Frameworks */,
 				6F3F5FF52CD0DB6E0014025B /* Resources */,
 				B6104D0899E0506A8BDD5047 /* [CP] Embed Pods Frameworks */,
+				9497905C2D580AF60042BE44 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -512,8 +534,6 @@
 				94978C4E2D5730990042BE44 /* PBXTargetDependency */,
 			);
 			name = EMASCurlWeb;
-			packageProductDependencies = (
-			);
 			productName = EMASCurlWeb;
 			productReference = 94978BA92D57301A0042BE44 /* EMASCurlWeb.framework */;
 			productType = "com.apple.product-type.framework";
@@ -1017,6 +1037,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VSW2PKYTD7;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = EMASCurlDemo/Info.plist;
@@ -1051,6 +1072,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VSW2PKYTD7;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = EMASCurlDemo/Info.plist;

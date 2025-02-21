@@ -19,9 +19,9 @@ end
 
 # 根据传入的参数设置 xcframework_path
 xcframework_path = if options[:type] == 'http2'
-  './out/libcurl-HTTP2.xcframework'
+  './precompiled/libcurl-HTTP2.xcframework'
 else
-  './out/libcurl-HTTP3.xcframework'
+  './precompiled/libcurl-HTTP3.xcframework'
 end
 
 # 打开 Xcode 项目
