@@ -391,6 +391,8 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 
 ```objc
 typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
+                                   BOOL success,
+                                   NSError * _Nullable error,
                                    double nameLookUpTimeMS,
                                    double connectTimeMs,
                                    double appConnectTimeMs,
@@ -401,13 +403,33 @@ typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
 + (void)setMetricsObserverBlockForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlock)metricsObserverBlock;
 ```
 
+性能指标回调参数说明：
+- `request`: 发起请求使用的请求实例
+- `success`: 请求是否成功
+- `error`: 如果请求失败，包含错误信息
+- `nameLookUpTimeMS`: DNS解析耗时，单位毫秒
+- `connectTimeMs`: TCP连接耗时，单位毫秒
+- `appConnectTimeMs`: SSL/TLS握手耗时，单位毫秒
+- `preTransferTimeMs`: 从开始到传输前准备完成的耗时，单位毫秒
+- `startTransferTimeMs`: 从开始到收到第一个字节的耗时，单位毫秒
+- `totalTimeMs`: 整个请求的总耗时，单位毫秒
+
+例如：
+
+```objc
+```
+
 网络请求性能指标回调，可以帮助您监控请求的各项耗时指标。
 
 例如：
 
 ```objc
 NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-[EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
+[EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
+    if (!success) {
+        NSLog(@"请求失败，错误信息: %@", error.localizedDescription);
+        return;
+    }
     NSLog(@"性能指标:");
     NSLog(@"DNS解析耗时: %.2f ms", nameLookUpTimeMS);
     NSLog(@"TCP连接耗时: %.2f ms", connectTimeMs);

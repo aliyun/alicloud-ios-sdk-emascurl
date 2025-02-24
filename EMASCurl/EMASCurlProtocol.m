@@ -99,6 +99,8 @@ static bool s_enableBuiltInGzip;
 
 static NSString *s_caFilePath;
 
+static BOOL s_enableBuiltInRedirection;
+
 static NSString *s_proxyServer;
 static dispatch_queue_t s_serialQueue;
 
@@ -134,6 +136,10 @@ static bool s_enableDebugLog;
 
 + (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath {
     s_caFilePath = selfSignedCAFilePath;
+}
+
++ (void)setBuiltInRedirectionEnabled:(BOOL)enabled {
+    s_enableBuiltInRedirection = enabled;
 }
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
@@ -187,6 +193,7 @@ static bool s_enableDebugLog;
     s_enableDebugLog = NO;
 
     s_enableBuiltInGzip = YES;
+    s_enableBuiltInRedirection = YES;
 
     s_proxyServer = nil;
     static dispatch_once_t onceToken;
@@ -248,11 +255,19 @@ static bool s_enableDebugLog;
     if ([[request.URL absoluteString] isEqual:@"about:blank"]) {
         return NO;
     }
+
     // 不是http或https，则不拦截
     if (!([request.URL.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame ||
          [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)) {
         return NO;
     }
+
+    NSString *userAgent = [request valueForHTTPHeaderField:@"User-Agent"];
+    if (userAgent && [userAgent containsString:@"HttpdnsSDK"]) {
+        // 不拦截来自Httpdns SDK的请求
+        return NO;
+    }
+
     return YES;
 }
 
@@ -264,8 +279,9 @@ static bool s_enableDebugLog;
     CURL *easyHandle = curl_easy_init();
     self.easyHandle = easyHandle;
     if (!easyHandle) {
-        [self observeNetworkMetric];
-        [self.client URLProtocol:self didFailWithError:[NSError errorWithDomain:@"fail to init easy handle" code:-1 userInfo:nil]];
+        NSError *error = [NSError errorWithDomain:@"fail to init easy handle." code:-1 userInfo:nil];
+        [self reportNetworkMetric:NO error:error];
+        [self.client URLProtocol:self didFailWithError:error];
         return;
     }
 
@@ -275,13 +291,13 @@ static bool s_enableDebugLog;
     NSError *error = nil;
     [self configEasyHandle:easyHandle error:&error];
     if (error) {
-        [self observeNetworkMetric];
+        [self reportNetworkMetric:NO error:error];
         [self.client URLProtocol:self didFailWithError:error];
         return;
     }
 
     [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error) {
-        [self observeNetworkMetric];
+        [self reportNetworkMetric:succeed error:error];
 
         if (succeed) {
             [self.client URLProtocolDidFinishLoading:self];
@@ -318,7 +334,7 @@ static bool s_enableDebugLog;
     }
 }
 
-- (void)observeNetworkMetric {
+- (void)reportNetworkMetric:(BOOL)success error:(NSError *)error {
     if (!self.metricsObserverBlock || !self.easyHandle) {
         return;
     }
@@ -342,6 +358,8 @@ static bool s_enableDebugLog;
     curl_easy_getinfo(self.easyHandle, CURLINFO_TOTAL_TIME, &totalTime);
 
     self.metricsObserverBlock(self.request,
+                              success,
+                              error,
                               nameLookupTime * 1000,
                               connectTime * 1000,
                               appConnectTime * 1000,
@@ -389,6 +407,7 @@ static bool s_enableDebugLog;
         case HTTP2:
             if (curlFeatureHttp2) {
                 curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
+                curl_easy_setopt(easyHandle, CURLOPT_PIPEWAIT, 1L);
             } else {
                 curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
             }
@@ -462,7 +481,7 @@ static bool s_enableDebugLog;
         NSBundle *mainBundle = [NSBundle mainBundle];
         NSURL *bundleURL = [mainBundle URLForResource:@"EMASCAResource" withExtension:@"bundle"];
         if (!bundleURL) {
-            *error = [NSError errorWithDomain:@"fail to load CA certificate" code:-3 userInfo:nil];
+            *error = [NSError errorWithDomain:@"fail to load CA certificate." code:-3 userInfo:nil];
             return;
         }
         NSBundle *resourceBundle = [NSBundle bundleWithURL:bundleURL];
@@ -534,7 +553,12 @@ static bool s_enableDebugLog;
     }
 
     // 开启重定向
-    curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
+    if (s_enableBuiltInRedirection) {
+        curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
+    } else {
+        curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 0L);
+    }
+
     // 为了线程安全，设置NOSIGNAL
     curl_easy_setopt(easyHandle, CURLOPT_NOSIGNAL, 1L);
 }
@@ -654,17 +678,35 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         NSInteger statusCode = protocol.currentResponse.statusCode;
         NSString *reasonPhrase = protocol.currentResponse.reasonPhrase;
 
+        NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
+                                                                      statusCode:protocol.currentResponse.statusCode
+                                                                     HTTPVersion:protocol.currentResponse.httpVersion
+                                                                    headerFields:protocol.currentResponse.headers];
         if (isRedirectionStatusCode(statusCode)) {
+            if (!s_enableBuiltInRedirection) {
+                // 关闭了重定向支持，则把重定向信息往外传递
+                __block NSString *location = nil;
+                [protocol.currentResponse.headers enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSString * _Nonnull obj, BOOL * _Nonnull stop) {
+                    if ([key caseInsensitiveCompare:@"Location"] == NSOrderedSame) {
+                        location = obj;
+                        *stop = YES;
+                    }
+                }];
+                if (location) {
+                    NSURL *locationURL = [NSURL URLWithString:location relativeToURL:protocol.request.URL];
+                    NSMutableURLRequest *redirectedRequest = [protocol.request mutableCopy];
+                    [redirectedRequest setURL:locationURL];
+                    [protocol.client URLProtocol:protocol wasRedirectedToRequest:redirectedRequest redirectResponse:httpResponse];
+                } else {
+
+                }
+            }
             [protocol.currentResponse reset];
         } else if (isInformationalStatusCode(statusCode)) {
             [protocol.currentResponse reset];
         } else if (isConnectEstablishedStatusCode(statusCode, reasonPhrase)) {
             [protocol.currentResponse reset];
         } else {
-            NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
-                                                                          statusCode:protocol.currentResponse.statusCode
-                                                                         HTTPVersion:protocol.currentResponse.httpVersion
-                                                                        headerFields:protocol.currentResponse.headers];
             [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageAllowed];
             protocol.currentResponse.isFinalResponse = YES;
         }

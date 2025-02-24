@@ -19,9 +19,9 @@ end
 
 # 根据传入的参数设置 xcframework_path
 xcframework_path = if options[:type] == 'http2'
-  './out/libcurl-HTTP2.xcframework'
+  './precompiled/libcurl-HTTP2.xcframework'
 else
-  './out/libcurl-HTTP3.xcframework'
+  './precompiled/libcurl-HTTP3.xcframework'
 end
 
 # 打开 Xcode 项目
@@ -66,8 +66,8 @@ frameworks_group = project.main_group['Frameworks']
 
 # 定义要检查和删除的路径
 paths_to_remove = [
-  './out/libcurl-HTTP2.xcframework',
-  './out/libcurl-HTTP3.xcframework'
+  './precompiled/libcurl-HTTP2.xcframework',
+  './precompiled/libcurl-HTTP3.xcframework'
 ]
 
 # 删除之前可能添加到构建阶段的 xcframework 文件

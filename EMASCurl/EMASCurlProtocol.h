@@ -48,6 +48,8 @@ typedef void(^EMASCurlUploadProgressUpdateBlock)(NSURLRequest * _Nonnull request
 /// param @startTransferTimeMs 从开始到收到第一个字节的耗时，单位毫秒
 /// param @totalTimeMs 整个请求的总耗时，单位毫秒
 typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
+                                   BOOL success,
+                                   NSError * _Nullable error,
                                    double nameLookUpTimeMS,
                                    double connectTimeMs,
                                    double appConnectTimeMs,
@@ -87,6 +89,9 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 
 // 设置CA证书文件路径，在使用自签名证书做测试时使用
 + (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath;
+
+// 是否开启内部重定向支持
++ (void)setBuiltInRedirectionEnabled:(BOOL)enabled;
 
 // 设置是否开启调试日志
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled;

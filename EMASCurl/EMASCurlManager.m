@@ -101,7 +101,7 @@ typedef struct {
         [_condition lock];
         while (!_shouldStop) {
             [self performCurlActions];
-            [_condition waitUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+            [_condition waitUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
         }
         [_condition unlock];
     }
@@ -141,7 +141,9 @@ typedef struct {
             curl_multi_remove_handle(_multiHandle, easy);
 
             if (completion) {
-                completion(succeed, error);
+                dispatch_async(dispatch_get_global_queue(0, 0), ^{
+                    completion(succeed, error);
+                });
             }
         }
     }
