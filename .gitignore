@@ -240,9 +240,13 @@ Cartfile.private
 *.swo
 .DS_Store
 **/.DS_Store
+*.DS_Store
 
 # python
 __pycache__/
 
 # vscode
 .vscode
+
+# windsurf rules
+.windsurfrules

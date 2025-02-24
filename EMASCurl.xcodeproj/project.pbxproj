@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -27,6 +27,9 @@
 		949539192D116EB8001FE850 /* EMASCurlMetricObserverTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */; };
 		9495391B2D1194DD001FE850 /* EMASCurlDNSResolverTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */; };
 		94953A972D1BEBE8001FE850 /* EMASCurlTimeoutTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94953A962D1BEBE8001FE850 /* EMASCurlTimeoutTest.m */; };
+		949788D82D4FAA0D0042BE44 /* EMASCurlCookieStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 949788D72D4FAA0D0042BE44 /* EMASCurlCookieStorage.m */; };
+		949788D92D4FAA0D0042BE44 /* EMASCurlCookieStorage.h in Headers */ = {isa = PBXBuildFile; fileRef = 949788D62D4FAA0D0042BE44 /* EMASCurlCookieStorage.h */; };
+		949789052D4FE2DB0042BE44 /* EMASCurlCookieTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949789042D4FE2DB0042BE44 /* EMASCurlCookieTest.m */; };
 		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
 		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
 /* End PBXBuildFile section */
@@ -71,6 +74,9 @@
 		949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlMetricObserverTest.m; sourceTree = "<group>"; };
 		9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlDNSResolverTest.m; sourceTree = "<group>"; };
 		94953A962D1BEBE8001FE850 /* EMASCurlTimeoutTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlTimeoutTest.m; sourceTree = "<group>"; };
+		949788D62D4FAA0D0042BE44 /* EMASCurlCookieStorage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlCookieStorage.h; sourceTree = "<group>"; };
+		949788D72D4FAA0D0042BE44 /* EMASCurlCookieStorage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlCookieStorage.m; sourceTree = "<group>"; };
+		949789042D4FE2DB0042BE44 /* EMASCurlCookieTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlCookieTest.m; sourceTree = "<group>"; };
 		94C5B5D82D071D86006BC856 /* EMASCurlManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlManager.h; sourceTree = "<group>"; };
 		94C5B5D92D071D86006BC856 /* EMASCurlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlManager.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
@@ -107,10 +113,6 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				949538D62D0F31B1001FE850 /* Exceptions for "MockServer" folder in "EMASCurlTests" target */,
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
 			);
 			path = MockServer;
 			sourceTree = "<group>";
@@ -187,6 +189,8 @@
 				6F3F60212CD0E07F0014025B /* EMASCurlProtocol.m */,
 				94C5B5D82D071D86006BC856 /* EMASCurlManager.h */,
 				94C5B5D92D071D86006BC856 /* EMASCurlManager.m */,
+				949788D62D4FAA0D0042BE44 /* EMASCurlCookieStorage.h */,
+				949788D72D4FAA0D0042BE44 /* EMASCurlCookieStorage.m */,
 			);
 			path = EMASCurl;
 			sourceTree = "<group>";
@@ -201,6 +205,7 @@
 				949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */,
 				9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */,
 				94953A962D1BEBE8001FE850 /* EMASCurlTimeoutTest.m */,
+				949789042D4FE2DB0042BE44 /* EMASCurlCookieTest.m */,
 				949538CC2D0F1CB3001FE850 /* README.md */,
 			);
 			path = EMASCurlTests;
@@ -242,6 +247,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				949788D92D4FAA0D0042BE44 /* EMASCurlCookieStorage.h in Headers */,
 				6F3F60232CD0E07F0014025B /* EMASCurl.h in Headers */,
 				6F3F60242CD0E07F0014025B /* EMASCurlProtocol.h in Headers */,
 				94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */,
@@ -329,7 +335,6 @@
 				};
 			};
 			buildConfigurationList = 6F3F5FD42CD0DB200014025B /* Build configuration list for PBXProject "EMASCurl" */;
-			compatibilityVersion = "Xcode 15.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -338,6 +343,7 @@
 			);
 			mainGroup = 6F3F5FD02CD0DB200014025B;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 6F3F5FDB2CD0DB200014025B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -406,6 +412,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				949788D82D4FAA0D0042BE44 /* EMASCurlCookieStorage.m in Sources */,
 				6F3F60252CD0E07F0014025B /* EMASCurlProtocol.m in Sources */,
 				94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */,
 			);
@@ -417,6 +424,7 @@
 			files = (
 				949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */,
 				949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */,
+				949789052D4FE2DB0042BE44 /* EMASCurlCookieTest.m in Sources */,
 				9495391B2D1194DD001FE850 /* EMASCurlDNSResolverTest.m in Sources */,
 				94953A972D1BEBE8001FE850 /* EMASCurlTimeoutTest.m in Sources */,
 				949539152D0FC531001FE850 /* EMASCurlSimpleTest.m in Sources */,

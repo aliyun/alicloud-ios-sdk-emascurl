@@ -7,6 +7,7 @@
 
 #import "EMASCurlProtocol.h"
 #import "EMASCurlManager.h"
+#import "EMASCurlCookieStorage.h"
 #import <curl/curl.h>
 
 #define HTTP_METHOD_GET @"GET"
@@ -82,6 +83,8 @@ static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCur
 
 @property (nonatomic, copy) EMASCurlMetricsObserverBlock metricsObserverBlock;
 
+@property (nonatomic, assign) double resolveDomainTimeInterval;
+
 @end
 
 static HTTPVersion s_httpVersion;
@@ -92,11 +95,12 @@ static bool curlFeatureHttp2;
 // runtime 的libcurl xcframework是否支持HTTP3
 static bool curlFeatureHttp3;
 
+static bool s_enableBuiltInGzip;
+
 static NSString *s_caFilePath;
 
-static BOOL s_enableBuiltInCookieStorage;
-
 static NSString *s_proxyServer;
+static dispatch_queue_t s_serialQueue;
 
 static Class<EMASCurlProtocolDNSResolver> s_dnsResolverClass;
 
@@ -124,16 +128,12 @@ static bool s_enableDebugLog;
     s_httpVersion = version;
 }
 
-+ (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath {
-    s_caFilePath = selfSignedCAFilePath;
++ (void)setBuiltInGzipEnabled:(BOOL)enabled {
+    s_enableBuiltInGzip = enabled;
 }
 
-+ (void)setBuiltInCookieStorageEnabled:(BOOL)enabled {
-    s_enableBuiltInCookieStorage = enabled;
-
-    if (!enabled) {
-        [[EMASCurlManager sharedInstance] disableCookieSharing];
-    }
++ (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath {
+    s_caFilePath = selfSignedCAFilePath;
 }
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
@@ -166,6 +166,7 @@ static bool s_enableDebugLog;
         _totalBytesSent = 0;
         _totalBytesExpected = 0;
         _currentResponse = [CurlHTTPResponse new];
+        _resolveDomainTimeInterval = -1;
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
@@ -185,7 +186,13 @@ static bool s_enableDebugLog;
     s_httpVersion = HTTP1;
     s_enableDebugLog = NO;
 
-    s_enableBuiltInCookieStorage = YES;
+    s_enableBuiltInGzip = YES;
+
+    s_proxyServer = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        s_serialQueue = dispatch_queue_create("com.alicloud.emascurl.serialQueue", DISPATCH_QUEUE_SERIAL);
+    });
 
     // 设置定时任务读取proxy
     [self startProxyUpdatingTimer];
@@ -205,21 +212,35 @@ static bool s_enableDebugLog;
 + (void)updateProxySettings {
     CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
     if (!proxySettings) {
-        return;
-    }
-    NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
-    if (!(proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable])) {
+        dispatch_sync(s_serialQueue, ^{
+            s_proxyServer = nil;
+        });
         CFRelease(proxySettings);
         return;
     }
+
+    NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
+    if (!(proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable])) {
+        dispatch_sync(s_serialQueue, ^{
+            s_proxyServer = nil;
+        });
+        CFRelease(proxySettings);
+        return;
+    }
+
     NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
     NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
 
     if (httpProxy && httpPort) {
-        @synchronized (self) {
+        dispatch_sync(s_serialQueue, ^{
             s_proxyServer = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
-        }
+        });
+    } else {
+        dispatch_sync(s_serialQueue, ^{
+            s_proxyServer = nil;
+        });
     }
+
     CFRelease(proxySettings);
 }
 
@@ -309,7 +330,11 @@ static bool s_enableDebugLog;
     double startTransferTime = 0;
     double totalTime = 0;
 
-    curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+    if (self.resolveDomainTimeInterval > 0) {
+        nameLookupTime = self.resolveDomainTimeInterval;
+    } else {
+        curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+    }
     curl_easy_getinfo(self.easyHandle, CURLINFO_CONNECT_TIME, &connectTime);
     curl_easy_getinfo(self.easyHandle, CURLINFO_APPCONNECT_TIME, &appConnectTime);
     curl_easy_getinfo(self.easyHandle, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
@@ -373,8 +398,10 @@ static bool s_enableDebugLog;
             break;
     }
 
-    // 配置支持的HTTP压缩算法，""代表自动检测内置的算法，目前zlib支持deflate与gzip
-    curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
+    if (s_enableBuiltInGzip) {
+        // 配置支持的HTTP压缩算法，""代表自动检测内置的算法，目前zlib支持deflate与gzip
+        curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
+    }
 
     // 将拦截到的request的header字段进行透传
     self.requestHeaderFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
@@ -401,7 +428,7 @@ static bool s_enableDebugLog;
     // 用read_cb回调函数来读取需要传输的数据
     curl_easy_setopt(easyHandle, CURLOPT_READFUNCTION, read_cb);
     // self传给read_cb函数的void *userp参数
-    curl_easy_setopt(easyHandle, CURLOPT_READDATA, self);
+    curl_easy_setopt(easyHandle, CURLOPT_READDATA, (__bridge void *)self);
 
     NSString *contentLength = [request valueForHTTPHeaderField:@"Content-Length"];
     if (!contentLength) {
@@ -443,12 +470,6 @@ static bool s_enableDebugLog;
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [filePath UTF8String]);
     }
 
-    if (s_enableBuiltInCookieStorage) {
-        char * cookieFilePath = getPersistentCookieFilePath();
-        curl_easy_setopt(easyHandle, CURLOPT_COOKIEFILE, cookieFilePath);
-        curl_easy_setopt(easyHandle, CURLOPT_COOKIEJAR, cookieFilePath);
-    }
-
     // 是否设置自定义根证书
     if (s_caFilePath) {
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [s_caFilePath UTF8String]);
@@ -456,15 +477,25 @@ static bool s_enableDebugLog;
 
     // 假如设置了自定义resolve，则使用
     if (s_dnsResolverClass) {
-        [self configCustomDNSResolver:easyHandle];
+        NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
+        if ([self preResolveDomain:easyHandle]) {
+            self.resolveDomainTimeInterval = [[NSDate date] timeIntervalSince1970] - startTime;
+        }
     }
 
-    @synchronized ([EMASCurlProtocol class]) {
+    // 设置cookie
+    EMASCurlCookieStorage *cookieStorage = [EMASCurlCookieStorage sharedStorage];
+    NSString *cookieString = [cookieStorage cookieStringForURL:self.request.URL];
+    if (cookieString) {
+        curl_easy_setopt(easyHandle, CURLOPT_COOKIE, [cookieString UTF8String]);
+    }
+
+    dispatch_sync(s_serialQueue, ^{
         // 设置proxy
         if (s_proxyServer) {
             curl_easy_setopt(easyHandle, CURLOPT_PROXY, [s_proxyServer UTF8String]);
         }
-    }
+    });
 
     // 设置debug回调函数以输出日志
     if (s_enableDebugLog) {
@@ -508,10 +539,10 @@ static bool s_enableDebugLog;
     curl_easy_setopt(easyHandle, CURLOPT_NOSIGNAL, 1L);
 }
 
-- (void)configCustomDNSResolver:(CURL *)easyHandle {
+- (BOOL)preResolveDomain:(CURL *)easyHandle {
     NSURL *url = self.request.URL;
     if (!url || !url.host) {
-        return;
+        return NO;
     }
 
     NSString *host = url.host;
@@ -527,13 +558,13 @@ static bool s_enableDebugLog;
         } else if ([scheme isEqualToString:@"http"]) {
             resolvedPort = 80;
         } else {
-            return;
+            return NO;
         }
     }
 
     NSString *address = [s_dnsResolverClass resolveDomain:host];
     if (!address) {
-        return;
+        return NO;
     }
 
     // Format: +{host}:{port}:{ips}
@@ -545,7 +576,9 @@ static bool s_enableDebugLog;
     self.resolveList = curl_slist_append(self.resolveList, [hostPortAddressString UTF8String]);
     if (self.resolveList) {
         curl_easy_setopt(easyHandle, CURLOPT_RESOLVE, self.resolveList);
+        return YES;
     }
+    return NO;
 }
 
 // 将拦截到的request中的header字段，转换为一个curl list
@@ -557,7 +590,12 @@ static bool s_enableDebugLog;
             continue;
         }
         NSString *value = headers[key];
-        NSString *header = [NSString stringWithFormat:@"%@: %@", key, value];
+        NSString *header;
+        if ([[value stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet] length] == 0) {
+            header = [NSString stringWithFormat:@"%@;", key];
+        } else {
+            header = [NSString stringWithFormat:@"%@: %@", key, value];
+        }
         headerFields = curl_slist_append(headerFields, [header UTF8String]);
     }
     return headerFields;
@@ -594,6 +632,12 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         if (delimiterRange.location != NSNotFound) {
             NSString *key = [headerLine substringToIndex:delimiterRange.location];
             NSString *value = [headerLine substringFromIndex:delimiterRange.location + delimiterRange.length];
+
+            // 设置cookie
+            if ([key caseInsensitiveCompare:@"set-cookie"] == NSOrderedSame) {
+                EMASCurlCookieStorage *cookieStorage = [EMASCurlCookieStorage sharedStorage];
+                [cookieStorage setCookieWithString:value forURL:protocol.request.URL];
+            }
 
             if (protocol.currentResponse.headers[key]) {
                 NSString *existingValue = protocol.currentResponse.headers[key];
@@ -737,42 +781,6 @@ static int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, v
             break;
     }
     return 0;
-}
-
-static char * getPersistentCookieFilePath(void) {
-    static dispatch_once_t onceToken;
-    static NSString *cookieFilePath = nil;
-    dispatch_once(&onceToken, ^{
-        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
-        NSString *applicationSupportDirectory = [paths firstObject];
-
-        if (![[NSFileManager defaultManager] fileExistsAtPath:applicationSupportDirectory]) {
-            NSError *error = nil;
-            [[NSFileManager defaultManager] createDirectoryAtPath:applicationSupportDirectory
-                                      withIntermediateDirectories:YES
-                                                       attributes:nil
-                                                            error:&error];
-            if (error) {
-                return;
-            }
-        }
-
-        NSString *cookieDirectory = [applicationSupportDirectory stringByAppendingPathComponent:@"EMASCurl"];
-        if (![[NSFileManager defaultManager] fileExistsAtPath:cookieDirectory]) {
-            [[NSFileManager defaultManager] createDirectoryAtPath:cookieDirectory
-                                      withIntermediateDirectories:YES
-                                                       attributes:nil
-                                                            error:nil];
-        }
-
-        cookieFilePath = [cookieDirectory stringByAppendingPathComponent:@"cookies.store"];
-    });
-
-    if (!cookieFilePath) {
-        return "";
-    }
-
-    return (char *)[cookieFilePath UTF8String];
 }
 
 @end
