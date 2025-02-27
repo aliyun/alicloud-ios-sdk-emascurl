@@ -5,7 +5,7 @@
 #import <objc/message.h>
 
 @interface EMASCurlWebURLResponseCache ()
-@property (nonatomic, weak) id<EMASCurlWebCacheProtocol> cacheDelegate;
+@property (nonatomic, strong) id<EMASCurlWebCacheProtocol> cacheDelegate;
 @end
 
 @implementation EMASCurlWebURLResponseCache
