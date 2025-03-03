@@ -18,6 +18,5 @@ FOUNDATION_EXPORT const unsigned char EMASCurlWebVersionString[];
 #import <EMASCurlWeb/EMASCurlWebContentLoader.h>
 #import <EMASCurlWeb/EMASCurlWebUrlSchemeHandler.h>
 #import <EMASCurlWeb/WKWebViewConfiguration+Loader.h>
-#import <EMASCurlWeb/EMASCurlWebCacheProtocol.h>
 #import <EMASCurlWeb/EMASCurlWebConstant.h>
 

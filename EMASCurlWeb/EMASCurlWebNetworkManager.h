@@ -3,15 +3,13 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "EMASCurlWebCacheProtocol.h"
 #import "EMASCurlWebDataTask.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface EMASCurlWebNetworkManager : NSObject
 
-- (instancetype)initWithSessionConfiguration:(NSURLSessionConfiguration *)sessionConfiguration
-                                   cacheDelegate:(id<EMASCurlWebCacheProtocol>)httpCache;
+- (instancetype)initWithSessionConfiguration:(NSURLSessionConfiguration *)sessionConfiguration;
 
 - (nullable EMASCurlNetworkDataTask *)dataTaskWithRequest:(NSURLRequest *)request
                                         responseCallback:(nullable EMASCurlNetResponseCallback)responseCallback

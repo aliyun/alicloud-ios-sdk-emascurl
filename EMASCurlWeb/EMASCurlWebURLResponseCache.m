@@ -2,70 +2,86 @@
 //  EMASCurlHybridURLCache.m
 
 #import "EMASCurlWebURLResponseCache.h"
+#import "NSCachedURLResponse+EMASCurl.h"
 #import <objc/message.h>
 
 @interface EMASCurlWebURLResponseCache ()
-@property (nonatomic, strong) id<EMASCurlWebCacheProtocol> cacheDelegate;
+
+@property (nonatomic, strong) NSURLCache *urlCache;
+
 @end
 
 @implementation EMASCurlWebURLResponseCache
 
-- (instancetype)initWithDelegate:(id<EMASCurlWebCacheProtocol>)delegate {
+- (instancetype)init {
     if (self = [super init]) {
-        _cacheDelegate = delegate;
+        _urlCache = [NSURLCache sharedURLCache];
     }
     return self;
 }
 
 - (void)cacheWithHTTPURLResponse:(NSHTTPURLResponse *)response
                             data:(NSData *)data
-                             url:(NSString *)url {
-    EMASCurlWebURLResponse *cacheResponse = [[EMASCurlWebURLResponse alloc] initWithResponse:response data:data];
-    if (!cacheResponse.canCache) {
+                         request:(NSURLRequest *)request {
+    if (!request) {
         return;
     }
-    [self.cacheDelegate setObject:cacheResponse forKey:url];
+
+    NSCachedURLResponse *cachedResponse = [NSCachedURLResponse emas_cachedResponseWithResponse:response
+                                                                                         data:data
+                                                                                          url:request.URL];
+
+    if (cachedResponse) {
+        [self.urlCache storeCachedResponse:cachedResponse forRequest:request];
+    }
 }
 
-- (nullable EMASCurlWebURLResponse *)getCachedResponseWithURL:(NSString *)url {
-    EMASCurlWebURLResponse *cacheResponse = (EMASCurlWebURLResponse*)[self.cacheDelegate objectForKey:url];
-    if (!cacheResponse || ![cacheResponse isKindOfClass:[EMASCurlWebURLResponse class]]) {
+- (nullable NSCachedURLResponse *)getCachedResponseWithRequest:(NSURLRequest *)request {
+    if (!request) {
         return nil;
     }
-    if ([cacheResponse isExpired]) {
-        if (!cacheResponse.etag && !cacheResponse.lastModified) {
-            [self.cacheDelegate removeObjectForKey:url];
+
+    NSCachedURLResponse *cachedResponse = [self.urlCache cachedResponseForRequest:request];
+
+    if (!cachedResponse) {
+        return nil;
+    }
+
+    if ([cachedResponse emas_isExpired]) {
+        if (![cachedResponse emas_etag] && ![cachedResponse emas_lastModified]) {
+            [self.urlCache removeCachedResponseForRequest:request];
             return nil;
         }
     }
-    return cacheResponse;
+
+    return cachedResponse;
 }
 
-- (nullable EMASCurlWebURLResponse *)updateCachedResponseWithURLResponse:(NSHTTPURLResponse *)newResponse
-                                                           requestUrl:(NSString *)url {
-    EMASCurlWebURLResponse *cacheResponse = (EMASCurlWebURLResponse*)[self.cacheDelegate objectForKey:url];
-    if (![cacheResponse isKindOfClass:[EMASCurlWebURLResponse class]]) {
+- (nullable NSCachedURLResponse *)updateCachedResponseWithURLResponse:(NSHTTPURLResponse *)newResponse
+                                                              request:(NSURLRequest *)request {
+    if (!request) {
         return nil;
     }
-    if (!cacheResponse || ![cacheResponse isKindOfClass:[EMASCurlWebURLResponse class]]) {
+
+    NSCachedURLResponse *cachedResponse = [self.urlCache cachedResponseForRequest:request];
+
+    if (!cachedResponse) {
         return nil;
     }
-    if (![cacheResponse isExpired]) {
-        return cacheResponse;
+
+    if (![cachedResponse emas_isExpired]) {
+        return cachedResponse;
     }
-    EMASCurlWebURLResponse *toSaveCacheResponse = [cacheResponse copy];
-    [toSaveCacheResponse updateWithResponse:newResponse.allHeaderFields];
-    if (toSaveCacheResponse.canCache) {
-        [self.cacheDelegate setObject:toSaveCacheResponse forKey:url];
+
+    NSCachedURLResponse *updatedResponse = [cachedResponse emas_updatedResponseWithHeaderFields:newResponse.allHeaderFields];
+
+    if ([updatedResponse emas_canCache]) {
+        [self.urlCache storeCachedResponse:updatedResponse forRequest:request];
+        return updatedResponse;
     } else {
-        [self.cacheDelegate removeObjectForKey:url];
+        [self.urlCache removeCachedResponseForRequest:request];
+        return nil;
     }
-    return toSaveCacheResponse;
 }
-
-- (void)clear {
-    [self.cacheDelegate removeAllObjects];
-}
-
 
 @end

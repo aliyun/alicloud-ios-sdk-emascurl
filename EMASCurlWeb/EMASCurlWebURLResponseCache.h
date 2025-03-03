@@ -2,25 +2,19 @@
 //  EMASCurlHybridURLCache.h
 
 #import <Foundation/Foundation.h>
-#import "EMASCurlWebURLResponse.h"
-#import "EMASCurlWebCacheProtocol.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface EMASCurlWebURLResponseCache : NSObject
 
-- (instancetype)initWithDelegate:(id<EMASCurlWebCacheProtocol>)delegate;
-
 - (void)cacheWithHTTPURLResponse:(NSHTTPURLResponse *)response
                             data:(NSData *)data
-                             url:(NSString *)url ;
+                         request:(NSURLRequest *)request;
 
-- (nullable EMASCurlWebURLResponse *)getCachedResponseWithURL:(NSString *)url ;
+- (nullable NSCachedURLResponse *)getCachedResponseWithRequest:(NSURLRequest *)request;
 
-- (nullable EMASCurlWebURLResponse *)updateCachedResponseWithURLResponse:(NSHTTPURLResponse *)newResponse
-                                                           requestUrl:(NSString *)url;
-
-- (void)clear;
+- (nullable NSCachedURLResponse *)updateCachedResponseWithURLResponse:(NSHTTPURLResponse *)newResponse
+                                                              request:(NSURLRequest *)request;
 
 @end
 

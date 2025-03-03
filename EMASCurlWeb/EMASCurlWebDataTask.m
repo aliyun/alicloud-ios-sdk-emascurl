@@ -8,6 +8,7 @@
 #import "EMASCurlWebDataTask.h"
 #import "EMASCurlWebUtils.h"
 #import "EMASCurlWebLogger.h"
+#import "NSCachedURLResponse+EMASCurl.h"
 
 NSInteger const kEMASCurlGetRequestRetryLimit = 0;
 
@@ -108,8 +109,8 @@ NSInteger const kEMASCurlGetRequestRetryLimit = 0;
     }
 
     // 有缓存能力则获取缓存
-    EMASCurlWebURLResponse *cachedResponse = [self.httpCacheWeakRef getCachedResponseWithURL:requestURL];
-    if (cachedResponse && ![cachedResponse isExpired]) {
+    NSCachedURLResponse *cachedResponse = [self.httpCacheWeakRef getCachedResponseWithRequest:self.originalRequest];
+    if (cachedResponse && ![cachedResponse emas_isExpired]) {
         if (self.responseCallback) {
             self.responseCallback(cachedResponse.response);
         }
@@ -123,13 +124,13 @@ NSInteger const kEMASCurlGetRequestRetryLimit = 0;
     }
 
     // 如果缓存已过期，则设置If-None-Match/If-Modified-Since
-    if (cachedResponse && [cachedResponse isExpired]) {
+    if (cachedResponse && [cachedResponse emas_isExpired]) {
         NSMutableURLRequest *tmpRequest = [self.originalRequest mutableCopy];
-        if (cachedResponse.etag) {
-            [tmpRequest setValue:cachedResponse.etag forHTTPHeaderField:@"If-None-Match"];
+        if (cachedResponse.emas_etag) {
+            [tmpRequest setValue:cachedResponse.emas_etag forHTTPHeaderField:@"If-None-Match"];
         }
-        if (cachedResponse.lastModified) {
-            [tmpRequest setValue:cachedResponse.lastModified forHTTPHeaderField:@"If-Modified-Since"];
+        if (cachedResponse.emas_lastModified) {
+            [tmpRequest setValue:cachedResponse.emas_lastModified forHTTPHeaderField:@"If-Modified-Since"];
         }
         self.originalRequest = [tmpRequest copy];
     }
@@ -151,7 +152,7 @@ NSInteger const kEMASCurlGetRequestRetryLimit = 0;
 
     // 如果 304 不立即回调 responseCallback，等 successCallback 时再处理
     if (self.receivedResponse.statusCode != 304
-        || ![self.httpCacheWeakRef getCachedResponseWithURL:self.originalRequest.URL.absoluteString]) {
+        || ![self.httpCacheWeakRef getCachedResponseWithRequest:self.originalRequest]) {
 
         if (self.responseCallback) {
             self.responseCallback(response);
@@ -177,12 +178,10 @@ NSInteger const kEMASCurlGetRequestRetryLimit = 0;
     }
 
     // 如果 304, 则尝试使用缓存
-    NSString *reqURL = self.originalRequest.URL.absoluteString;
-    if (self.receivedResponse.statusCode == 304
-        && [self.httpCacheWeakRef getCachedResponseWithURL:self.originalRequest.URL.absoluteString]) {
-        EMASCurlWebURLResponse *cachedResponse = [self.httpCacheWeakRef
-                                                   updateCachedResponseWithURLResponse:self.receivedResponse
-                                                   requestUrl:reqURL];
+    if (self.receivedResponse.statusCode == 304 && [self.httpCacheWeakRef getCachedResponseWithRequest:self.originalRequest]) {
+        NSCachedURLResponse *cachedResponse = [self.httpCacheWeakRef
+                                               updateCachedResponseWithURLResponse:self.receivedResponse
+                                               request:self.originalRequest];
         if (self.responseCallback) {
             self.responseCallback(cachedResponse.response);
         }
@@ -197,7 +196,7 @@ NSInteger const kEMASCurlGetRequestRetryLimit = 0;
 
     [self.httpCacheWeakRef cacheWithHTTPURLResponse:self.receivedResponse
                                                data:self.receivedData
-                                                url:reqURL];
+                                            request:self.originalRequest];
 
     if (self.successCallback) {
         self.successCallback();

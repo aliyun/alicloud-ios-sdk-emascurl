@@ -23,8 +23,7 @@
     os_unfair_lock _dataTasksLock;
 }
 
-- (instancetype)initWithSessionConfiguration:(NSURLSessionConfiguration *)sessionConfiguration
-                               cacheDelegate:(id<EMASCurlWebCacheProtocol>)delegate {
+- (instancetype)initWithSessionConfiguration:(NSURLSessionConfiguration *)sessionConfiguration {
     self = [super init];
     if (self) {
         _dataTasksLock = OS_UNFAIR_LOCK_INIT;
@@ -33,7 +32,7 @@
         _currentCacheItemCount = 0;
 
         _networkManager = [[EMASCurlWebRequestExecutor alloc] initWithSessionConfiguration:sessionConfiguration];
-        _httpResponseCache = [[EMASCurlWebURLResponseCache alloc] initWithDelegate:delegate];
+        _httpResponseCache = [[EMASCurlWebURLResponseCache alloc] init];
     }
     return self;
 }

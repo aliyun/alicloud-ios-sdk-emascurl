@@ -14,7 +14,6 @@ Pod::Spec.new do |s|
 
     s.public_header_files = [
       'EMASCurlWeb/EMASCurlWeb.h',
-      'EMASCurlWeb/EMASCurlWebCacheProtocol.h',
       'EMASCurlWeb/EMASCurlWebConstant.h',
       'EMASCurlWeb/WKWebViewConfiguration+Loader.h',
       'EMASCurlWeb/EMASCurlWebUrlSchemeHandler.h',
