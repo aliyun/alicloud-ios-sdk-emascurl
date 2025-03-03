@@ -110,6 +110,16 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 // 设置性能指标回调
 + (void)setMetricsObserverBlockForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlock)metricsObserverBlock;
 
+// 设置拦截域名白名单，处理请求时，先检查黑名单，再检查白名单
+// 只拦截白名单中的域名
+// 传入nil时，清除白名单
++ (void)setHijackDomainWhiteList:(nullable NSArray<NSString *> *)domainWhiteList;
+
+// 设置拦截域名黑名单，处理请求时，先检查黑名单，再检查白名单
+// 不拦截黑名单中的域名
+// 传入nil时，清除黑名单
++ (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList;
+
 @end
 
 #endif /* EMASCurlProtocol_h */

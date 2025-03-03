@@ -109,6 +109,10 @@ static Class<EMASCurlProtocolDNSResolver> s_dnsResolverClass;
 
 static bool s_enableDebugLog;
 
+// 拦截域名白名单
+static NSArray<NSString *> *s_domainWhiteList;
+static NSArray<NSString *> *s_domainBlackList;
+
 @implementation EMASCurlProtocol
 
 #pragma mark * user API
@@ -161,6 +165,14 @@ static bool s_enableDebugLog;
 
 + (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)timeoutInterval {
     [NSURLProtocol setProperty:@(timeoutInterval) forKey:kEMASCurlConnectTimeoutIntervalKey inRequest:request];
+}
+
++ (void)setHijackDomainWhiteList:(nullable NSArray<NSString *> *)domainWhiteList {
+    s_domainWhiteList = domainWhiteList;
+}
+
++ (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList {
+    s_domainBlackList = domainBlackList;
 }
 
 #pragma mark * NSURLProtocol overrides
@@ -265,6 +277,27 @@ static bool s_enableDebugLog;
     // 不是http或https，则不拦截
     if (!([request.URL.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame ||
          [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)) {
+        return NO;
+    }
+
+    // 检查请求的host是否在白名单或黑名单中
+    NSString *host = request.URL.host;
+    if (!host) {
+        return NO;
+    }
+    if (s_domainBlackList && s_domainBlackList.count > 0) {
+        for (NSString *blacklistDomain in s_domainBlackList) {
+            if ([host hasSuffix:blacklistDomain]) {
+                return NO;
+            }
+        }
+    }
+    if (s_domainWhiteList && s_domainWhiteList.count > 0) {
+        for (NSString *whitelistDomain in s_domainWhiteList) {
+            if ([host hasSuffix:whitelistDomain]) {
+                return YES;
+            }
+        }
         return NO;
     }
 
