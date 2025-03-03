@@ -6,12 +6,25 @@
 EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/curl)的iOS平台网络库框架，能够与阿里云[HTTPDNS](https://www.aliyun.com/product/httpdns)配合使用，以降低iOS开发者接入[HTTPDNS](https://www.aliyun.com/product/httpdns)的门槛。
 
 ## 目录
+- [目录](#目录)
 - [最新版本](#最新版本)
 - [快速入门](#快速入门)
+  - [从CocoaPods引入依赖](#从cocoapods引入依赖)
+  - [使用EMASCurl发送网络请求](#使用emascurl发送网络请求)
 - [构建EMASCurl](#构建emascurl)
+  - [构建工具安装](#构建工具安装)
+  - [拉取子模块](#拉取子模块)
+  - [构建libcurl.xcframework](#构建libcurlxcframework)
+  - [构建EMASCurl xcframework](#构建emascurl-xcframework)
 - [集成EMASCurl](#集成emascurl)
   - [CocoaPods引入依赖](#cocoapods引入依赖)
+    - [指定Master仓库和阿里云仓库](#指定master仓库和阿里云仓库)
+    - [添加依赖](#添加依赖)
+    - [安装依赖](#安装依赖)
   - [本地手动集成依赖](#本地手动集成依赖)
+    - [将framework文件添加到工程中](#将framework文件添加到工程中)
+    - [添加Linker Flags](#添加linker-flags)
+    - [添加CA证书文件路径（如果使用自签名证书）](#添加ca证书文件路径如果使用自签名证书)
 - [使用EMASCurl](#使用emascurl)
   - [开启EMASCurl拦截](#开启emascurl拦截)
     - [拦截`NSURLSessionConfiguration`](#拦截nsurlsessionconfiguration)
@@ -24,6 +37,9 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
   - [设置上传进度回调](#设置上传进度回调)
   - [设置性能指标回调](#设置性能指标回调)
   - [开启调试日志](#开启调试日志)
+  - [设置请求拦截域名白名单和黑名单](#设置请求拦截域名白名单和黑名单)
+  - [设置Gzip压缩](#设置gzip压缩)
+  - [设置内部重定向支持](#设置内部重定向支持)
 - [License](#license)
 - [联系我们](#联系我们)
 
@@ -452,6 +468,62 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 
 ```objc
 [EMASCurlProtocol setDebugLogEnabled:YES];
+```
+
+### 设置请求拦截域名白名单和黑名单
+
+```objc
++ (void)setHijackDomainWhiteList:(nullable NSArray<NSString *> *)domainWhiteList;
++ (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList;
+```
+
+EMASCurl允许您设置域名白名单和黑名单来控制哪些请求会被拦截处理：
+- 处理请求时，EMASCurl会先检查黑名单，再检查白名单
+- 白名单：只拦截白名单中的域名请求
+- 黑名单：不拦截黑名单中的域名请求
+- 传入nil时，会清除相应的名单
+
+例如：
+
+```objc
+// 只拦截这些域名的请求
+[EMASCurlProtocol setHijackDomainWhiteList:@[@"example.com", @"api.example.com"]];
+
+// 不拦截这些域名的请求
+[EMASCurlProtocol setHijackDomainBlackList:@[@"analytics.example.com"]];
+
+// 清除白名单
+[EMASCurlProtocol setHijackDomainWhiteList:nil];
+```
+
+### 设置Gzip压缩
+
+```objc
++ (void)setBuiltInGzipEnabled:(BOOL)enabled;
+```
+
+EMASCurl默认开启内部Gzip压缩。开启后，请求的header中会自动添加`Accept-Encoding: deflate, gzip`，并自动解压响应内容。若关闭，则需要自行处理请求/响应中的gzip字段。
+
+例如：
+
+```objc
+// 关闭内置Gzip支持
+[EMASCurlProtocol setBuiltInGzipEnabled:NO];
+```
+
+### 设置内部重定向支持
+
+```objc
++ (void)setBuiltInRedirectionEnabled:(BOOL)enabled;
+```
+
+EMASCurl可以配置是否自动处理HTTP重定向（如301、302等状态码）。
+
+例如：
+
+```objc
+// 开启内部重定向支持
+[EMASCurlProtocol setBuiltInRedirectionEnabled:YES];
 ```
 
 ## License
