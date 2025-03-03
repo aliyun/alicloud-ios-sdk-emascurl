@@ -52,7 +52,11 @@ lipo "${installPath}/artifacts-iphonesimulator-arm64-HTTP2/libcurl.a" \
      "${installPath}/artifacts-iphonesimulator-x86_64-HTTP2/libcurl.a" \
      -create -output "${installPath}/libcurl.a"
 
-frameworkPath="${installPath}/../libcurl-HTTP2.xcframework"
+# Create precompiled directory if it doesn't exist
+precompiledDir="$(pwd)/../precompiled"
+mkdir -p "$precompiledDir"
+
+frameworkPath="${precompiledDir}/libcurl-HTTP2.xcframework"
 
 if [ -d "$frameworkPath" ]; then
   rm -rf "$frameworkPath"

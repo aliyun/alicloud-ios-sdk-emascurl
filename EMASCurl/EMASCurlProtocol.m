@@ -7,6 +7,7 @@
 
 #import "EMASCurlProtocol.h"
 #import "EMASCurlManager.h"
+#import "EMASCurlCookieStorage.h"
 #import <curl/curl.h>
 
 #define HTTP_METHOD_GET @"GET"
@@ -22,6 +23,7 @@
 static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMASCurlUploadProgressUpdateBlockKey";
 static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
+static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 
 
 @interface CurlHTTPResponse : NSObject
@@ -82,6 +84,8 @@ static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCur
 
 @property (nonatomic, copy) EMASCurlMetricsObserverBlock metricsObserverBlock;
 
+@property (nonatomic, assign) double resolveDomainTimeInterval;
+
 @end
 
 static HTTPVersion s_httpVersion;
@@ -92,15 +96,22 @@ static bool curlFeatureHttp2;
 // runtime 的libcurl xcframework是否支持HTTP3
 static bool curlFeatureHttp3;
 
+static bool s_enableBuiltInGzip;
+
 static NSString *s_caFilePath;
 
-static BOOL s_enableBuiltInCookieStorage;
+static BOOL s_enableBuiltInRedirection;
 
 static NSString *s_proxyServer;
+static dispatch_queue_t s_serialQueue;
 
 static Class<EMASCurlProtocolDNSResolver> s_dnsResolverClass;
 
 static bool s_enableDebugLog;
+
+// 拦截域名白名单
+static NSArray<NSString *> *s_domainWhiteList;
+static NSArray<NSString *> *s_domainBlackList;
 
 @implementation EMASCurlProtocol
 
@@ -124,16 +135,16 @@ static bool s_enableDebugLog;
     s_httpVersion = version;
 }
 
++ (void)setBuiltInGzipEnabled:(BOOL)enabled {
+    s_enableBuiltInGzip = enabled;
+}
+
 + (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath {
     s_caFilePath = selfSignedCAFilePath;
 }
 
-+ (void)setBuiltInCookieStorageEnabled:(BOOL)enabled {
-    s_enableBuiltInCookieStorage = enabled;
-
-    if (!enabled) {
-        [[EMASCurlManager sharedInstance] disableCookieSharing];
-    }
++ (void)setBuiltInRedirectionEnabled:(BOOL)enabled {
+    s_enableBuiltInRedirection = enabled;
 }
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
@@ -156,6 +167,14 @@ static bool s_enableDebugLog;
     [NSURLProtocol setProperty:@(timeoutInterval) forKey:kEMASCurlConnectTimeoutIntervalKey inRequest:request];
 }
 
++ (void)setHijackDomainWhiteList:(nullable NSArray<NSString *> *)domainWhiteList {
+    s_domainWhiteList = domainWhiteList;
+}
+
++ (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList {
+    s_domainBlackList = domainBlackList;
+}
+
 #pragma mark * NSURLProtocol overrides
 
 - (instancetype)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id<NSURLProtocolClient>)client {
@@ -166,6 +185,7 @@ static bool s_enableDebugLog;
         _totalBytesSent = 0;
         _totalBytesExpected = 0;
         _currentResponse = [CurlHTTPResponse new];
+        _resolveDomainTimeInterval = -1;
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
@@ -185,7 +205,14 @@ static bool s_enableDebugLog;
     s_httpVersion = HTTP1;
     s_enableDebugLog = NO;
 
-    s_enableBuiltInCookieStorage = YES;
+    s_enableBuiltInGzip = YES;
+    s_enableBuiltInRedirection = YES;
+
+    s_proxyServer = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        s_serialQueue = dispatch_queue_create("com.alicloud.emascurl.serialQueue", DISPATCH_QUEUE_SERIAL);
+    });
 
     // 设置定时任务读取proxy
     [self startProxyUpdatingTimer];
@@ -205,21 +232,35 @@ static bool s_enableDebugLog;
 + (void)updateProxySettings {
     CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
     if (!proxySettings) {
-        return;
-    }
-    NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
-    if (!(proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable])) {
+        dispatch_sync(s_serialQueue, ^{
+            s_proxyServer = nil;
+        });
         CFRelease(proxySettings);
         return;
     }
+
+    NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
+    if (!(proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable])) {
+        dispatch_sync(s_serialQueue, ^{
+            s_proxyServer = nil;
+        });
+        CFRelease(proxySettings);
+        return;
+    }
+
     NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
     NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
 
     if (httpProxy && httpPort) {
-        @synchronized (self) {
+        dispatch_sync(s_serialQueue, ^{
             s_proxyServer = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
-        }
+        });
+    } else {
+        dispatch_sync(s_serialQueue, ^{
+            s_proxyServer = nil;
+        });
     }
+
     CFRelease(proxySettings);
 }
 
@@ -227,24 +268,61 @@ static bool s_enableDebugLog;
     if ([[request.URL absoluteString] isEqual:@"about:blank"]) {
         return NO;
     }
+
+    // 不拦截已经处理过的请求
+    if ([NSURLProtocol propertyForKey:kEMASCurlHandledKey inRequest:request]) {
+        return NO;
+    }
+
     // 不是http或https，则不拦截
     if (!([request.URL.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame ||
          [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)) {
         return NO;
     }
+
+    // 检查请求的host是否在白名单或黑名单中
+    NSString *host = request.URL.host;
+    if (!host) {
+        return NO;
+    }
+    if (s_domainBlackList && s_domainBlackList.count > 0) {
+        for (NSString *blacklistDomain in s_domainBlackList) {
+            if ([host hasSuffix:blacklistDomain]) {
+                return NO;
+            }
+        }
+    }
+    if (s_domainWhiteList && s_domainWhiteList.count > 0) {
+        for (NSString *whitelistDomain in s_domainWhiteList) {
+            if ([host hasSuffix:whitelistDomain]) {
+                return YES;
+            }
+        }
+        return NO;
+    }
+
+    NSString *userAgent = [request valueForHTTPHeaderField:@"User-Agent"];
+    if (userAgent && [userAgent containsString:@"HttpdnsSDK"]) {
+        // 不拦截来自Httpdns SDK的请求
+        return NO;
+    }
+
     return YES;
 }
 
 + (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request {
-    return request;
+    NSMutableURLRequest *mutableRequest = [request mutableCopy];
+    [NSURLProtocol setProperty:@YES forKey:kEMASCurlHandledKey inRequest:mutableRequest];
+    return mutableRequest;
 }
 
 - (void)startLoading {
     CURL *easyHandle = curl_easy_init();
     self.easyHandle = easyHandle;
     if (!easyHandle) {
-        [self observeNetworkMetric];
-        [self.client URLProtocol:self didFailWithError:[NSError errorWithDomain:@"fail to init easy handle" code:-1 userInfo:nil]];
+        NSError *error = [NSError errorWithDomain:@"fail to init easy handle." code:-1 userInfo:nil];
+        [self reportNetworkMetric:NO error:error];
+        [self.client URLProtocol:self didFailWithError:error];
         return;
     }
 
@@ -254,13 +332,13 @@ static bool s_enableDebugLog;
     NSError *error = nil;
     [self configEasyHandle:easyHandle error:&error];
     if (error) {
-        [self observeNetworkMetric];
+        [self reportNetworkMetric:NO error:error];
         [self.client URLProtocol:self didFailWithError:error];
         return;
     }
 
     [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error) {
-        [self observeNetworkMetric];
+        [self reportNetworkMetric:succeed error:error];
 
         if (succeed) {
             [self.client URLProtocolDidFinishLoading:self];
@@ -297,7 +375,7 @@ static bool s_enableDebugLog;
     }
 }
 
-- (void)observeNetworkMetric {
+- (void)reportNetworkMetric:(BOOL)success error:(NSError *)error {
     if (!self.metricsObserverBlock || !self.easyHandle) {
         return;
     }
@@ -309,7 +387,11 @@ static bool s_enableDebugLog;
     double startTransferTime = 0;
     double totalTime = 0;
 
-    curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+    if (self.resolveDomainTimeInterval > 0) {
+        nameLookupTime = self.resolveDomainTimeInterval;
+    } else {
+        curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+    }
     curl_easy_getinfo(self.easyHandle, CURLINFO_CONNECT_TIME, &connectTime);
     curl_easy_getinfo(self.easyHandle, CURLINFO_APPCONNECT_TIME, &appConnectTime);
     curl_easy_getinfo(self.easyHandle, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
@@ -317,6 +399,8 @@ static bool s_enableDebugLog;
     curl_easy_getinfo(self.easyHandle, CURLINFO_TOTAL_TIME, &totalTime);
 
     self.metricsObserverBlock(self.request,
+                              success,
+                              error,
                               nameLookupTime * 1000,
                               connectTime * 1000,
                               appConnectTime * 1000,
@@ -364,6 +448,7 @@ static bool s_enableDebugLog;
         case HTTP2:
             if (curlFeatureHttp2) {
                 curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
+                curl_easy_setopt(easyHandle, CURLOPT_PIPEWAIT, 1L);
             } else {
                 curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
             }
@@ -373,8 +458,10 @@ static bool s_enableDebugLog;
             break;
     }
 
-    // 配置支持的HTTP压缩算法，""代表自动检测内置的算法，目前zlib支持deflate与gzip
-    curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
+    if (s_enableBuiltInGzip) {
+        // 配置支持的HTTP压缩算法，""代表自动检测内置的算法，目前zlib支持deflate与gzip
+        curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
+    }
 
     // 将拦截到的request的header字段进行透传
     self.requestHeaderFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
@@ -401,7 +488,7 @@ static bool s_enableDebugLog;
     // 用read_cb回调函数来读取需要传输的数据
     curl_easy_setopt(easyHandle, CURLOPT_READFUNCTION, read_cb);
     // self传给read_cb函数的void *userp参数
-    curl_easy_setopt(easyHandle, CURLOPT_READDATA, self);
+    curl_easy_setopt(easyHandle, CURLOPT_READDATA, (__bridge void *)self);
 
     NSString *contentLength = [request valueForHTTPHeaderField:@"Content-Length"];
     if (!contentLength) {
@@ -435,18 +522,12 @@ static bool s_enableDebugLog;
         NSBundle *mainBundle = [NSBundle mainBundle];
         NSURL *bundleURL = [mainBundle URLForResource:@"EMASCAResource" withExtension:@"bundle"];
         if (!bundleURL) {
-            *error = [NSError errorWithDomain:@"fail to load CA certificate" code:-3 userInfo:nil];
+            *error = [NSError errorWithDomain:@"fail to load CA certificate." code:-3 userInfo:nil];
             return;
         }
         NSBundle *resourceBundle = [NSBundle bundleWithURL:bundleURL];
         NSString *filePath = [resourceBundle pathForResource:@"cacert" ofType:@"pem"];
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [filePath UTF8String]);
-    }
-
-    if (s_enableBuiltInCookieStorage) {
-        char * cookieFilePath = getPersistentCookieFilePath();
-        curl_easy_setopt(easyHandle, CURLOPT_COOKIEFILE, cookieFilePath);
-        curl_easy_setopt(easyHandle, CURLOPT_COOKIEJAR, cookieFilePath);
     }
 
     // 是否设置自定义根证书
@@ -456,15 +537,25 @@ static bool s_enableDebugLog;
 
     // 假如设置了自定义resolve，则使用
     if (s_dnsResolverClass) {
-        [self configCustomDNSResolver:easyHandle];
+        NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
+        if ([self preResolveDomain:easyHandle]) {
+            self.resolveDomainTimeInterval = [[NSDate date] timeIntervalSince1970] - startTime;
+        }
     }
 
-    @synchronized ([EMASCurlProtocol class]) {
+    // 设置cookie
+    EMASCurlCookieStorage *cookieStorage = [EMASCurlCookieStorage sharedStorage];
+    NSString *cookieString = [cookieStorage cookieStringForURL:self.request.URL];
+    if (cookieString) {
+        curl_easy_setopt(easyHandle, CURLOPT_COOKIE, [cookieString UTF8String]);
+    }
+
+    dispatch_sync(s_serialQueue, ^{
         // 设置proxy
         if (s_proxyServer) {
             curl_easy_setopt(easyHandle, CURLOPT_PROXY, [s_proxyServer UTF8String]);
         }
-    }
+    });
 
     // 设置debug回调函数以输出日志
     if (s_enableDebugLog) {
@@ -503,15 +594,20 @@ static bool s_enableDebugLog;
     }
 
     // 开启重定向
-    curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
+    if (s_enableBuiltInRedirection) {
+        curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
+    } else {
+        curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 0L);
+    }
+
     // 为了线程安全，设置NOSIGNAL
     curl_easy_setopt(easyHandle, CURLOPT_NOSIGNAL, 1L);
 }
 
-- (void)configCustomDNSResolver:(CURL *)easyHandle {
+- (BOOL)preResolveDomain:(CURL *)easyHandle {
     NSURL *url = self.request.URL;
     if (!url || !url.host) {
-        return;
+        return NO;
     }
 
     NSString *host = url.host;
@@ -527,13 +623,13 @@ static bool s_enableDebugLog;
         } else if ([scheme isEqualToString:@"http"]) {
             resolvedPort = 80;
         } else {
-            return;
+            return NO;
         }
     }
 
     NSString *address = [s_dnsResolverClass resolveDomain:host];
     if (!address) {
-        return;
+        return NO;
     }
 
     // Format: +{host}:{port}:{ips}
@@ -545,7 +641,9 @@ static bool s_enableDebugLog;
     self.resolveList = curl_slist_append(self.resolveList, [hostPortAddressString UTF8String]);
     if (self.resolveList) {
         curl_easy_setopt(easyHandle, CURLOPT_RESOLVE, self.resolveList);
+        return YES;
     }
+    return NO;
 }
 
 // 将拦截到的request中的header字段，转换为一个curl list
@@ -557,7 +655,12 @@ static bool s_enableDebugLog;
             continue;
         }
         NSString *value = headers[key];
-        NSString *header = [NSString stringWithFormat:@"%@: %@", key, value];
+        NSString *header;
+        if ([[value stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet] length] == 0) {
+            header = [NSString stringWithFormat:@"%@;", key];
+        } else {
+            header = [NSString stringWithFormat:@"%@: %@", key, value];
+        }
         headerFields = curl_slist_append(headerFields, [header UTF8String]);
     }
     return headerFields;
@@ -595,6 +698,12 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
             NSString *key = [headerLine substringToIndex:delimiterRange.location];
             NSString *value = [headerLine substringFromIndex:delimiterRange.location + delimiterRange.length];
 
+            // 设置cookie
+            if ([key caseInsensitiveCompare:@"set-cookie"] == NSOrderedSame) {
+                EMASCurlCookieStorage *cookieStorage = [EMASCurlCookieStorage sharedStorage];
+                [cookieStorage setCookieWithString:value forURL:protocol.request.URL];
+            }
+
             if (protocol.currentResponse.headers[key]) {
                 NSString *existingValue = protocol.currentResponse.headers[key];
                 NSString *combinedValue = [existingValue stringByAppendingFormat:@", %@", value];
@@ -610,17 +719,35 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         NSInteger statusCode = protocol.currentResponse.statusCode;
         NSString *reasonPhrase = protocol.currentResponse.reasonPhrase;
 
+        NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
+                                                                      statusCode:protocol.currentResponse.statusCode
+                                                                     HTTPVersion:protocol.currentResponse.httpVersion
+                                                                    headerFields:protocol.currentResponse.headers];
         if (isRedirectionStatusCode(statusCode)) {
+            if (!s_enableBuiltInRedirection) {
+                // 关闭了重定向支持，则把重定向信息往外传递
+                __block NSString *location = nil;
+                [protocol.currentResponse.headers enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSString * _Nonnull obj, BOOL * _Nonnull stop) {
+                    if ([key caseInsensitiveCompare:@"Location"] == NSOrderedSame) {
+                        location = obj;
+                        *stop = YES;
+                    }
+                }];
+                if (location) {
+                    NSURL *locationURL = [NSURL URLWithString:location relativeToURL:protocol.request.URL];
+                    NSMutableURLRequest *redirectedRequest = [protocol.request mutableCopy];
+                    [redirectedRequest setURL:locationURL];
+                    [protocol.client URLProtocol:protocol wasRedirectedToRequest:redirectedRequest redirectResponse:httpResponse];
+                } else {
+
+                }
+            }
             [protocol.currentResponse reset];
         } else if (isInformationalStatusCode(statusCode)) {
             [protocol.currentResponse reset];
         } else if (isConnectEstablishedStatusCode(statusCode, reasonPhrase)) {
             [protocol.currentResponse reset];
         } else {
-            NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
-                                                                          statusCode:protocol.currentResponse.statusCode
-                                                                         HTTPVersion:protocol.currentResponse.httpVersion
-                                                                        headerFields:protocol.currentResponse.headers];
             [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageAllowed];
             protocol.currentResponse.isFinalResponse = YES;
         }
@@ -737,42 +864,6 @@ static int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, v
             break;
     }
     return 0;
-}
-
-static char * getPersistentCookieFilePath(void) {
-    static dispatch_once_t onceToken;
-    static NSString *cookieFilePath = nil;
-    dispatch_once(&onceToken, ^{
-        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
-        NSString *applicationSupportDirectory = [paths firstObject];
-
-        if (![[NSFileManager defaultManager] fileExistsAtPath:applicationSupportDirectory]) {
-            NSError *error = nil;
-            [[NSFileManager defaultManager] createDirectoryAtPath:applicationSupportDirectory
-                                      withIntermediateDirectories:YES
-                                                       attributes:nil
-                                                            error:&error];
-            if (error) {
-                return;
-            }
-        }
-
-        NSString *cookieDirectory = [applicationSupportDirectory stringByAppendingPathComponent:@"EMASCurl"];
-        if (![[NSFileManager defaultManager] fileExistsAtPath:cookieDirectory]) {
-            [[NSFileManager defaultManager] createDirectoryAtPath:cookieDirectory
-                                      withIntermediateDirectories:YES
-                                                       attributes:nil
-                                                            error:nil];
-        }
-
-        cookieFilePath = [cookieDirectory stringByAppendingPathComponent:@"cookies.store"];
-    });
-
-    if (!cookieFilePath) {
-        return "";
-    }
-
-    return (char *)[cookieFilePath UTF8String];
 }
 
 @end

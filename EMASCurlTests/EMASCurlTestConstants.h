@@ -19,6 +19,9 @@ static NSString *TIMEOUT_TEST_ENDPOINT = @"http://127.0.0.1:9081";
 
 static NSString *PATH_ECHO = @"/echo";
 
+static NSString *PATH_COOKIE_SET = @"/cookie/set";
+static NSString *PATH_COOKIE_VERIFY = @"/cookie/verify";
+
 static NSString *PATH_REDIRECT = @"/redirect";
 
 static NSString *PATH_REDIRECT_CHAIN = @"/redirect_chain";

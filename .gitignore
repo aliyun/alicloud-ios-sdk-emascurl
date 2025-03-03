@@ -4,6 +4,8 @@
 build/
 out/
 DerivedData/
+*.DS_Store
+.DS_Store
 #
 # Xcode 9 and later
 DerivedData
@@ -240,9 +242,13 @@ Cartfile.private
 *.swo
 .DS_Store
 **/.DS_Store
+*.DS_Store
 
 # python
 __pycache__/
 
 # vscode
 .vscode
+
+# windsurf rules
+.windsurfrules
