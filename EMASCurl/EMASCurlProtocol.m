@@ -23,6 +23,7 @@
 static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMASCurlUploadProgressUpdateBlockKey";
 static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
+static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 
 
 @interface CurlHTTPResponse : NSObject
@@ -256,6 +257,11 @@ static bool s_enableDebugLog;
         return NO;
     }
 
+    // 不拦截已经处理过的请求
+    if ([NSURLProtocol propertyForKey:kEMASCurlHandledKey inRequest:request]) {
+        return NO;
+    }
+
     // 不是http或https，则不拦截
     if (!([request.URL.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame ||
          [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)) {
@@ -272,7 +278,9 @@ static bool s_enableDebugLog;
 }
 
 + (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request {
-    return request;
+    NSMutableURLRequest *mutableRequest = [request mutableCopy];
+    [NSURLProtocol setProperty:@YES forKey:kEMASCurlHandledKey inRequest:mutableRequest];
+    return mutableRequest;
 }
 
 - (void)startLoading {
