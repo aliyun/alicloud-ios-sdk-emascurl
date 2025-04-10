@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
     s.name         = "EMASCurlWeb"
-    s.version      = "1.2.0-beta"
+    s.version      = "1.2.0"
     s.summary      = "WKWebView integration for EMASCurl iOS SDK."
     s.homepage     = "https://www.aliyun.com/product/httpdns"
     s.author       = { "xiaoyu" => "yx456323@alibaba-inc.com" }
