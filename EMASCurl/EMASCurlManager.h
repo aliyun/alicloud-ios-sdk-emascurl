@@ -12,7 +12,6 @@
 
 + (instancetype)sharedInstance;
 
-- (void)enqueueNewEasyHandle:(CURL *)easyHandle
-                  completion:(void (^)(BOOL, NSError *))completion;
+- (void)enqueueNewEasyHandle:(CURL *)easyHandle completion:(void (^)(BOOL, NSError *))completion;
 
 @end

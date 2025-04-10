@@ -11,7 +11,6 @@
 #import <objc/message.h>
 #import <os/lock.h>
 #import "EMASCurlWebUtils.h"
-#import "EMASCurlWebCacheProtocol.h"
 #import "EMASCurlWebNetworkManager.h"
 #import "EMASCurlWebUrlSchemeHandler.h"
 #import "WKWebViewConfiguration+Loader.h"
@@ -34,14 +33,13 @@
 
 @implementation EMASCurlWebUrlSchemeHandler
 
-- (instancetype)initWithSessionConfiguration:(NSURLSessionConfiguration *)configuration
-                               cacheDelegate:(id<EMASCurlWebCacheProtocol>)delegate {
+- (instancetype)initWithSessionConfiguration:(NSURLSessionConfiguration *)configuration {
     self = [super init];
     if (self) {
         _taskMaplock = OS_UNFAIR_LOCK_INIT;
         _taskHashTable = [NSHashTable weakObjectsHashTable];
 
-        _networkSession = [[EMASCurlWebNetworkManager alloc] initWithSessionConfiguration:configuration cacheDelegate:delegate];
+        _networkSession = [[EMASCurlWebNetworkManager alloc] initWithSessionConfiguration:configuration];
     }
     return self;
 }

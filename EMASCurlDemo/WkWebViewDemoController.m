@@ -1,5 +1,4 @@
 #import "WkWebViewDemoController.h"
-#import "DemoCache.h"
 #import <WebKit/WebKit.h>
 #import <EMASCurl/EMASCurl.h>
 #import <EMASCurlWeb/EMASCurlWeb.h>
@@ -62,11 +61,7 @@
     // [EMASCurlProtocol setDNSResolver:[SampleDnsResolver class]];
     [EMASCurlProtocol installIntoSessionConfiguration:urlSessionConfig];
 
-    DemoCache *demoCache = [[DemoCache alloc] initWithName:@"com.alicloud.emascurl.cache"];
-
-    EMASCurlWebUrlSchemeHandler *urlSchemeHandler = [[EMASCurlWebUrlSchemeHandler alloc]
-                                                  initWithSessionConfiguration:urlSessionConfig
-                                                  cacheDelegate:demoCache];
+    EMASCurlWebUrlSchemeHandler *urlSchemeHandler = [[EMASCurlWebUrlSchemeHandler alloc] initWithSessionConfiguration:urlSessionConfig];
 
     [EMASCurlWebContentLoader initializeInterception];
 

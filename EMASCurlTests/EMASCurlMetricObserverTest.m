@@ -32,7 +32,7 @@ static NSURLSession *session;
 
     __block NSNumber *totalTimeConsumed = 0;
 
-    [EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
+    [EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * error, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
         XCTAssertGreaterThan(totalTimeMs, startTransferTimeMs, @"Total time should be after start transfer time");
 
         // Log metrics for debugging
@@ -159,7 +159,7 @@ static NSURLSession *session;
 
     double startTime = [[NSDate date] timeIntervalSince1970];
 
-    [EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
+    [EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError *error, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
 
         // Our mock resolver has a 500ms delay
         XCTAssertGreaterThanOrEqual(nameLookUpTimeMS, 2000, @"DNS lookup time should be at least 2000ms with mock resolver");
