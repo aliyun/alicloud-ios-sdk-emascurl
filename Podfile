@@ -6,7 +6,7 @@ platform :ios, '13.0'
 target 'EMASCurlDemo' do
   use_frameworks!
 
-  pod 'AlicloudHTTPDNS', '3.1.5'
+  pod 'AlicloudHTTPDNS', '3.2.0'
   pod 'EMASCurl', :path => './EMASCurlHttp2.podspec'
   pod 'EMASCurlWeb', :path => './EMASCurlWeb.podspec'
   pod 'YYCache'

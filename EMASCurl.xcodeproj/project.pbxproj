@@ -19,6 +19,8 @@
 		6F3F603B2CD0E0890014025B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F602B2CD0E0890014025B /* Assets.xcassets */; };
 		6F3F603D2CD0E0890014025B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F602E2CD0E0890014025B /* LaunchScreen.storyboard */; };
 		6F3F603E2CD0E0890014025B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6F3F60312CD0E0890014025B /* Main.storyboard */; };
+		94105BF32DA9267600DC9612 /* ca.crt in Resources */ = {isa = PBXBuildFile; fileRef = 94105BDC2DA9267600DC9612 /* ca.crt */; };
+		94105C012DA9267600DC9612 /* server.py in Resources */ = {isa = PBXBuildFile; fileRef = 94105BF02DA9267600DC9612 /* server.py */; };
 		9492D6A82D30226200008A84 /* RequestDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6A52D30226200008A84 /* RequestDemoController.m */; };
 		9492D6A92D30226200008A84 /* WkWebViewDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6A72D30226200008A84 /* WkWebViewDemoController.m */; };
 		949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */; };
@@ -112,6 +114,22 @@
 		73E15D7538E496E0EFD4FD8E /* Pods-EMASCurlDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.debug.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		8A23146F0EBBDA489A1A0D31 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "./out/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
 		8F7550AA13D3ADD72163B2F6 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "./precompiled/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
+		94105BDC2DA9267600DC9612 /* ca.crt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ca.crt; sourceTree = "<group>"; };
+		94105BDE2DA9267600DC9612 /* 1000.pem */ = {isa = PBXFileReference; lastKnownFileType = text; path = 1000.pem; sourceTree = "<group>"; };
+		94105BE02DA9267600DC9612 /* ca.key */ = {isa = PBXFileReference; lastKnownFileType = text; path = ca.key; sourceTree = "<group>"; };
+		94105BE22DA9267600DC9612 /* index.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = index.txt; sourceTree = "<group>"; };
+		94105BE32DA9267600DC9612 /* index.txt.attr */ = {isa = PBXFileReference; lastKnownFileType = text; path = index.txt.attr; sourceTree = "<group>"; };
+		94105BE42DA9267600DC9612 /* index.txt.old */ = {isa = PBXFileReference; lastKnownFileType = text; path = index.txt.old; sourceTree = "<group>"; };
+		94105BE52DA9267600DC9612 /* openssl.cnf */ = {isa = PBXFileReference; lastKnownFileType = text; path = openssl.cnf; sourceTree = "<group>"; };
+		94105BE62DA9267600DC9612 /* serial */ = {isa = PBXFileReference; lastKnownFileType = text; path = serial; sourceTree = "<group>"; };
+		94105BE72DA9267600DC9612 /* serial.old */ = {isa = PBXFileReference; lastKnownFileType = text; path = serial.old; sourceTree = "<group>"; };
+		94105BE92DA9267600DC9612 /* server.crt */ = {isa = PBXFileReference; lastKnownFileType = text; path = server.crt; sourceTree = "<group>"; };
+		94105BEA2DA9267600DC9612 /* server.csr */ = {isa = PBXFileReference; lastKnownFileType = text; path = server.csr; sourceTree = "<group>"; };
+		94105BEB2DA9267600DC9612 /* server.key */ = {isa = PBXFileReference; lastKnownFileType = text; path = server.key; sourceTree = "<group>"; };
+		94105BEE2DA9267600DC9612 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		94105BEF2DA9267600DC9612 /* requirements.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = requirements.txt; sourceTree = "<group>"; };
+		94105BF02DA9267600DC9612 /* server.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = server.py; sourceTree = "<group>"; };
+		94105BF12DA9267600DC9612 /* server_controller.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = server_controller.py; sourceTree = "<group>"; };
 		9492D6A42D30226200008A84 /* RequestDemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RequestDemoController.h; sourceTree = "<group>"; };
 		9492D6A52D30226200008A84 /* RequestDemoController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RequestDemoController.m; sourceTree = "<group>"; };
 		9492D6A62D30226200008A84 /* WkWebViewDemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WkWebViewDemoController.h; sourceTree = "<group>"; };
@@ -158,41 +176,6 @@
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
 		FC63873258AC2D2C8BE72105 /* Pods-AVPlayerDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AVPlayerDemo.debug.xcconfig"; path = "Target Support Files/Pods-AVPlayerDemo/Pods-AVPlayerDemo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		949538D62D0F31B1001FE850 /* Exceptions for "MockServer" folder in "EMASCurlTests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"__pycache__/server_controller.cpython-39.pyc",
-				certs/rootCA/index.txt,
-				certs/rootCA/index.txt.attr,
-				certs/rootCA/index.txt.old,
-				certs/rootCA/newcerts/1000.pem,
-				certs/rootCA/openssl.cnf,
-				certs/rootCA/private/ca.key,
-				certs/rootCA/serial,
-				certs/rootCA/serial.old,
-				certs/server/server.crt,
-				certs/server/server.csr,
-				certs/server/server.key,
-				README.md,
-				requirements.txt,
-				server_controller.py,
-			);
-			target = 6F3F5FE82CD0DB520014025B /* EMASCurlTests */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		949538AA2D0C3BA3001FE850 /* MockServer */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				949538D62D0F31B1001FE850 /* Exceptions for "MockServer" folder in "EMASCurlTests" target */,
-			);
-			path = MockServer;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		6F3F5FD72CD0DB200014025B /* Frameworks */ = {
@@ -243,7 +226,7 @@
 				94978CE22D5742BB0042BE44 /* EMASCurlWeb */,
 				6F3F60272CD0E0860014025B /* EMASCurlTests */,
 				6F3F60362CD0E0890014025B /* EMASCurlDemo */,
-				949538AA2D0C3BA3001FE850 /* MockServer */,
+				94105BF22DA9267600DC9612 /* MockServer */,
 				6F3F60112CD0DB7D0014025B /* Frameworks */,
 				6F3F5FDB2CD0DB200014025B /* Products */,
 				F020AA635FEA508BFC2214FC /* Pods */,
@@ -323,6 +306,77 @@
 				9492D6A72D30226200008A84 /* WkWebViewDemoController.m */,
 			);
 			path = EMASCurlDemo;
+			sourceTree = "<group>";
+		};
+		94105BDD2DA9267600DC9612 /* certs */ = {
+			isa = PBXGroup;
+			children = (
+				94105BDC2DA9267600DC9612 /* ca.crt */,
+			);
+			path = certs;
+			sourceTree = "<group>";
+		};
+		94105BDF2DA9267600DC9612 /* newcerts */ = {
+			isa = PBXGroup;
+			children = (
+				94105BDE2DA9267600DC9612 /* 1000.pem */,
+			);
+			path = newcerts;
+			sourceTree = "<group>";
+		};
+		94105BE12DA9267600DC9612 /* private */ = {
+			isa = PBXGroup;
+			children = (
+				94105BE02DA9267600DC9612 /* ca.key */,
+			);
+			path = private;
+			sourceTree = "<group>";
+		};
+		94105BE82DA9267600DC9612 /* rootCA */ = {
+			isa = PBXGroup;
+			children = (
+				94105BDD2DA9267600DC9612 /* certs */,
+				94105BDF2DA9267600DC9612 /* newcerts */,
+				94105BE12DA9267600DC9612 /* private */,
+				94105BE22DA9267600DC9612 /* index.txt */,
+				94105BE32DA9267600DC9612 /* index.txt.attr */,
+				94105BE42DA9267600DC9612 /* index.txt.old */,
+				94105BE52DA9267600DC9612 /* openssl.cnf */,
+				94105BE62DA9267600DC9612 /* serial */,
+				94105BE72DA9267600DC9612 /* serial.old */,
+			);
+			path = rootCA;
+			sourceTree = "<group>";
+		};
+		94105BEC2DA9267600DC9612 /* server */ = {
+			isa = PBXGroup;
+			children = (
+				94105BE92DA9267600DC9612 /* server.crt */,
+				94105BEA2DA9267600DC9612 /* server.csr */,
+				94105BEB2DA9267600DC9612 /* server.key */,
+			);
+			path = server;
+			sourceTree = "<group>";
+		};
+		94105BED2DA9267600DC9612 /* certs */ = {
+			isa = PBXGroup;
+			children = (
+				94105BE82DA9267600DC9612 /* rootCA */,
+				94105BEC2DA9267600DC9612 /* server */,
+			);
+			path = certs;
+			sourceTree = "<group>";
+		};
+		94105BF22DA9267600DC9612 /* MockServer */ = {
+			isa = PBXGroup;
+			children = (
+				94105BED2DA9267600DC9612 /* certs */,
+				94105BEE2DA9267600DC9612 /* README.md */,
+				94105BEF2DA9267600DC9612 /* requirements.txt */,
+				94105BF02DA9267600DC9612 /* server.py */,
+				94105BF12DA9267600DC9612 /* server_controller.py */,
+			);
+			path = MockServer;
 			sourceTree = "<group>";
 		};
 		94978CE22D5742BB0042BE44 /* EMASCurlWeb */ = {
@@ -432,9 +486,6 @@
 			);
 			dependencies = (
 				6F3F5FEF2CD0DB520014025B /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				949538AA2D0C3BA3001FE850 /* MockServer */,
 			);
 			name = EMASCurlTests;
 			productName = EMASCurlTests;
@@ -558,6 +609,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				94105BF32DA9267600DC9612 /* ca.crt in Resources */,
+				94105C012DA9267600DC9612 /* server.py in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -598,9 +651,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
