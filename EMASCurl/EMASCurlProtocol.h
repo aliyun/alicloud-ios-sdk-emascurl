@@ -120,10 +120,28 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 // 传入nil时，清除黑名单
 + (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList;
 
-// 设置用于公钥固定(Public Key Pinning)的证书文件路径
-// libcurl 会使用此文件中的公钥信息来验证服务器证书链中的公钥
-// 传入nil时，清除公钥固定设置
-+ (void)setPublicKeyPinningCertificatePath:(nullable NSString *)certificatePath;
+// 设置用于公钥固定(Public Key Pinning)的公钥文件路径。
+// libcurl 会使用此文件中的公钥信息来验证服务器证书链中的公钥。
+// 传入nil时，清除公钥固定设置。
+//
+// 要求公钥 PEM 文件的结构：
+// 1. 公钥 PEM 文件必须包含一个有效的公钥信息，格式为 PEM 格式，
+//    即包含 `-----BEGIN PUBLIC KEY-----` 和 `-----END PUBLIC KEY-----` 区块，内容为公钥的 base64 编码。
+// 2. 文件内容示例：
+//    -----BEGIN PUBLIC KEY-----
+//    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...
+//    ...base64 data...
+//    -----END PUBLIC KEY-----
+//
+// 如果用户仅持有 PEM 格式的证书文件，而不是单独的公钥 PEM 文件，可以通过以下命令从证书中提取公钥：
+//
+//    使用 OpenSSL 工具：
+//    ```bash
+//    openssl x509 -in your-cert.pem -pubkey -noout -out publickey.pem
+//    ```
+//    该命令会从 PEM 证书文件（`your-cert.pem`）中提取公钥，并将公钥保存到 `publickey.pem` 文件中。
+//    生成的公钥文件应符合上述结构要求，可以直接用于公钥固定。
++ (void)setPublicKeyPinningKeyPath:(nullable NSString *)publicKeyPath;
 
 @end
 
