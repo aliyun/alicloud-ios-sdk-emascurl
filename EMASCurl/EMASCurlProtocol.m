@@ -113,6 +113,9 @@ static bool s_enableDebugLog;
 static NSArray<NSString *> *s_domainWhiteList;
 static NSArray<NSString *> *s_domainBlackList;
 
+// 公钥固定(Public Key Pinning)的证书文件路径
+static NSString *s_publicKeyPinningCertificatePath;
+
 @implementation EMASCurlProtocol
 
 #pragma mark * user API
@@ -173,6 +176,10 @@ static NSArray<NSString *> *s_domainBlackList;
 
 + (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList {
     s_domainBlackList = domainBlackList;
+}
+
++ (void)setPublicKeyPinningCertificatePath:(nullable NSString *)certificatePath {
+    s_publicKeyPinningCertificatePath = [certificatePath copy];
 }
 
 #pragma mark * NSURLProtocol overrides
@@ -602,6 +609,11 @@ static NSArray<NSString *> *s_domainBlackList;
 
     // 为了线程安全，设置NOSIGNAL
     curl_easy_setopt(easyHandle, CURLOPT_NOSIGNAL, 1L);
+
+    // 设置公钥固定
+    if (s_publicKeyPinningCertificatePath) {
+        curl_easy_setopt(easyHandle, CURLOPT_PINNEDPUBLICKEY, [s_publicKeyPinningCertificatePath UTF8String]);
+    }
 }
 
 - (BOOL)preResolveDomain:(CURL *)easyHandle {

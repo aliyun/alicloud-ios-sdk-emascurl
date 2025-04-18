@@ -120,6 +120,11 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 // 传入nil时，清除黑名单
 + (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList;
 
+// 设置用于公钥固定(Public Key Pinning)的证书文件路径
+// libcurl 会使用此文件中的公钥信息来验证服务器证书链中的公钥
+// 传入nil时，清除公钥固定设置
++ (void)setPublicKeyPinningCertificatePath:(nullable NSString *)certificatePath;
+
 @end
 
 #endif /* EMASCurlProtocol_h */
