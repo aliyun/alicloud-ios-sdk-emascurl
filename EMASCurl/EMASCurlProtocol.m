@@ -109,6 +109,11 @@ static Class<EMASCurlProtocolDNSResolver> s_dnsResolverClass;
 
 static bool s_enableDebugLog;
 
+// 标记是否启用了手动代理
+static BOOL s_manualProxyEnabled;
+// 定时更新系统代理设置的定时器
+static NSTimer *s_proxyUpdateTimer;
+
 // 拦截域名白名单
 static NSArray<NSString *> *s_domainWhiteList;
 static NSArray<NSString *> *s_domainBlackList;
@@ -182,6 +187,34 @@ static NSString *s_publicKeyPinningKeyPath;
     s_publicKeyPinningKeyPath = [publicKeyPath copy];
 }
 
++ (void)setManualProxyServer:(nullable NSString *)proxyServerURL {
+    __block BOOL shouldInvalidateTimer = NO;
+    __block BOOL shouldStartTimer = NO;
+
+    dispatch_sync(s_serialQueue, ^{
+        if (proxyServerURL && proxyServerURL.length > 0) {
+            s_manualProxyEnabled = YES;
+            s_proxyServer = [proxyServerURL copy];
+            shouldInvalidateTimer = YES;
+        } else {
+            s_manualProxyEnabled = NO;
+            s_proxyServer = nil;
+            shouldStartTimer = YES;
+        }
+    });
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (shouldInvalidateTimer && s_proxyUpdateTimer) {
+            [s_proxyUpdateTimer invalidate];
+            s_proxyUpdateTimer = nil;
+            NSLog(@"[EMASCurlProtocol] Manual proxy enabled: %@", proxyServerURL);
+        } else if (shouldStartTimer && !s_proxyUpdateTimer) {
+            [self startProxyUpdatingTimer];
+            NSLog(@"[EMASCurlProtocol] Manual proxy disabled, reverting to system settings.");
+        }
+    });
+}
+
 #pragma mark * NSURLProtocol overrides
 
 - (instancetype)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id<NSURLProtocolClient>)client {
@@ -226,49 +259,57 @@ static NSString *s_publicKeyPinningKeyPath;
 }
 
 + (void)startProxyUpdatingTimer {
-    // 设置一个定时器，10s更新一次proxy设置
-    NSTimer *timer = [NSTimer timerWithTimeInterval:10.0
-                                             target:self
-                                           selector:@selector(updateProxySettings)
-                                           userInfo:nil
-                                            repeats:YES];
-    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
-    [self updateProxySettings];
+    // 确保在主线程上操作定时器
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // 如果定时器已存在，先停止旧的
+        if (s_proxyUpdateTimer) {
+            [s_proxyUpdateTimer invalidate];
+            s_proxyUpdateTimer = nil;
+        }
+        // 设置一个定时器，10s更新一次proxy设置
+        NSTimer *timer = [NSTimer timerWithTimeInterval:10.0
+                                                 target:self
+                                               selector:@selector(updateProxySettings)
+                                               userInfo:nil
+                                                repeats:YES];
+        [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+        s_proxyUpdateTimer = timer; // 保存定时器实例
+        [self updateProxySettings]; // 立即执行一次更新
+    });
 }
 
 + (void)updateProxySettings {
-    CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
-    if (!proxySettings) {
-        dispatch_sync(s_serialQueue, ^{
+    dispatch_sync(s_serialQueue, ^{
+        // If manual proxy is enabled, don't update anything
+        if (s_manualProxyEnabled) {
+            return;
+        }
+
+        // Get and process system proxy within the locked section
+        CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
+        if (!proxySettings) {
             s_proxyServer = nil;
-        });
-        CFRelease(proxySettings);
-        return;
-    }
+            return;
+        }
 
-    NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
-    if (!(proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable])) {
-        dispatch_sync(s_serialQueue, ^{
+        NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
+        if (!(proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable])) {
             s_proxyServer = nil;
-        });
-        CFRelease(proxySettings);
-        return;
-    }
+            CFRelease(proxySettings);
+            return;
+        }
 
-    NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
-    NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
+        NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
+        NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
 
-    if (httpProxy && httpPort) {
-        dispatch_sync(s_serialQueue, ^{
+        if (httpProxy && httpPort) {
             s_proxyServer = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
-        });
-    } else {
-        dispatch_sync(s_serialQueue, ^{
+        } else {
             s_proxyServer = nil;
-        });
-    }
+        }
 
-    CFRelease(proxySettings);
+        CFRelease(proxySettings);
+    });
 }
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
