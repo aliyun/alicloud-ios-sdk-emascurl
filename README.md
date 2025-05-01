@@ -41,6 +41,8 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
     - [设置请求拦截域名白名单和黑名单](#设置请求拦截域名白名单和黑名单)
     - [设置Gzip压缩](#设置gzip压缩)
     - [设置内部重定向支持](#设置内部重定向支持)
+    - [设置公钥固定 (Public Key Pinning)](#设置公钥固定-public-key-pinning)
+    - [设置手动代理服务器](#设置手动代理服务器)
   - [使用EMASCurlWeb](#使用emascurlweb)
     - [EMASCurlWeb简介](#emascurlweb简介)
     - [从CocoaPods引入EMASCurlWeb依赖](#从cocoapods引入emascurlweb依赖)
@@ -530,6 +532,67 @@ EMASCurl可以配置是否自动处理HTTP重定向（如301、302等状态码�
 ```objc
 // 开启内部重定向支持
 [EMASCurlProtocol setBuiltInRedirectionEnabled:YES];
+```
+
+### 设置公钥固定 (Public Key Pinning)
+
+```objc
++ (void)setPublicKeyPinningKeyPath:(nullable NSString *)publicKeyPath;
+```
+
+设置用于公钥固定(Public Key Pinning)的公钥文件路径。libcurl 会使用此文件中的公钥信息来验证服务器证书链中的公钥。传入`nil`时，清除公钥固定设置。
+
+**要求公钥 PEM 文件的结构：**
+1.  公钥 PEM 文件必须包含一个有效的公钥信息，格式为 PEM 格式，即包含 `-----BEGIN PUBLIC KEY-----` 和 `-----END PUBLIC KEY-----` 区块，内容为公钥的 base64 编码。
+2.  文件内容示例：
+    ```
+    -----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...
+    ...base64 data...
+    -----END PUBLIC KEY-----
+    ```
+
+如果用户仅持有 PEM 格式的证书文件，而不是单独的公钥 PEM 文件，可以通过以下命令从证书中提取公钥：
+
+使用 OpenSSL 工具：
+```bash
+openssl x509 -in your-cert.pem -pubkey -noout -out publickey.pem
+```
+该命令会从 PEM 证书文件（`your-cert.pem`）中提取公钥，并将公钥保存到 `publickey.pem` 文件中。生成的公钥文件应符合上述结构要求，可以直接用于公钥固定。
+
+例如：
+
+```objc
+NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key" ofType:@"pem"];
+[EMASCurlProtocol setPublicKeyPinningKeyPath:publicKeyPath];
+
+// 清除公钥固定设置
+// [EMASCurlProtocol setPublicKeyPinningKeyPath:nil];
+```
+
+### 设置手动代理服务器
+
+```objc
++ (void)setManualProxyServer:(nullable NSString *)proxyServerURL;
+```
+
+设置手动代理服务器。设置后会覆盖系统代理设置。传入`nil`时，恢复使用系统代理设置。
+
+代理字符串格式：`[protocol://]user:password@host[:port]`
+
+例如: `http://user:pass@myproxy.com:8080` 或 `socks5://127.0.0.1:1080`
+
+例如：
+
+```objc
+// 设置HTTP代理
+[EMASCurlProtocol setManualProxyServer:@"http://user:pass@proxy.example.com:8080"];
+
+// 设置SOCKS5代理
+// [EMASCurlProtocol setManualProxyServer:@"socks5://192.168.1.100:1080"];
+
+// 清除手动代理设置，恢复使用系统代理
+// [EMASCurlProtocol setManualProxyServer:nil];
 ```
 
 ## 使用EMASCurlWeb
