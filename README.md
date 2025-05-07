@@ -599,6 +599,8 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 
 ### EMASCurlWeb简介
 
+**注意：本模块尚处于实验性质阶段。WebView涉及请求类型复杂，完全拦截网络请求难以做到通用方案，特别是Cookie处理、大文件上传等细节。本模块当前实现仅供参考，若业务已经实现或正在实现Hybrid预加载、本地加载等能力的情况下，可以参考本模块，实现符合业务自身需求的方案。**
+
 EMASCurlWeb是EMASCurl的扩展模块，专门为WKWebView提供网络请求拦截和处理功能。通过使用WKURLSchemeHandler机制，EMASCurlWeb能够拦截WKWebView中的所有网络请求并通过EMASCurl进行处理，使得WebView中的网络请求也能够享受EMASCurl带来的以下好处：
 
 - HTTP/2协议支持
