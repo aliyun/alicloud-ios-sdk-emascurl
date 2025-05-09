@@ -25,7 +25,6 @@ static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlM
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
 static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 
-
 @interface CurlHTTPResponse : NSObject
 
 @property (nonatomic, assign) NSInteger statusCode;
@@ -702,11 +701,18 @@ static NSString *s_publicKeyPinningKeyPath;
 // 将拦截到的request中的header字段，转换为一个curl list
 - (struct curl_slist *)convertHeadersToCurlSlist:(NSDictionary<NSString *, NSString *> *)headers {
     struct curl_slist *headerFields = NULL;
+    BOOL userAgentPresent = NO; // 标记User-Agent是否存在
+
     for (NSString *key in headers) {
         // 对于Content-Length，使用CURLOPT_POSTFIELDSIZE_LARGE指定，不要在这里透传，否则POST重定向为GET时仍会保留Content-Length，导致错误
         if ([key caseInsensitiveCompare:@"Content-Length"] == NSOrderedSame) {
             continue;
         }
+        // 检查是否已提供User-Agent
+        if ([key caseInsensitiveCompare:@"User-Agent"] == NSOrderedSame) {
+            userAgentPresent = YES;
+        }
+
         NSString *value = headers[key];
         NSString *header;
         if ([[value stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet] length] == 0) {
@@ -716,6 +722,13 @@ static NSString *s_publicKeyPinningKeyPath;
         }
         headerFields = curl_slist_append(headerFields, [header UTF8String]);
     }
+
+    // 如果没有提供User-Agent，则添加默认的
+    if (!userAgentPresent) {
+        NSString *defaultUAHeader = [NSString stringWithFormat:@"User-Agent: %@", [NSString stringWithFormat:@"EMASCurl/%@", EMASCURL_SDK_VERSION]];
+        headerFields = curl_slist_append(headerFields, [defaultUAHeader UTF8String]);
+    }
+
     return headerFields;
 }
 
