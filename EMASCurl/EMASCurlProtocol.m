@@ -8,6 +8,8 @@
 #import "EMASCurlProtocol.h"
 #import "EMASCurlManager.h"
 #import "EMASCurlCookieStorage.h"
+#import "EMASCurlResponseCache.h"
+#import "NSCachedURLResponse+EMASCurl.h"
 #import <curl/curl.h>
 
 #define HTTP_METHOD_GET @"GET"
@@ -24,6 +26,7 @@ static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMAS
 static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
 static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
+static NSString * _Nonnull const kEMASCurlForceRefreshKey = @"kEMASCurlForceRefreshKey";
 
 @interface CurlHTTPResponse : NSObject
 
@@ -85,6 +88,8 @@ static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 
 @property (nonatomic, assign) double resolveDomainTimeInterval;
 
+@property (nonatomic, strong) NSMutableData *receivedResponseData;
+
 @end
 
 static HTTPVersion s_httpVersion;
@@ -119,6 +124,10 @@ static NSArray<NSString *> *s_domainBlackList;
 
 // 公钥固定(Public Key Pinning)的公钥文件路径
 static NSString *s_publicKeyPinningKeyPath;
+
+static EMASCurlResponseCache *s_responseCache;
+static BOOL s_cacheEnabled;
+static dispatch_queue_t s_cacheQueue;
 
 @implementation EMASCurlProtocol
 
@@ -214,6 +223,12 @@ static NSString *s_publicKeyPinningKeyPath;
     });
 }
 
++ (void)setCacheEnabled:(BOOL)enabled {
+    dispatch_sync(s_cacheQueue, ^{
+        s_cacheEnabled = enabled;
+    });
+}
+
 #pragma mark * NSURLProtocol overrides
 
 - (instancetype)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id<NSURLProtocolClient>)client {
@@ -225,6 +240,7 @@ static NSString *s_publicKeyPinningKeyPath;
         _totalBytesExpected = 0;
         _currentResponse = [CurlHTTPResponse new];
         _resolveDomainTimeInterval = -1;
+        _receivedResponseData = [NSMutableData new];
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
@@ -247,10 +263,13 @@ static NSString *s_publicKeyPinningKeyPath;
     s_enableBuiltInGzip = YES;
     s_enableBuiltInRedirection = YES;
 
+    s_responseCache = [EMASCurlResponseCache new];
+
     s_proxyServer = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         s_serialQueue = dispatch_queue_create("com.alicloud.emascurl.serialQueue", DISPATCH_QUEUE_SERIAL);
+        s_cacheQueue = dispatch_queue_create("com.alicloud.emascurl.cacheQueue", DISPATCH_QUEUE_SERIAL);
     });
 
     // 设置定时任务读取proxy
@@ -364,6 +383,45 @@ static NSString *s_publicKeyPinningKeyPath;
 }
 
 - (void)startLoading {
+    // 检查是否启用缓存以及是否是可缓存的请求
+    __block BOOL useCache = NO;
+    __block BOOL forceRefresh = NO;
+
+    dispatch_sync(s_cacheQueue, ^{
+        if (!s_cacheEnabled) {
+            return;
+        }
+
+        // 只有GET方法才使用缓存
+        if (![[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
+            return;
+        }
+
+        // 检查是否强制刷新
+        forceRefresh = [NSURLProtocol propertyForKey:kEMASCurlForceRefreshKey inRequest:self.request] != nil;
+        if (forceRefresh) {
+            return;
+        }
+
+        // 尝试从缓存获取
+        NSCachedURLResponse *cachedResponse = [s_responseCache getCachedResponseWithRequest:self.request];
+        if (cachedResponse && ![cachedResponse emas_isExpired]) {
+            useCache = YES;
+
+            // 使用缓存的响应
+            [self.client URLProtocol:self didReceiveResponse:cachedResponse.response cacheStoragePolicy:NSURLCacheStorageAllowed];
+            [self.client URLProtocol:self didLoadData:cachedResponse.data];
+            [self.client URLProtocolDidFinishLoading:self];
+        }
+    });
+
+    // 如果使用了缓存，则直接返回
+    if (useCache) {
+        dispatch_semaphore_signal(self.cleanupSemaphore);
+        return;
+    }
+
+    // 原始的网络请求处理逻辑
     CURL *easyHandle = curl_easy_init();
     self.easyHandle = easyHandle;
     if (!easyHandle) {
@@ -386,6 +444,25 @@ static NSString *s_publicKeyPinningKeyPath;
 
     [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error) {
         [self reportNetworkMetric:succeed error:error];
+
+        // 如果请求成功且状态码为200，则尝试缓存响应
+        if (succeed &&
+            self.currentResponse.statusCode == 200 &&
+            s_cacheEnabled &&
+            [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
+
+            dispatch_sync(s_cacheQueue, ^{
+                NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:self.request.URL
+                                                                              statusCode:self.currentResponse.statusCode
+                                                                             HTTPVersion:self.currentResponse.httpVersion
+                                                                            headerFields:self.currentResponse.headers];
+                if (httpResponse) {
+                    [s_responseCache cacheWithHTTPURLResponse:httpResponse
+                                                        data:self.receivedResponseData
+                                                     request:self.request];
+                }
+            });
+        }
 
         if (succeed) {
             [self.client URLProtocolDidFinishLoading:self];
@@ -512,6 +589,26 @@ static NSString *s_publicKeyPinningKeyPath;
 
     // 将拦截到的request的header字段进行透传
     self.requestHeaderFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
+
+    // 只对GET请求添加缓存相关条件头
+    if (s_cacheEnabled && [[request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
+        // 检查是否存在已过期的缓存，如果有则添加条件头
+        NSCachedURLResponse *cachedResponse = [s_responseCache getCachedResponseWithRequest:request];
+        if (cachedResponse && [cachedResponse emas_isExpired]) {
+            NSString *etag = [cachedResponse emas_etag];
+            if (etag) {
+                NSString *ifNoneMatchHeader = [NSString stringWithFormat:@"If-None-Match: %@", etag];
+                self.requestHeaderFields = curl_slist_append(self.requestHeaderFields, [ifNoneMatchHeader UTF8String]);
+            }
+
+            NSString *lastModified = [cachedResponse emas_lastModified];
+            if (lastModified) {
+                NSString *ifModifiedSinceHeader = [NSString stringWithFormat:@"If-Modified-Since: %@", lastModified];
+                self.requestHeaderFields = curl_slist_append(self.requestHeaderFields, [ifModifiedSinceHeader UTF8String]);
+            }
+        }
+    }
+
     curl_easy_setopt(easyHandle, CURLOPT_HTTPHEADER, self.requestHeaderFields);
 }
 
@@ -785,6 +882,24 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         NSInteger statusCode = protocol.currentResponse.statusCode;
         NSString *reasonPhrase = protocol.currentResponse.reasonPhrase;
 
+        // 处理304 Not Modified响应
+        if (statusCode == 304 && s_cacheEnabled) {
+            // 查找缓存
+            NSCachedURLResponse *cachedResponse = [s_responseCache getCachedResponseWithRequest:protocol.request];
+            if (cachedResponse) {
+                // 使用缓存的响应数据，但更新头部
+                NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)protocol.currentResponse;
+                NSCachedURLResponse *updatedResponse = [s_responseCache updateCachedResponseWithURLResponse:httpResponse
+                                                                                                    request:protocol.request];
+                if (updatedResponse) {
+                    [protocol.client URLProtocol:protocol didReceiveResponse:updatedResponse.response
+                                                      cacheStoragePolicy:NSURLCacheStorageAllowed];
+                    [protocol.client URLProtocol:protocol didLoadData:updatedResponse.data];
+                    return totalSize;
+                }
+            }
+        }
+
         NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
                                                                       statusCode:protocol.currentResponse.statusCode
                                                                      HTTPVersion:protocol.currentResponse.httpVersion
@@ -804,8 +919,6 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                     NSMutableURLRequest *redirectedRequest = [protocol.request mutableCopy];
                     [redirectedRequest setURL:locationURL];
                     [protocol.client URLProtocol:protocol wasRedirectedToRequest:redirectedRequest redirectResponse:httpResponse];
-                } else {
-
                 }
             }
             [protocol.currentResponse reset];
@@ -848,14 +961,21 @@ BOOL isConnectEstablishedStatusCode(NSInteger statusCode, NSString *reasonPhrase
 static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
     EMASCurlProtocol *protocol = (__bridge EMASCurlProtocol *)userp;
 
-    NSMutableData *data = [[NSMutableData alloc] initWithBytes:contents length:size * nmemb];
+    size_t totalSize = size * nmemb;
+    NSData *data = [[NSData alloc] initWithBytes:contents length:totalSize];
+
+    // 收集响应数据用于缓存
+    if (s_cacheEnabled && protocol.currentResponse.statusCode == 200 &&
+        [[protocol.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
+        [protocol.receivedResponseData appendData:data];
+    }
 
     // 只有确认获得已经读取了最后一个响应，接受的数据才视为有效数据
     if (protocol.currentResponse.isFinalResponse) {
         [protocol.client URLProtocol:protocol didLoadData:data];
     }
 
-    return size * nmemb;
+    return totalSize;
 }
 
 // libcurl的read回调函数，用于post等需要设置body数据的方法

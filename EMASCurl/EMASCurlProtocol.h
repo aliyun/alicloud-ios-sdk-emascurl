@@ -150,6 +150,11 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 // 例如: http://user:pass@myproxy.com:8080 或 socks5://127.0.0.1:1080
 + (void)setManualProxyServer:(nullable NSString *)proxyServerURL;
 
+#pragma mark - HTTP缓存相关方法
+
+// 设置是否启用HTTP缓存，默认启用
++ (void)setCacheEnabled:(BOOL)enabled;
+
 @end
 
 #endif /* EMASCurlProtocol_h */
