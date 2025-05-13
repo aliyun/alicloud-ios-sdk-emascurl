@@ -5,7 +5,6 @@
 #import "EMASCurlWebNetworkManager.h"
 #import "EMASCurlWebRequestExecutor.h"
 #import "EMASCurlWebUtils.h"
-#import "EMASCurlWebURLResponseCache.h"
 #import <os/lock.h>
 
 @interface EMASCurlWebNetworkManager ()
@@ -15,7 +14,6 @@
 @property (nonatomic, assign) NSUInteger currentCacheCapacity;
 
 @property (nonatomic, strong) EMASCurlWebRequestExecutor *networkManager;
-@property (nonatomic, strong) EMASCurlWebURLResponseCache *httpResponseCache;
 
 @end
 
@@ -32,7 +30,6 @@
         _currentCacheItemCount = 0;
 
         _networkManager = [[EMASCurlWebRequestExecutor alloc] initWithSessionConfiguration:sessionConfiguration];
-        _httpResponseCache = [[EMASCurlWebURLResponseCache alloc] init];
     }
     return self;
 }
@@ -48,7 +45,6 @@
     dataTask.dataCallback = dataCallback;
     dataTask.redirectCallback = redirectCallback;
     dataTask.networkManagerWeakRef = self.networkManager;
-    dataTask.httpCacheWeakRef = self.httpResponseCache;
 
     EMASCurlWeak(self)
     EMASCurlWeak(dataTask)
@@ -92,18 +88,6 @@
         }
         [self removeDataTask:dataTask];
     };
-
-    // 根据请求方法判断是否允许缓存
-    BOOL isNonGET = ![[request.HTTPMethod uppercaseString] isEqualToString:@"GET"];
-    NSString *mainDocumentURL = request.mainDocumentURL.absoluteString;
-    NSString *requestURL = request.URL.absoluteString;
-    BOOL isMainURLMatch = ([EMASCurlWebUtils isValidStr:mainDocumentURL] &&
-                           [EMASCurlWebUtils isEqualURLA:requestURL withURLB:mainDocumentURL]);
-    if (isNonGET || isMainURLMatch) {
-        dataTask.canCache = NO;
-    } else {
-        dataTask.canCache = YES;
-    }
 
     os_unfair_lock_lock(&_dataTasksLock);
     [self.dataTasks addObject:dataTask];

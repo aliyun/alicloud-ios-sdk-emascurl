@@ -6,7 +6,6 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "EMASCurlWebURLResponseCache.h"
 #import "EMASCurlWebRequestExecutor.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -23,10 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) void (^retryHandler)(void);
 @property (nonatomic, copy) void (^cancelHandler)(void);
 
-@property (nonatomic, weak, nullable) EMASCurlWebURLResponseCache *httpCacheWeakRef;
 @property (nonatomic, weak, nullable) EMASCurlWebRequestExecutor *networkManagerWeakRef;
 
-@property (nonatomic, assign) BOOL canCache;
 @property (nonatomic, assign) NSUInteger currentRetryCount;
 @property (nullable, readwrite, copy) NSURLRequest *originalRequest;
 

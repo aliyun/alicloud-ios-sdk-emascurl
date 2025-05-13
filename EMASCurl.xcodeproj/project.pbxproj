@@ -45,7 +45,6 @@
 		94978CE82D5742BB0042BE44 /* EMASCurlWebLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CD22D5742BB0042BE44 /* EMASCurlWebLogger.h */; };
 		94978CE92D5742BB0042BE44 /* EMASCurlWebNetworkManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CD42D5742BB0042BE44 /* EMASCurlWebNetworkManager.h */; };
 		94978CEA2D5742BB0042BE44 /* EMASCurlWebRequestExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CD62D5742BB0042BE44 /* EMASCurlWebRequestExecutor.h */; };
-		94978CEC2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CDA2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.h */; };
 		94978CED2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CDC2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		94978CEE2D5742BB0042BE44 /* EMASCurlWebUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CDE2D5742BB0042BE44 /* EMASCurlWebUtils.h */; };
 		94978CEF2D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h in Headers */ = {isa = PBXBuildFile; fileRef = 94978CE02D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -54,13 +53,10 @@
 		94978CF22D5742BB0042BE44 /* EMASCurlWebLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CD32D5742BB0042BE44 /* EMASCurlWebLogger.m */; };
 		94978CF32D5742BB0042BE44 /* EMASCurlWebNetworkManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CD52D5742BB0042BE44 /* EMASCurlWebNetworkManager.m */; };
 		94978CF42D5742BB0042BE44 /* EMASCurlWebRequestExecutor.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CD72D5742BB0042BE44 /* EMASCurlWebRequestExecutor.m */; };
-		94978CF62D5742BB0042BE44 /* EMASCurlWebURLResponseCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CDB2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.m */; };
 		94978CF72D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CDD2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.m */; };
 		94978CF82D5742BB0042BE44 /* EMASCurlWebUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CDF2D5742BB0042BE44 /* EMASCurlWebUtils.m */; };
 		94978CF92D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m in Sources */ = {isa = PBXBuildFile; fileRef = 94978CE12D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m */; };
 		94978CFB2D5742BB0042BE44 /* cookie.js in Resources */ = {isa = PBXBuildFile; fileRef = 94978CCA2D5742BB0042BE44 /* cookie.js */; };
-		949793862D709F6E0042BE44 /* NSCachedURLResponse+EMASCurl.h in Headers */ = {isa = PBXBuildFile; fileRef = 949793842D709F6E0042BE44 /* NSCachedURLResponse+EMASCurl.h */; };
-		949793872D709F6E0042BE44 /* NSCachedURLResponse+EMASCurl.m in Sources */ = {isa = PBXBuildFile; fileRef = 949793852D709F6E0042BE44 /* NSCachedURLResponse+EMASCurl.m */; };
 		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
 		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
 		9ED156F40066301702A9AC72 /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7550AA13D3ADD72163B2F6 /* libcurl-HTTP2.xcframework */; };
@@ -170,8 +166,6 @@
 		94978CD52D5742BB0042BE44 /* EMASCurlWebNetworkManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebNetworkManager.m; sourceTree = "<group>"; };
 		94978CD62D5742BB0042BE44 /* EMASCurlWebRequestExecutor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebRequestExecutor.h; sourceTree = "<group>"; };
 		94978CD72D5742BB0042BE44 /* EMASCurlWebRequestExecutor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebRequestExecutor.m; sourceTree = "<group>"; };
-		94978CDA2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebURLResponseCache.h; sourceTree = "<group>"; };
-		94978CDB2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebURLResponseCache.m; sourceTree = "<group>"; };
 		94978CDC2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebUrlSchemeHandler.h; sourceTree = "<group>"; };
 		94978CDD2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlWebUrlSchemeHandler.m; sourceTree = "<group>"; };
 		94978CDE2D5742BB0042BE44 /* EMASCurlWebUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlWebUtils.h; sourceTree = "<group>"; };
@@ -179,8 +173,6 @@
 		94978CE02D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WKWebViewConfiguration+Loader.h"; sourceTree = "<group>"; };
 		94978CE12D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "WKWebViewConfiguration+Loader.m"; sourceTree = "<group>"; };
 		94978EB22D57FFCC0042BE44 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "precompiled/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
-		949793842D709F6E0042BE44 /* NSCachedURLResponse+EMASCurl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSCachedURLResponse+EMASCurl.h"; sourceTree = "<group>"; };
-		949793852D709F6E0042BE44 /* NSCachedURLResponse+EMASCurl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSCachedURLResponse+EMASCurl.m"; sourceTree = "<group>"; };
 		94C5B5D82D071D86006BC856 /* EMASCurlManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlManager.h; sourceTree = "<group>"; };
 		94C5B5D92D071D86006BC856 /* EMASCurlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlManager.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
@@ -410,14 +402,10 @@
 				94978CD52D5742BB0042BE44 /* EMASCurlWebNetworkManager.m */,
 				94978CD62D5742BB0042BE44 /* EMASCurlWebRequestExecutor.h */,
 				94978CD72D5742BB0042BE44 /* EMASCurlWebRequestExecutor.m */,
-				94978CDA2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.h */,
-				94978CDB2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.m */,
 				94978CDC2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.h */,
 				94978CDD2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.m */,
 				94978CDE2D5742BB0042BE44 /* EMASCurlWebUtils.h */,
 				94978CDF2D5742BB0042BE44 /* EMASCurlWebUtils.m */,
-				949793842D709F6E0042BE44 /* NSCachedURLResponse+EMASCurl.h */,
-				949793852D709F6E0042BE44 /* NSCachedURLResponse+EMASCurl.m */,
 				94978CE02D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h */,
 				94978CE12D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m */,
 			);
@@ -457,14 +445,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				94978CE32D5742BB0042BE44 /* EMASCurlWeb.h in Headers */,
-				949793862D709F6E0042BE44 /* NSCachedURLResponse+EMASCurl.h in Headers */,
 				94978CE52D5742BB0042BE44 /* EMASCurlWebConstant.h in Headers */,
 				94978CE62D5742BB0042BE44 /* EMASCurlWebContentLoader.h in Headers */,
 				94978CE72D5742BB0042BE44 /* EMASCurlWebDataTask.h in Headers */,
 				94978CE82D5742BB0042BE44 /* EMASCurlWebLogger.h in Headers */,
 				94978CE92D5742BB0042BE44 /* EMASCurlWebNetworkManager.h in Headers */,
 				94978CEA2D5742BB0042BE44 /* EMASCurlWebRequestExecutor.h in Headers */,
-				94978CEC2D5742BB0042BE44 /* EMASCurlWebURLResponseCache.h in Headers */,
 				94978CED2D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.h in Headers */,
 				94978CEE2D5742BB0042BE44 /* EMASCurlWebUtils.h in Headers */,
 				94978CEF2D5742BB0042BE44 /* WKWebViewConfiguration+Loader.h in Headers */,
@@ -669,13 +655,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -759,11 +741,9 @@
 			files = (
 				94978CF02D5742BB0042BE44 /* EMASCurlWebContentLoader.m in Sources */,
 				94978CF12D5742BB0042BE44 /* EMASCurlWebDataTask.m in Sources */,
-				949793872D709F6E0042BE44 /* NSCachedURLResponse+EMASCurl.m in Sources */,
 				94978CF22D5742BB0042BE44 /* EMASCurlWebLogger.m in Sources */,
 				94978CF32D5742BB0042BE44 /* EMASCurlWebNetworkManager.m in Sources */,
 				94978CF42D5742BB0042BE44 /* EMASCurlWebRequestExecutor.m in Sources */,
-				94978CF62D5742BB0042BE44 /* EMASCurlWebURLResponseCache.m in Sources */,
 				94978CF72D5742BB0042BE44 /* EMASCurlWebUrlSchemeHandler.m in Sources */,
 				94978CF82D5742BB0042BE44 /* EMASCurlWebUtils.m in Sources */,
 				94978CF92D5742BB0042BE44 /* WKWebViewConfiguration+Loader.m in Sources */,

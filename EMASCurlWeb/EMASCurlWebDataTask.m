@@ -29,7 +29,6 @@ NSInteger const kEMASCurlGetRequestRetryLimit = 0;
         _originalRequest = request;
         _currentRetryCount = 0;
         _isCancelled = NO;
-        _canCache = YES;
         _requestID = -1;
         _receivedData = [NSMutableData data];
     }
@@ -40,11 +39,6 @@ NSInteger const kEMASCurlGetRequestRetryLimit = 0;
 
 - (void)resume {
     if (self.isCancelled) {
-        return;
-    }
-
-    // 检查是否可用缓存
-    if (![self prepareRequestAndTryCache]) {
         return;
     }
 
@@ -89,74 +83,14 @@ NSInteger const kEMASCurlGetRequestRetryLimit = 0;
     }
 }
 
-#pragma mark - Cache & Request Preparation
-
-// 检查缓存是否可用并尝试直接返回缓存内容
-- (BOOL)prepareRequestAndTryCache {
-    // 不使用缓存的情况
-    BOOL isGetMethod = [[self.originalRequest.HTTPMethod uppercaseString] isEqualToString:@"GET"];
-    if (!isGetMethod) {
-        self.canCache = NO;
-    }
-    NSString *mainURL = self.originalRequest.mainDocumentURL.absoluteString;
-    NSString *requestURL = self.originalRequest.URL.absoluteString;
-    if ([EMASCurlWebUtils isValidStr:mainURL] &&
-        [EMASCurlWebUtils isEqualURLA:requestURL withURLB:mainURL]) {
-        self.canCache = NO;
-    }
-    if (!self.canCache) {
-        return YES;
-    }
-
-    // 有缓存能力则获取缓存
-    NSCachedURLResponse *cachedResponse = [self.httpCacheWeakRef getCachedResponseWithRequest:self.originalRequest];
-    if (cachedResponse && ![cachedResponse emas_isExpired]) {
-        if (self.responseCallback) {
-            self.responseCallback(cachedResponse.response);
-        }
-        if (self.dataCallback) {
-            self.dataCallback(cachedResponse.data);
-        }
-        if (self.successCallback) {
-            self.successCallback();
-        }
-        return NO;
-    }
-
-    // 如果缓存已过期，则设置If-None-Match/If-Modified-Since
-    if (cachedResponse && [cachedResponse emas_isExpired]) {
-        NSMutableURLRequest *tmpRequest = [self.originalRequest mutableCopy];
-        if (cachedResponse.emas_etag) {
-            [tmpRequest setValue:cachedResponse.emas_etag forHTTPHeaderField:@"If-None-Match"];
-        }
-        if (cachedResponse.emas_lastModified) {
-            [tmpRequest setValue:cachedResponse.emas_lastModified forHTTPHeaderField:@"If-Modified-Since"];
-        }
-        self.originalRequest = [tmpRequest copy];
-    }
-    return YES;
-}
-
 #pragma mark - Callback Handling
 
 // 处理响应回调
 - (void)handleResponse:(NSURLResponse *)response {
-    if (!self.canCache || ![response isKindOfClass:[NSHTTPURLResponse class]]) {
-        if (self.responseCallback) {
-            self.responseCallback(response);
-        }
-        return;
-    }
-
     self.receivedResponse = (NSHTTPURLResponse *)response;
 
-    // 如果 304 不立即回调 responseCallback，等 successCallback 时再处理
-    if (self.receivedResponse.statusCode != 304
-        || ![self.httpCacheWeakRef getCachedResponseWithRequest:self.originalRequest]) {
-
-        if (self.responseCallback) {
-            self.responseCallback(response);
-        }
+    if (self.responseCallback) {
+        self.responseCallback(response);
     }
 }
 
@@ -170,34 +104,6 @@ NSInteger const kEMASCurlGetRequestRetryLimit = 0;
 
 // 处理成功回调
 - (void)handleSuccess {
-    if (!self.canCache) {
-        if (self.successCallback) {
-            self.successCallback();
-        }
-        return;
-    }
-
-    // 如果 304, 则尝试使用缓存
-    if (self.receivedResponse.statusCode == 304 && [self.httpCacheWeakRef getCachedResponseWithRequest:self.originalRequest]) {
-        NSCachedURLResponse *cachedResponse = [self.httpCacheWeakRef
-                                               updateCachedResponseWithURLResponse:self.receivedResponse
-                                               request:self.originalRequest];
-        if (self.responseCallback) {
-            self.responseCallback(cachedResponse.response);
-        }
-        if (self.dataCallback) {
-            self.dataCallback(cachedResponse.data);
-        }
-        if (self.successCallback) {
-            self.successCallback();
-        }
-        return;
-    }
-
-    [self.httpCacheWeakRef cacheWithHTTPURLResponse:self.receivedResponse
-                                               data:self.receivedData
-                                            request:self.originalRequest];
-
     if (self.successCallback) {
         self.successCallback();
     }
