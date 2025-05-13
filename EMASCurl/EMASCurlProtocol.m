@@ -905,12 +905,14 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
             NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:protocol.request];
             if (cachedResponse) {
                 // 使用缓存的响应数据，但更新头部
-                NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)protocol.currentResponse;
+                NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
+                                                                              statusCode:protocol.currentResponse.statusCode
+                                                                             HTTPVersion:protocol.currentResponse.httpVersion
+                                                                            headerFields:protocol.currentResponse.headers];
                 NSCachedURLResponse *updatedResponse = [s_responseCache updateCachedResponseWithHeaders:httpResponse.allHeaderFields
                                                                                              forRequest:protocol.request];
                 if (updatedResponse) {
-                    [protocol.client URLProtocol:protocol didReceiveResponse:updatedResponse.response
-                                                      cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+                    [protocol.client URLProtocol:protocol didReceiveResponse:updatedResponse.response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
                     [protocol.client URLProtocol:protocol didLoadData:updatedResponse.data];
                     return totalSize;
                 }
