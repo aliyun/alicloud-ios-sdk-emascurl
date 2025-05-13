@@ -18,4 +18,27 @@
 // 标记用于收集响应数据
 #define kEMASCurlResponseDataKey @"kEMASCurlResponseDataKey"
 
+#define EMASHTTPHeaderCacheControl @"Cache-Control"
+#define EMASHTTPHeaderPragma @"Pragma"
+#define EMASHTTPHeaderExpires @"Expires"
+#define EMASHTTPHeaderDate @"Date"
+#define EMASHTTPHeaderETag @"Etag"
+#define EMASHTTPHeaderLastModified @"Last-Modified"
+#define EMASHTTPHeaderAge @"Age"
+#define EMASHTTPHeaderVary @"Vary"
+
+#define EMASCacheControlNoCache @"no-cache"
+#define EMASCacheControlNoStore @"no-store"
+#define EMASCacheControlMaxAge @"max-age"
+#define EMASCacheControlSMaxAge @"s-maxage"
+#define EMASCacheControlMustRevalidate @"must-revalidate"
+#define EMASCacheControlPublic @"public"
+#define EMASCacheControlPrivate @"private"
+
+#define EMASUserInfoKeyStorageTimestamp @"EMASUserInfoKeyStorageTimestamp"
+#define EMASUserInfoKeyOriginalDateHeader @"EMASUserInfoKeyOriginalDateHeader"
+#define EMASUserInfoKeyOriginalExpiresHeader @"EMASUserInfoKeyOriginalExpiresHeader"
+#define EMASUserInfoKeyOriginalHTTPVersion @"EMASUserInfoKeyOriginalHTTPVersion"
+#define EMASUserInfoKeyOriginalStatusCode @"EMASUserInfoKeyOriginalStatusCode"
+
 #endif /* EMASCurlCacheConstants_h */

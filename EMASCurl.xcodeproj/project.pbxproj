@@ -24,7 +24,6 @@
 		941470C02DD1A9680072507F /* NSCachedURLResponse+EMASCurl.h in Headers */ = {isa = PBXBuildFile; fileRef = 941470BE2DD1A9680072507F /* NSCachedURLResponse+EMASCurl.h */; };
 		941470C12DD1A9680072507F /* EMASCurlResponseCache.h in Headers */ = {isa = PBXBuildFile; fileRef = 941470BB2DD1A9680072507F /* EMASCurlResponseCache.h */; };
 		941470C22DD1A9680072507F /* EMASCurlCacheConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = 941470B92DD1A9680072507F /* EMASCurlCacheConstants.h */; };
-		941470C32DD1A9680072507F /* EMASCurlUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 941470BD2DD1A9680072507F /* EMASCurlUtils.h */; };
 		941470C42DD1A9680072507F /* NSCachedURLResponse+EMASCurl.m in Sources */ = {isa = PBXBuildFile; fileRef = 941470BF2DD1A9680072507F /* NSCachedURLResponse+EMASCurl.m */; };
 		941470C62DD1A9680072507F /* EMASCurlResponseCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 941470BC2DD1A9680072507F /* EMASCurlResponseCache.m */; };
 		9492D6A82D30226200008A84 /* RequestDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6A52D30226200008A84 /* RequestDemoController.m */; };
@@ -139,7 +138,6 @@
 		941470B92DD1A9680072507F /* EMASCurlCacheConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlCacheConstants.h; sourceTree = "<group>"; };
 		941470BB2DD1A9680072507F /* EMASCurlResponseCache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlResponseCache.h; sourceTree = "<group>"; };
 		941470BC2DD1A9680072507F /* EMASCurlResponseCache.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlResponseCache.m; sourceTree = "<group>"; };
-		941470BD2DD1A9680072507F /* EMASCurlUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlUtils.h; sourceTree = "<group>"; };
 		941470BE2DD1A9680072507F /* NSCachedURLResponse+EMASCurl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSCachedURLResponse+EMASCurl.h"; sourceTree = "<group>"; };
 		941470BF2DD1A9680072507F /* NSCachedURLResponse+EMASCurl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSCachedURLResponse+EMASCurl.m"; sourceTree = "<group>"; };
 		9492D6A42D30226200008A84 /* RequestDemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RequestDemoController.h; sourceTree = "<group>"; };
@@ -281,7 +279,6 @@
 				941470B92DD1A9680072507F /* EMASCurlCacheConstants.h */,
 				941470BB2DD1A9680072507F /* EMASCurlResponseCache.h */,
 				941470BC2DD1A9680072507F /* EMASCurlResponseCache.m */,
-				941470BD2DD1A9680072507F /* EMASCurlUtils.h */,
 				941470BE2DD1A9680072507F /* NSCachedURLResponse+EMASCurl.h */,
 				941470BF2DD1A9680072507F /* NSCachedURLResponse+EMASCurl.m */,
 			);
@@ -450,7 +447,6 @@
 				941470C02DD1A9680072507F /* NSCachedURLResponse+EMASCurl.h in Headers */,
 				941470C12DD1A9680072507F /* EMASCurlResponseCache.h in Headers */,
 				941470C22DD1A9680072507F /* EMASCurlCacheConstants.h in Headers */,
-				941470C32DD1A9680072507F /* EMASCurlUtils.h in Headers */,
 				6F3F60242CD0E07F0014025B /* EMASCurlProtocol.h in Headers */,
 				94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */,
 			);
@@ -673,9 +669,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

@@ -26,7 +26,6 @@ static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMAS
 static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
 static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
-static NSString * _Nonnull const kEMASCurlForceRefreshKey = @"kEMASCurlForceRefreshKey";
 
 @interface CurlHTTPResponse : NSObject
 
@@ -385,33 +384,36 @@ static dispatch_queue_t s_cacheQueue;
 - (void)startLoading {
     // 检查是否启用缓存以及是否是可缓存的请求
     __block BOOL useCache = NO;
-    __block BOOL forceRefresh = NO;
 
     dispatch_sync(s_cacheQueue, ^{
         if (!s_cacheEnabled) {
             return;
         }
 
-        // 只有GET方法才使用缓存
         if (![[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
             return;
         }
 
-        // 检查是否强制刷新
-        forceRefresh = [NSURLProtocol propertyForKey:kEMASCurlForceRefreshKey inRequest:self.request] != nil;
-        if (forceRefresh) {
-            return;
-        }
+        // 从我们的缓存逻辑获取响应
+        NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:self.request];
 
-        // 尝试从缓存获取
-        NSCachedURLResponse *cachedResponse = [s_responseCache getCachedResponseWithRequest:self.request];
-        if (cachedResponse && ![cachedResponse emas_isExpired]) {
-            useCache = YES;
+        if (cachedResponse) {
+            BOOL isFresh = [cachedResponse emas_isResponseStillFreshForRequest:self.request];
+            BOOL requiresRevalidation = [cachedResponse emas_requiresRevalidation];
 
-            // 使用缓存的响应
-            [self.client URLProtocol:self didReceiveResponse:cachedResponse.response cacheStoragePolicy:NSURLCacheStorageAllowed];
-            [self.client URLProtocol:self didLoadData:cachedResponse.data];
-            [self.client URLProtocolDidFinishLoading:self];
+            if (isFresh && !requiresRevalidation) {
+                // 响应是新鲜的，且不需要因为 no-cache 等指令而重新验证
+                useCache = YES; // 标记已使用缓存
+                [self.client URLProtocol:self didReceiveResponse:cachedResponse.response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+                [self.client URLProtocol:self didLoadData:cachedResponse.data];
+                [self.client URLProtocolDidFinishLoading:self];
+                // 注意：因为在dispatch_sync块中，直接return可能不是预期行为，
+                // 取决于外部如何处理 useCache 标记。这里假设 useCache 会被外部检查。
+            } else {
+                // 响应是陈旧的，或者新鲜但需要重新验证 (no-cache)。
+                // 条件请求头将在后续步骤中添加 (如果 cachedResponse 有 ETag/Last-Modified)。
+                // cachedResponseForRequest 保证了如果到这里 cachedResponse 非nil，它至少有验证器。
+            }
         }
     });
 
@@ -457,9 +459,10 @@ static dispatch_queue_t s_cacheQueue;
                                                                              HTTPVersion:self.currentResponse.httpVersion
                                                                             headerFields:self.currentResponse.headers];
                 if (httpResponse) {
-                    [s_responseCache cacheWithHTTPURLResponse:httpResponse
-                                                        data:self.receivedResponseData
-                                                     request:self.request];
+                    [s_responseCache cacheResponse:httpResponse
+                                              data:self.receivedResponseData
+                                        forRequest:self.request
+                                   withHTTPVersion:@"HTTP/2"];
                 }
             });
         }
@@ -591,20 +594,34 @@ static dispatch_queue_t s_cacheQueue;
     self.requestHeaderFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
 
     // 只对GET请求添加缓存相关条件头
-    if (s_cacheEnabled && [[request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
-        // 检查是否存在已过期的缓存，如果有则添加条件头
-        NSCachedURLResponse *cachedResponse = [s_responseCache getCachedResponseWithRequest:request];
-        if (cachedResponse && [cachedResponse emas_isExpired]) {
-            NSString *etag = [cachedResponse emas_etag];
-            if (etag) {
-                NSString *ifNoneMatchHeader = [NSString stringWithFormat:@"If-None-Match: %@", etag];
-                self.requestHeaderFields = curl_slist_append(self.requestHeaderFields, [ifNoneMatchHeader UTF8String]);
-            }
+    if (s_cacheEnabled && [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
+        // 再次从缓存获取，看是否有可用于条件GET的项
+        // 注意：这里的 request 应该是用于网络请求的 NSMutableURLRequest
+        // 而 s_responseCache.cachedResponseForRequest 需要原始的 self.request (或其副本) 作为键
+        NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:self.request];
 
-            NSString *lastModified = [cachedResponse emas_lastModified];
-            if (lastModified) {
-                NSString *ifModifiedSinceHeader = [NSString stringWithFormat:@"If-Modified-Since: %@", lastModified];
-                self.requestHeaderFields = curl_slist_append(self.requestHeaderFields, [ifModifiedSinceHeader UTF8String]);
+        // cachedResponseForRequest 返回的要么是nil，要么是新鲜/可验证的
+        if (cachedResponse) {
+            BOOL isFresh = [cachedResponse emas_isResponseStillFreshForRequest:self.request]; // 再次检查，考虑请求头
+            BOOL requiresRevalidation = [cachedResponse emas_requiresRevalidation];
+
+            // 只有当响应不是新鲜的，或者它新鲜但服务器要求重新验证(no-cache)时，才添加条件头
+            if (!isFresh || requiresRevalidation) {
+                NSString *etag = [cachedResponse emas_etag];
+                if (etag) {
+                    // 在这里，你需要将头添加到实际要发送的请求对象 (可能是 mutableRequest)
+                    // 例如: [mutableRequest setValue:etag forHTTPHeaderField:@"If-None-Match"];
+                    // 下面的 curl_slist_append 逻辑需要适配你的 libcurl 请求构建过程
+                    NSString *ifNoneMatchHeaderValue = etag; // ETag本身就是值
+                    self.requestHeaderFields = curl_slist_append(self.requestHeaderFields, [[NSString stringWithFormat:@"If-None-Match: %@", ifNoneMatchHeaderValue] UTF8String]);
+                }
+
+                NSString *lastModified = [cachedResponse emas_lastModified];
+                if (lastModified) {
+                    // 例如: [mutableRequest setValue:lastModified forHTTPHeaderField:@"If-Modified-Since"];
+                    NSString *ifModifiedSinceHeaderValue = lastModified; // Last-Modified本身就是值
+                    self.requestHeaderFields = curl_slist_append(self.requestHeaderFields, [[NSString stringWithFormat:@"If-Modified-Since: %@", ifModifiedSinceHeaderValue] UTF8String]);
+                }
             }
         }
     }
@@ -885,15 +902,15 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         // 处理304 Not Modified响应
         if (statusCode == 304 && s_cacheEnabled) {
             // 查找缓存
-            NSCachedURLResponse *cachedResponse = [s_responseCache getCachedResponseWithRequest:protocol.request];
+            NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:protocol.request];
             if (cachedResponse) {
                 // 使用缓存的响应数据，但更新头部
                 NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)protocol.currentResponse;
-                NSCachedURLResponse *updatedResponse = [s_responseCache updateCachedResponseWithURLResponse:httpResponse
-                                                                                                    request:protocol.request];
+                NSCachedURLResponse *updatedResponse = [s_responseCache updateCachedResponseWithHeaders:httpResponse.allHeaderFields
+                                                                                             forRequest:protocol.request];
                 if (updatedResponse) {
                     [protocol.client URLProtocol:protocol didReceiveResponse:updatedResponse.response
-                                                      cacheStoragePolicy:NSURLCacheStorageAllowed];
+                                                      cacheStoragePolicy:NSURLCacheStorageNotAllowed];
                     [protocol.client URLProtocol:protocol didLoadData:updatedResponse.data];
                     return totalSize;
                 }
@@ -927,7 +944,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         } else if (isConnectEstablishedStatusCode(statusCode, reasonPhrase)) {
             [protocol.currentResponse reset];
         } else {
-            [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageAllowed];
+            [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageNotAllowed];
             protocol.currentResponse.isFinalResponse = YES;
         }
     }
