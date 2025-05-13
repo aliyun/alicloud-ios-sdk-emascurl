@@ -20,7 +20,7 @@
 
     // 使用阿里云HTTPDN控制台分配的AccountId构造全局实例
     // 全局只需要初始化一次
-    HttpDnsService *httpdns = [[HttpDnsService alloc] initWithAccountID:139450];
+    HttpDnsService *httpdns = [[HttpDnsService alloc] initWithAccountID:000000000 secretKey:@"Your SecretKey"];
 
     // 若开启了鉴权访问，则需要到控制台获得鉴权密钥并在初始化时进行配置
     // HttpDnsService *httpdns = [[HttpDnsService alloc] initWithAccountID:xxxxxx secretKey:@"your secret key"];
@@ -36,9 +36,6 @@
 
     // 设置允许使用已经过期的IP，当域名的IP配置比较稳定时可以使用，提高解析效率
     [httpdns setReuseExpiredIPEnabled:YES];
-
-    // 设置是否支持IPv6地址解析，只有开启这个开关，解析接口才有能力解析域名的IPv6地址并返回
-    [httpdns setIPv6Enabled:YES];
 
     // 设置网络超时时间
     [httpdns setNetworkingTimeoutInterval:2];
