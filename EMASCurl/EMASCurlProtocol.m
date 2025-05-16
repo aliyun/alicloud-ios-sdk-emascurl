@@ -936,6 +936,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                 if (location) {
                     NSURL *locationURL = [NSURL URLWithString:location relativeToURL:protocol.request.URL];
                     NSMutableURLRequest *redirectedRequest = [protocol.request mutableCopy];
+                    [NSURLProtocol removePropertyForKey:kEMASCurlHandledKey inRequest:redirectedRequest];
                     [redirectedRequest setURL:locationURL];
                     [protocol.client URLProtocol:protocol wasRedirectedToRequest:redirectedRequest redirectResponse:httpResponse];
                 }

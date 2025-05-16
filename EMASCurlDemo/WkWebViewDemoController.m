@@ -58,7 +58,6 @@
     [EMASCurlProtocol setDebugLogEnabled:NO];
     [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
     [EMASCurlProtocol setCacheEnabled:YES];
-    // [EMASCurlProtocol setHTTPVersion:HTTP2];
     // [EMASCurlProtocol setDNSResolver:[SampleDnsResolver class]];
     [EMASCurlProtocol installIntoSessionConfiguration:urlSessionConfig];
 
@@ -74,7 +73,6 @@
     [self.view addSubview:self.webView];
 
     NSURL *url = [NSURL URLWithString:@"https://m.taobao.com"];
-    // NSURL *url = [NSURL URLWithString:@"http://blog.sample.com"];
     NSURLRequest *request = [NSURLRequest requestWithURL:url];
     [self.webView loadRequest:request];
 }

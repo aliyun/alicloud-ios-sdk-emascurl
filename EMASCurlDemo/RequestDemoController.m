@@ -59,7 +59,7 @@
 }
 
 - (void)getButtonTapped {
-    NSString *urlString = @"https://mooc1-api.chaoxing.com/mooc-ans/exam/test/transfer/examlist?cxanalyzetag=hp";
+    NSString *urlString = @"https://m.taobao.com";
     NSURL *url = [NSURL URLWithString:urlString];
 
     self.resultTextView.text = @""; // Clear previous results
