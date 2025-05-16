@@ -17,10 +17,16 @@ Pod::Spec.new do |s|
       'EMASCurl/EMASCurlProtocol.h'
     ]
 
+    s.resource_bundles = {
+      'EMASCAResource' => ['precompiled/cacert.pem']
+    }
+
     s.requires_arc = true
     s.frameworks = 'Foundation'
 
     s.vendored_frameworks = 'precompiled/libcurl-HTTP2.xcframework'
+
+    s.dependency 'OpenSSL-Universal', '~> 3.3.1000'
 
     s.xcconfig = {
       'OTHER_LDFLAGS' => '$(inherited) -ObjC -lz',

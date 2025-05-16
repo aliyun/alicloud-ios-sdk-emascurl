@@ -678,22 +678,20 @@ static dispatch_queue_t s_cacheQueue;
 }
 
 - (void)configEasyHandle:(CURL *)easyHandle error:(NSError **)error {
-    // 假如是quic这个framework，由于使用的boringssl无法访问苹果native CA，需要从Bundle中读取CA
-    if (curlFeatureHttp3) {
-        NSBundle *mainBundle = [NSBundle mainBundle];
-        NSURL *bundleURL = [mainBundle URLForResource:@"EMASCAResource" withExtension:@"bundle"];
-        if (!bundleURL) {
-            *error = [NSError errorWithDomain:@"fail to load CA certificate." code:-3 userInfo:nil];
-            return;
-        }
-        NSBundle *resourceBundle = [NSBundle bundleWithURL:bundleURL];
-        NSString *filePath = [resourceBundle pathForResource:@"cacert" ofType:@"pem"];
-        curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [filePath UTF8String]);
-    }
-
     // 是否设置自定义根证书
     if (s_caFilePath) {
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [s_caFilePath UTF8String]);
+    } else {
+        // 本分支默认使用openssl，由于无法访问苹果native CA，需要从Bundle中读取CA
+        NSString *bundlePath = [[NSBundle bundleForClass:NSClassFromString(@"EMASCurlProtocol")] pathForResource:@"EMASCAResource" ofType:@"bundle"];
+        if (!bundlePath) {
+            *error = [NSError errorWithDomain:@"fail to load the CA pem resources." code:-3 userInfo:nil];
+            return;
+        }
+        NSLog(@"ca pem files: %@", bundlePath);
+        NSBundle *resourceBundle = [NSBundle bundleWithPath:bundlePath];
+        NSString *filePath = [resourceBundle pathForResource:@"cacert" ofType:@"pem"];
+        curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [filePath UTF8String]);
     }
 
     // 假如设置了自定义resolve，则使用
