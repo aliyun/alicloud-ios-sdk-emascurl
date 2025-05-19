@@ -43,6 +43,7 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
     - [设置内部重定向支持](#设置内部重定向支持)
     - [设置公钥固定 (Public Key Pinning)](#设置公钥固定-public-key-pinning)
     - [设置手动代理服务器](#设置手动代理服务器)
+    - [设置HTTP缓存](#设置http缓存)
   - [使用EMASCurlWeb](#使用emascurlweb)
     - [EMASCurlWeb简介](#emascurlweb简介)
     - [从CocoaPods引入EMASCurlWeb依赖](#从cocoapods引入emascurlweb依赖)
@@ -595,6 +596,28 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 // [EMASCurlProtocol setManualProxyServer:nil];
 ```
 
+### 设置HTTP缓存
+
+```objc
++ (void)setCacheEnabled:(BOOL)enabled;
+```
+
+设置是否启用HTTP缓存。EMASCurl默认不启用HTTP缓存，所有请求都不会使用本地缓存，并且响应也不会被缓存。
+
+缓存功能特性包括：
+1. 自动缓存可缓存的HTTP响应
+2. 支持304 Not Modified响应处理
+3. 遵循Cache-Control头信息控制缓存行为
+4. 自动管理和清理过期缓存
+5. 缓存使用`[NSURLCache sharedURLCache]`
+
+例如：
+
+```objc
+// 启用HTTP缓存
+[EMASCurlProtocol setCacheEnabled:YES];
+```
+
 ## 使用EMASCurlWeb
 
 ### EMASCurlWeb简介
@@ -737,6 +760,7 @@ NSURLRequest *request = [NSURLRequest requestWithURL:url];
     NSURLSessionConfiguration *urlSessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol setDebugLogEnabled:YES];
     [EMASCurlProtocol setBuiltInRedirectionEnabled:NO]; // 让WebView处理重定向
+    [EMASCurlProtocol setCacheEnabled:YES];
     [EMASCurlProtocol setDNSResolver:[MyDNSResolver class]]; // 设置DNS解析器
     [EMASCurlProtocol installIntoSessionConfiguration:urlSessionConfig];
 
@@ -817,16 +841,12 @@ Cookie同步机制实现了以下功能：
 
 ### 响应缓存支持
 
-EMASCurlWeb实现了符合HTTP规范的缓存机制，支持ETag、Last-Modified、Cache-Control等HTTP缓存控制标头。
+EMASCurlWeb的缓存行为依赖负责网络请求的EMASCurl模块。因此在初始化时，需要指定启用EMASCurl的缓存：
 
-缓存功能特性包括：
+```
+[EMASCurlProtocol setCacheEnabled:YES];
+```
 
-1. 自动缓存可缓存的HTTP响应
-2. 支持304 Not Modified响应处理
-3. 遵循Cache-Control头信息控制缓存行为
-4. 自动管理和清理过期缓存
-
-缓存机制完全透明，无需额外配置，EMASCurlWeb会根据HTTP规范自动处理缓存逻辑。
 
 ### 开启EMASCurlWeb调试日志
 
