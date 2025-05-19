@@ -856,6 +856,10 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
     NSData *data = [NSData dataWithBytes:buffer length:size * nitems];
 
     NSString *headerLine = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    if (!headerLine) {
+        return totalSize;
+    }
+
     headerLine = [headerLine stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
     if ([headerLine hasPrefix:@"HTTP/"]) {
@@ -877,6 +881,14 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         if (delimiterRange.location != NSNotFound) {
             NSString *key = [headerLine substringToIndex:delimiterRange.location];
             NSString *value = [headerLine substringFromIndex:delimiterRange.location + delimiterRange.length];
+
+            if (!key) {
+                // key不能为空，否则无法处理
+                return totalSize;
+            }
+            if (!value) {
+                value = @"";
+            }
 
             // 设置cookie
             if ([key caseInsensitiveCompare:@"set-cookie"] == NSOrderedSame) {
