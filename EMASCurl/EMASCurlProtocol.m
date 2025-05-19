@@ -124,6 +124,12 @@ static NSArray<NSString *> *s_domainBlackList;
 // 公钥固定(Public Key Pinning)的公钥文件路径
 static NSString *s_publicKeyPinningKeyPath;
 
+// 是否开启证书校验
+static BOOL s_certificateValidationEnabled;
+
+// 是否开启域名校验
+static BOOL s_domainNameVerificationEnabled;
+
 static EMASCurlResponseCache *s_responseCache;
 static BOOL s_cacheEnabled;
 static dispatch_queue_t s_cacheQueue;
@@ -194,6 +200,14 @@ static dispatch_queue_t s_cacheQueue;
     s_publicKeyPinningKeyPath = [publicKeyPath copy];
 }
 
++ (void)setCertificateValidationEnabled:(BOOL)enabled {
+    s_certificateValidationEnabled = enabled;
+}
+
++ (void)setDomainNameVerificationEnabled:(BOOL)enabled {
+    s_domainNameVerificationEnabled = enabled;
+}
+
 + (void)setManualProxyServer:(nullable NSString *)proxyServerURL {
     __block BOOL shouldInvalidateTimer = NO;
     __block BOOL shouldStartTimer = NO;
@@ -261,6 +275,10 @@ static dispatch_queue_t s_cacheQueue;
 
     s_enableBuiltInGzip = YES;
     s_enableBuiltInRedirection = YES;
+
+    // 默认开启证书和域名校验
+    s_certificateValidationEnabled = YES;
+    s_domainNameVerificationEnabled = YES;
 
     s_responseCache = [EMASCurlResponseCache new];
 
@@ -696,6 +714,28 @@ static dispatch_queue_t s_cacheQueue;
         curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [s_caFilePath UTF8String]);
     }
 
+    // 配置证书校验
+    if (s_certificateValidationEnabled) {
+        curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYPEER, 1L);
+    } else {
+        curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYPEER, 0L);
+    }
+
+    // 配置域名校验
+    // 0: 不校验域名
+    // 1: 校验域名是否存在于证书中，但仅用于提示 (libcurl < 7.28.0)
+    // 2: 校验域名是否存在于证书中且匹配 (libcurl >= 7.28.0 推荐)
+    if (s_domainNameVerificationEnabled) {
+        curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYHOST, 2L);
+    } else {
+        curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYHOST, 0L);
+    }
+
+    // 设置公钥固定
+    if (s_publicKeyPinningKeyPath) {
+        curl_easy_setopt(easyHandle, CURLOPT_PINNEDPUBLICKEY, [s_publicKeyPinningKeyPath UTF8String]);
+    }
+
     // 假如设置了自定义resolve，则使用
     if (s_dnsResolverClass) {
         NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
@@ -763,11 +803,6 @@ static dispatch_queue_t s_cacheQueue;
 
     // 为了线程安全，设置NOSIGNAL
     curl_easy_setopt(easyHandle, CURLOPT_NOSIGNAL, 1L);
-
-    // 设置公钥固定
-    if (s_publicKeyPinningKeyPath) {
-        curl_easy_setopt(easyHandle, CURLOPT_PINNEDPUBLICKEY, [s_publicKeyPinningKeyPath UTF8String]);
-    }
 }
 
 - (BOOL)preResolveDomain:(CURL *)easyHandle {

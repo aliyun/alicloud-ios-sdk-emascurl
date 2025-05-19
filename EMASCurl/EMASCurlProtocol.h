@@ -144,6 +144,12 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 //    生成的公钥文件应符合上述结构要求，可以直接用于公钥固定。
 + (void)setPublicKeyPinningKeyPath:(nullable NSString *)publicKeyPath;
 
+// 设置是否开启证书校验，默认开启
++ (void)setCertificateValidationEnabled:(BOOL)enabled;
+
+// 设置是否开启域名校验，默认开启
++ (void)setDomainNameVerificationEnabled:(BOOL)enabled;
+
 // 设置手动代理服务器。设置后会覆盖系统代理设置。
 // 传入nil时，恢复使用系统代理设置。
 // 代理字符串格式：[protocol://]user:password@host[:port]
