@@ -764,14 +764,14 @@ NSURLRequest *request = [NSURLRequest requestWithURL:url];
     [EMASCurlProtocol setDNSResolver:[MyDNSResolver class]]; // 设置DNS解析器
     [EMASCurlProtocol installIntoSessionConfiguration:urlSessionConfig];
 
-    // 3. 配置EMASCurlWeb
+    // 3. 初始化方法拦截
+    [EMASCurlWebContentLoader initializeInterception];
+    [EMASCurlWebContentLoader setDebugLogEnabled:YES];
+
+    // 4. 配置EMASCurlWeb
     EMASCurlWebUrlSchemeHandler *urlSchemeHandler = [[EMASCurlWebUrlSchemeHandler alloc] initWithSessionConfiguration:urlSessionConfig];
     [configuration setURLSchemeHandler:urlSchemeHandler forURLScheme:@"http"];
     [configuration setURLSchemeHandler:urlSchemeHandler forURLScheme:@"https"];
-
-    // 4. 初始化内容拦截
-    [EMASCurlWebContentLoader initializeInterception];
-    [EMASCurlWebContentLoader setDebugLogEnabled:YES];
 
     // 5. 启用Cookie处理
     [configuration enableCookieHandler];
