@@ -42,6 +42,8 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
     - [设置Gzip压缩](#设置gzip压缩)
     - [设置内部重定向支持](#设置内部重定向支持)
     - [设置公钥固定 (Public Key Pinning)](#设置公钥固定-public-key-pinning)
+    - [设置证书校验](#设置证书校验)
+    - [设置域名校验](#设置域名校验)
     - [设置手动代理服务器](#设置手动代理服务器)
     - [设置HTTP缓存](#设置http缓存)
   - [使用EMASCurlWeb](#使用emascurlweb)
@@ -569,6 +571,48 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 
 // 清除公钥固定设置
 // [EMASCurlProtocol setPublicKeyPinningKeyPath:nil];
+```
+
+### 设置证书校验
+
+```objc
++ (void)setCertificateValidationEnabled:(BOOL)enabled;
+```
+
+设置是否开启 SSL 证书校验。默认情况下，证书校验是开启的 (`YES`)。
+
+- 当设置为 `YES` 时，libcurl 会验证服务器证书的有效性，包括证书链、有效期等。
+- 当设置为 `NO` 时，libcurl 将不执行证书校验，这通常仅用于测试或连接到使用自签名证书且无法提供 CA 证书的服务器。**在生产环境中关闭证书校验会带来安全风险，请谨慎使用。**
+
+例如：
+
+```objc
+// 关闭证书校验
+[EMASCurlProtocol setCertificateValidationEnabled:NO];
+
+// 开启证书校验 (默认行为)
+// [EMASCurlProtocol setCertificateValidationEnabled:YES];
+```
+
+### 设置域名校验
+
+```objc
++ (void)setDomainNameVerificationEnabled:(BOOL)enabled;
+```
+
+设置是否开启 SSL 证书中的域名校验。默认情况下，域名校验是开启的 (`YES`)。
+
+- 当设置为 `YES` 时，libcurl 会验证服务器证书中的 Common Name (CN) 或 Subject Alternative Name (SAN) 是否与请求的域名匹配。
+- 当设置为 `NO` 时，libcurl 将不执行域名校验。**在生产环境中关闭域名校验会带来安全风险，可能导致中间人攻击，请谨慎使用。**
+
+例如：
+
+```objc
+// 关闭域名校验
+[EMASCurlProtocol setDomainNameVerificationEnabled:NO];
+
+// 开启域名校验 (默认行为)
+// [EMASCurlProtocol setDomainNameVerificationEnabled:YES];
 ```
 
 ### 设置手动代理服务器
