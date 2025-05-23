@@ -469,16 +469,62 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 
 ### 开启调试日志
 
+EMASCurl提供了多级别的日志系统，支持组件化的日志记录，便于调试和问题排查。
+
+#### 设置日志级别
+
 ```objc
-+ (void)setDebugLogEnabled:(BOOL)debugLogEnabled;
++ (void)setLogLevel:(EMASCurlLogLevel)logLevel;
++ (EMASCurlLogLevel)currentLogLevel;
 ```
 
-开启后会打印出日志记录，便于调试。
+EMASCurl支持以下日志级别：
+
+- `EMASCurlLogLevelOff` (0): 禁用所有日志
+- `EMASCurlLogLevelError` (1): 仅显示错误信息
+- `EMASCurlLogLevelInfo` (2): 显示信息和错误级别日志
+- `EMASCurlLogLevelDebug` (3): 显示所有日志，包括详细的调试信息和libcurl输出
 
 例如：
 
 ```objc
-[EMASCurlProtocol setDebugLogEnabled:YES];
+// 设置为信息级别，显示错误和信息日志
+[EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
+
+// 获取当前日志级别
+EMASCurlLogLevel currentLevel = [EMASCurlProtocol currentLogLevel];
+NSLog(@"当前日志级别: %ld", (long)currentLevel);
+
+// 设置为调试级别，显示所有日志
+[EMASCurlProtocol setLogLevel:EMASCurlLogLevelDebug];
+```
+
+#### 组件化日志
+
+EMASCurl使用组件化的日志记录，每个日志消息都会标明来源组件，便于问题定位：
+
+- `[EC-Protocol]`: 主协议处理相关
+- `[EC-Request]`: 请求验证和过滤相关
+- `[EC-DNS]`: DNS解析相关
+- `[EC-SSL]`: SSL/TLS配置相关
+- `[EC-Cache]`: 响应缓存相关
+- `[EC-Response]`: 响应处理相关
+- `[EC-Performance]`: 性能指标相关
+- `[EC-Proxy]`: 代理配置相关
+- `[EC-libcurl]`: libcurl详细输出
+- `[EC-Manager]`: 连接管理相关
+
+日志输出格式：
+```
+[时间戳] [级别] [组件] 消息内容
+```
+
+示例输出：
+```
+[2024-12-27 10:30:15.123] [INFO] [EC-Protocol] Starting request for URL: https://example.com
+[2024-12-27 10:30:15.124] [DEBUG] [EC-DNS] Resolved example.com to IPs: 93.184.216.34
+[2024-12-27 10:30:15.125] [INFO] [EC-SSL] Certificate validation enabled
+[2024-12-27 10:30:15.200] [INFO] [EC-Manager] Transfer completed successfully for URL: https://example.com (HTTP 200)
 ```
 
 ### 设置请求拦截域名白名单和黑名单
