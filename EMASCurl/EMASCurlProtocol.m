@@ -170,6 +170,12 @@ static dispatch_queue_t s_cacheQueue;
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
     s_enableDebugLog = debugLogEnabled;
+    // 向后兼容性：映射到新的日志级别系统
+    if (debugLogEnabled) {
+        [EMASCurlLogger setLogLevel:EMASCurlLogLevelDebug];
+    } else {
+        [EMASCurlLogger setLogLevel:EMASCurlLogLevelOff];
+    }
 }
 
 + (void)setDNSResolver:(nonnull Class<EMASCurlProtocolDNSResolver>)dnsResolver {
@@ -228,10 +234,10 @@ static dispatch_queue_t s_cacheQueue;
         if (shouldInvalidateTimer && s_proxyUpdateTimer) {
             [s_proxyUpdateTimer invalidate];
             s_proxyUpdateTimer = nil;
-            NSLog(@"[EMASCurlProtocol] Manual proxy enabled: %@", proxyServerURL);
+            EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy enabled: %@", proxyServerURL);
         } else if (shouldStartTimer && !s_proxyUpdateTimer) {
             [self startProxyUpdatingTimer];
-            NSLog(@"[EMASCurlProtocol] Manual proxy disabled, reverting to system settings.");
+            EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy disabled, reverting to system settings");
         }
     });
 }
@@ -349,6 +355,7 @@ static dispatch_queue_t s_cacheQueue;
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
     if ([[request.URL absoluteString] isEqual:@"about:blank"]) {
+        EMAS_LOG_DEBUG(@"EC-Request", @"Rejected blank URL request");
         return NO;
     }
 
@@ -360,17 +367,20 @@ static dispatch_queue_t s_cacheQueue;
     // 不是http或https，则不拦截
     if (!([request.URL.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame ||
          [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)) {
+        EMAS_LOG_DEBUG(@"EC-Request", @"Rejected non-HTTP(S) request: %@", request.URL.scheme);
         return NO;
     }
 
     // 检查请求的host是否在白名单或黑名单中
     NSString *host = request.URL.host;
     if (!host) {
+        EMAS_LOG_DEBUG(@"EC-Request", @"Rejected request without host");
         return NO;
     }
     if (s_domainBlackList && s_domainBlackList.count > 0) {
         for (NSString *blacklistDomain in s_domainBlackList) {
             if ([host hasSuffix:blacklistDomain]) {
+                EMAS_LOG_DEBUG(@"EC-Request", @"Request rejected by domain blacklist: %@", host);
                 return NO;
             }
         }
@@ -378,18 +388,22 @@ static dispatch_queue_t s_cacheQueue;
     if (s_domainWhiteList && s_domainWhiteList.count > 0) {
         for (NSString *whitelistDomain in s_domainWhiteList) {
             if ([host hasSuffix:whitelistDomain]) {
+                EMAS_LOG_DEBUG(@"EC-Request", @"Request filtered by domain whitelist: %@", host);
                 return YES;
             }
         }
+        EMAS_LOG_DEBUG(@"EC-Request", @"Request rejected: not in domain whitelist: %@", host);
         return NO;
     }
 
     NSString *userAgent = [request valueForHTTPHeaderField:@"User-Agent"];
     if (userAgent && [userAgent containsString:@"HttpdnsSDK"]) {
         // 不拦截来自Httpdns SDK的请求
+        EMAS_LOG_DEBUG(@"EC-Request", @"Rejected HttpdnsSDK request");
         return NO;
     }
 
+    EMAS_LOG_DEBUG(@"EC-Request", @"Request accepted for processing: %@", request.URL.absoluteString);
     return YES;
 }
 
@@ -400,6 +414,8 @@ static dispatch_queue_t s_cacheQueue;
 }
 
 - (void)startLoading {
+    EMAS_LOG_INFO(@"EC-Protocol", @"Starting request for URL: %@", self.request.URL.absoluteString);
+
     // 检查是否启用缓存以及是否是可缓存的请求
     __block BOOL useCache = NO;
 
@@ -422,6 +438,7 @@ static dispatch_queue_t s_cacheQueue;
             if (isFresh && !requiresRevalidation) {
                 // 响应是新鲜的，且不需要因为 no-cache 等指令而重新验证
                 useCache = YES; // 标记已使用缓存
+                EMAS_LOG_INFO(@"EC-Cache", @"Cache hit for request: %@", self.request.URL.absoluteString);
                 [self.client URLProtocol:self didReceiveResponse:cachedResponse.response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
                 [self.client URLProtocol:self didLoadData:cachedResponse.data];
                 [self.client URLProtocolDidFinishLoading:self];
@@ -431,6 +448,7 @@ static dispatch_queue_t s_cacheQueue;
                 // 响应是陈旧的，或者新鲜但需要重新验证 (no-cache)。
                 // 条件请求头将在后续步骤中添加 (如果 cachedResponse 有 ETag/Last-Modified)。
                 // cachedResponseForRequest 保证了如果到这里 cachedResponse 非nil，它至少有验证器。
+                EMAS_LOG_DEBUG(@"EC-Cache", @"Cache validation: fresh=%d, requires_revalidation=%d", isFresh, requiresRevalidation);
             }
         }
     });
@@ -446,10 +464,13 @@ static dispatch_queue_t s_cacheQueue;
     self.easyHandle = easyHandle;
     if (!easyHandle) {
         NSError *error = [NSError errorWithDomain:@"fail to init easy handle." code:-1 userInfo:nil];
+        EMAS_LOG_ERROR(@"EC-Protocol", @"Failed to create easy handle for URL: %@", self.request.URL.absoluteString);
         [self reportNetworkMetric:NO error:error];
         [self.client URLProtocol:self didFailWithError:error];
         return;
     }
+
+    EMAS_LOG_DEBUG(@"EC-Protocol", @"Easy handle created successfully for URL: %@", self.request.URL.absoluteString);
 
     [self populateRequestHeader:easyHandle];
     [self populateRequestBody:easyHandle];
@@ -457,6 +478,7 @@ static dispatch_queue_t s_cacheQueue;
     NSError *error = nil;
     [self configEasyHandle:easyHandle error:&error];
     if (error) {
+        EMAS_LOG_ERROR(@"EC-Protocol", @"Failed to configure easy handle: %@", error.localizedDescription);
         [self reportNetworkMetric:NO error:error];
         [self.client URLProtocol:self didFailWithError:error];
         return;
@@ -477,6 +499,7 @@ static dispatch_queue_t s_cacheQueue;
                                                                              HTTPVersion:self.currentResponse.httpVersion
                                                                             headerFields:self.currentResponse.headers];
                 if (httpResponse) {
+                    EMAS_LOG_INFO(@"EC-Cache", @"Response cached for URL: %@", self.request.URL.absoluteString);
                     [s_responseCache cacheResponse:httpResponse
                                               data:self.receivedResponseData
                                         forRequest:self.request
@@ -486,8 +509,10 @@ static dispatch_queue_t s_cacheQueue;
         }
 
         if (succeed) {
+            EMAS_LOG_DEBUG(@"EC-Protocol", @"Request processing completed with status: %ld", (long)self.currentResponse.statusCode);
             [self.client URLProtocolDidFinishLoading:self];
         } else {
+            EMAS_LOG_ERROR(@"EC-Protocol", @"Request failed: %@", error ? error.localizedDescription : @"Unknown error");
             [self.client URLProtocol:self didFailWithError:error];
         }
 
@@ -542,6 +567,10 @@ static dispatch_queue_t s_cacheQueue;
     curl_easy_getinfo(self.easyHandle, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
     curl_easy_getinfo(self.easyHandle, CURLINFO_STARTTRANSFER_TIME, &startTransferTime);
     curl_easy_getinfo(self.easyHandle, CURLINFO_TOTAL_TIME, &totalTime);
+
+    // 记录性能指标
+    EMAS_LOG_INFO(@"EC-Performance", @"Request completed in %.0fms (DNS: %.0fms, Connect: %.0fms, Transfer: %.0fms)",
+                  totalTime * 1000, nameLookupTime * 1000, connectTime * 1000, startTransferTime * 1000);
 
     self.metricsObserverBlock(self.request,
                               success,
@@ -718,6 +747,7 @@ static dispatch_queue_t s_cacheQueue;
     if (s_certificateValidationEnabled) {
         curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYPEER, 1L);
     } else {
+        EMAS_LOG_INFO(@"EC-SSL", @"Certificate validation disabled");
         curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYPEER, 0L);
     }
 
@@ -728,11 +758,13 @@ static dispatch_queue_t s_cacheQueue;
     if (s_domainNameVerificationEnabled) {
         curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYHOST, 2L);
     } else {
+        EMAS_LOG_INFO(@"EC-SSL", @"Domain name verification disabled");
         curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYHOST, 0L);
     }
 
     // 设置公钥固定
     if (s_publicKeyPinningKeyPath) {
+        EMAS_LOG_INFO(@"EC-SSL", @"Using public key pinning for host: %@", self.request.URL.host);
         curl_easy_setopt(easyHandle, CURLOPT_PINNEDPUBLICKEY, [s_publicKeyPinningKeyPath UTF8String]);
     }
 
@@ -828,10 +860,22 @@ static dispatch_queue_t s_cacheQueue;
         }
     }
 
+    EMAS_LOG_INFO(@"EC-DNS", @"Using custom DNS resolver for domain: %@", host);
+
+    CFAbsoluteTime startTime = CFAbsoluteTimeGetCurrent();
     NSString *address = [s_dnsResolverClass resolveDomain:host];
+    CFAbsoluteTime endTime = CFAbsoluteTimeGetCurrent();
+
+    double resolutionTime = (endTime - startTime) * 1000; // 转换为毫秒
+    self.resolveDomainTimeInterval = resolutionTime;
+
     if (!address) {
+        EMAS_LOG_ERROR(@"EC-DNS", @"Custom DNS resolver returned nil for domain: %@", host);
         return NO;
     }
+
+    EMAS_LOG_DEBUG(@"EC-DNS", @"Resolved %@ to IPs: %@", host, address);
+    EMAS_LOG_DEBUG(@"EC-DNS", @"DNS resolution took %.2fms", resolutionTime);
 
     // Format: +{host}:{port}:{ips}
     NSString *hostPortAddressString = [NSString stringWithFormat:@"+%@:%ld:%@",
@@ -911,6 +955,9 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
             protocol.currentResponse.statusCode = [components[1] integerValue];
             protocol.currentResponse.reasonPhrase = @"";
         }
+
+        EMAS_LOG_INFO(@"EC-Response", @"Received response: %ld %@", (long)protocol.currentResponse.statusCode, protocol.currentResponse.reasonPhrase);
+        EMAS_LOG_DEBUG(@"EC-Response", @"Processing %@ response", protocol.currentResponse.httpVersion);
     } else {
         NSRange delimiterRange = [headerLine rangeOfString:@": "];
         if (delimiterRange.location != NSNotFound) {
@@ -929,6 +976,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
             if ([key caseInsensitiveCompare:@"set-cookie"] == NSOrderedSame) {
                 EMASCurlCookieStorage *cookieStorage = [EMASCurlCookieStorage sharedStorage];
                 [cookieStorage setCookieWithString:value forURL:protocol.request.URL];
+                EMAS_LOG_DEBUG(@"EC-Response", @"Cookie set: %@", value);
             }
 
             if (protocol.currentResponse.headers[key]) {
@@ -981,6 +1029,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                     }
                 }];
                 if (location) {
+                    EMAS_LOG_DEBUG(@"EC-Response", @"Handling redirect to: %@", location);
                     NSURL *locationURL = [NSURL URLWithString:location relativeToURL:protocol.request.URL];
                     NSMutableURLRequest *redirectedRequest = [protocol.request mutableCopy];
                     [NSURLProtocol removePropertyForKey:kEMASCurlHandledKey inRequest:redirectedRequest];
@@ -1089,34 +1138,61 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 // libcurl的debug回调函数，输出libcurl的运行日志
 static int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
+    // 只在Debug级别下记录libcurl详细信息
+    if ([EMASCurlLogger currentLogLevel] < EMASCurlLogLevelDebug) {
+        return 0;
+    }
+
+    // 创建NSString从数据，确保不包含换行符
+    NSString *message = [[NSString alloc] initWithBytes:data length:size encoding:NSUTF8StringEncoding];
+    if (!message) {
+        return 0;
+    }
+
+    // 移除末尾的换行符
+    message = [message stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+
     switch (type) {
         case CURLINFO_TEXT:
-            NSLog(@"[CURLINFO_TEXT] %.*s", (int)size, data);
+            EMAS_LOG_DEBUG(@"EC-libcurl", @"TEXT: %@", message);
             break;
         case CURLINFO_HEADER_IN:
-            NSLog(@"[CURLINFO_HEADER_IN] %.*s", (int)size, data);
+            EMAS_LOG_DEBUG(@"EC-libcurl", @"HEADER_IN: %@", message);
             break;
         case CURLINFO_HEADER_OUT:
-            NSLog(@"[CURLINFO_HEADER_OUT] %.*s", (int)size, data);
+            EMAS_LOG_DEBUG(@"EC-libcurl", @"HEADER_OUT: %@", message);
             break;
         case CURLINFO_DATA_IN:
-            NSLog(@"[CURLINFO_DATA_IN] %.*s", (int)size, data);
+            EMAS_LOG_DEBUG(@"EC-libcurl", @"DATA_IN: %lu bytes", (unsigned long)size);
             break;
         case CURLINFO_DATA_OUT:
-            NSLog(@"[CURLINFO_DATA_OUT] %.*s", (int)size, data);
+            EMAS_LOG_DEBUG(@"EC-libcurl", @"DATA_OUT: %lu bytes", (unsigned long)size);
             break;
         case CURLINFO_SSL_DATA_IN:
-            NSLog(@"[CURLINFO_SSL_DATA_IN] %.*s", (int)size, data);
+            EMAS_LOG_DEBUG(@"EC-libcurl", @"SSL_DATA_IN: %lu bytes", (unsigned long)size);
             break;
         case CURLINFO_SSL_DATA_OUT:
-            NSLog(@"[CURLINFO_SSL_DATA_OUT] %.*s", (int)size, data);
+            EMAS_LOG_DEBUG(@"EC-libcurl", @"SSL_DATA_OUT: %lu bytes", (unsigned long)size);
             break;
         case CURLINFO_END:
-            NSLog(@"[CURLINFO_END] %.*s", (int)size, data);
+            EMAS_LOG_DEBUG(@"EC-libcurl", @"END: %@", message);
+            break;
         default:
             break;
     }
     return 0;
+}
+
+#pragma mark - 日志相关方法
+
++ (void)setLogLevel:(EMASCurlLogLevel)logLevel {
+    [EMASCurlLogger setLogLevel:logLevel];
+    // 同步更新旧的debug标志，保持一致性
+    s_enableDebugLog = (logLevel >= EMASCurlLogLevelDebug);
+}
+
++ (EMASCurlLogLevel)currentLogLevel {
+    return [EMASCurlLogger currentLogLevel];
 }
 
 @end

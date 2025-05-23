@@ -9,6 +9,7 @@
 #define EMASCurlProtocol_h
 
 #import <Foundation/Foundation.h>
+#import "EMASCurlLogger.h"
 
 #define EMASCURL_SDK_VERSION @"1.3.0"
 
@@ -94,8 +95,18 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 // 是否开启内部重定向支持
 + (void)setBuiltInRedirectionEnabled:(BOOL)enabled;
 
-// 设置是否开启调试日志
+// 设置是否开启调试日志 (保持向后兼容性)
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled;
+
+#pragma mark - 日志相关方法
+
+// 设置全局日志级别
++ (void)setLogLevel:(EMASCurlLogLevel)logLevel;
+
+// 获取当前日志级别
++ (EMASCurlLogLevel)currentLogLevel;
+
+#pragma mark - 其他配置方法
 
 // 设置DNS解析器
 + (void)setDNSResolver:(nonnull Class<EMASCurlProtocolDNSResolver>)dnsResolver;

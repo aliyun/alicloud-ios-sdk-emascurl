@@ -6,6 +6,7 @@
 //
 
 #import "EMASCurlManager.h"
+#import "EMASCurlLogger.h"
 
 @interface EMASCurlManager () {
     CURLM *_multiHandle;
@@ -32,16 +33,30 @@
 - (instancetype)initPrivate {
     self = [super init];
     if (self) {
+        EMAS_LOG_INFO(@"EC-Manager", @"Initializing EMASCurlManager");
+
         curl_global_init(CURL_GLOBAL_ALL);
 
         _multiHandle = curl_multi_init();
+        if (!_multiHandle) {
+            EMAS_LOG_ERROR(@"EC-Manager", @"Failed to initialize curl multi handle");
+            return nil;
+        }
 
         // cookie手动管理，所以这里不共享
         // 如果有需求，需要做实例隔离，整个架构要重新设计
         _shareHandle = curl_share_init();
+        if (!_shareHandle) {
+            EMAS_LOG_ERROR(@"EC-Manager", @"Failed to initialize curl share handle");
+            curl_multi_cleanup(_multiHandle);
+            return nil;
+        }
+
         curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
         curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
         curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_CONNECT);
+
+        EMAS_LOG_DEBUG(@"EC-Manager", @"Configured share handle for DNS, SSL sessions, and connections");
 
         _completionMap = [NSMutableDictionary dictionary];
 
@@ -50,38 +65,68 @@
         _networkThread = [[NSThread alloc] initWithTarget:self selector:@selector(networkThreadEntry) object:nil];
         _networkThread.qualityOfService = NSQualityOfServiceUserInitiated;
         [_networkThread start];
+
+        EMAS_LOG_INFO(@"EC-Manager", @"EMASCurlManager initialized successfully with network thread started");
     }
     return self;
 }
 
 - (void)dealloc {
+    EMAS_LOG_INFO(@"EC-Manager", @"Deallocating EMASCurlManager");
+
     [self stop];
     if (_multiHandle) {
         curl_multi_cleanup(_multiHandle);
         _multiHandle = NULL;
+        EMAS_LOG_DEBUG(@"EC-Manager", @"Cleaned up curl multi handle");
     }
     if (_shareHandle) {
         curl_share_cleanup(_shareHandle);
         _shareHandle = NULL;
+        EMAS_LOG_DEBUG(@"EC-Manager", @"Cleaned up curl share handle");
     }
     curl_global_cleanup();
+
+    EMAS_LOG_INFO(@"EC-Manager", @"EMASCurlManager deallocation completed");
 }
 
 - (void)stop {
+    EMAS_LOG_INFO(@"EC-Manager", @"Stopping EMASCurlManager");
+
     [_condition lock];
     _shouldStop = YES;
     [_condition signal];
     [_condition unlock];
+
+    EMAS_LOG_DEBUG(@"EC-Manager", @"Stop signal sent to network thread");
 }
 
 - (void)enqueueNewEasyHandle:(CURL *)easyHandle completion:(void (^)(BOOL, NSError *))completion {
     NSNumber *easyKey = @((uintptr_t)easyHandle);
     _completionMap[easyKey] = completion;
 
+    EMAS_LOG_DEBUG(@"EC-Manager", @"Enqueueing new easy handle (total pending: %lu)", (unsigned long)_completionMap.count);
+
     [_condition lock];
 
     curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
-    curl_multi_add_handle(_multiHandle, easyHandle);
+    CURLMcode result = curl_multi_add_handle(_multiHandle, easyHandle);
+
+    if (result != CURLM_OK) {
+        EMAS_LOG_ERROR(@"EC-Manager", @"Failed to add easy handle to multi handle: %s", curl_multi_strerror(result));
+        [_completionMap removeObjectForKey:easyKey];
+        [_condition unlock];
+
+        if (completion) {
+            NSError *error = [NSError errorWithDomain:@"EMASCurlManager"
+                                               code:result
+                                           userInfo:@{NSLocalizedDescriptionKey: @(curl_multi_strerror(result))}];
+            completion(NO, error);
+        }
+        return;
+    }
+
+    EMAS_LOG_DEBUG(@"EC-Manager", @"Easy handle added to multi handle successfully");
 
     [_condition signal];
     [_condition unlock];
@@ -90,11 +135,14 @@
 #pragma mark - Thread Entry and Main Loop
 
 - (void)networkThreadEntry {
+    EMAS_LOG_INFO(@"EC-Manager", @"Network thread started");
+
     @autoreleasepool {
         [_condition lock];
 
         while (!_shouldStop) {
             if (_completionMap.count == 0) {
+                EMAS_LOG_DEBUG(@"EC-Manager", @"No pending requests, waiting for new work");
                 [_condition wait];
                 if (_shouldStop) {
                     break;
@@ -106,13 +154,20 @@
             if (_completionMap.count > 0 && !_shouldStop) {
                 [_condition unlock];
 
-                curl_multi_wait(_multiHandle, NULL, 0, 1000, NULL);
+                // 等待网络事件，最多1秒超时
+                int numfds = 0;
+                CURLMcode result = curl_multi_wait(_multiHandle, NULL, 0, 1000, &numfds);
+                if (result != CURLM_OK) {
+                    EMAS_LOG_ERROR(@"EC-Manager", @"curl_multi_wait failed: %s", curl_multi_strerror(result));
+                }
 
                 [_condition lock];
             }
         }
         [_condition unlock];
     }
+
+    EMAS_LOG_INFO(@"EC-Manager", @"Network thread stopped");
 }
 
 - (void)performCurlTransfers {
@@ -121,7 +176,11 @@
     int msgsLeft = 0;
 
     do {
-        curl_multi_perform(_multiHandle, &stillRunning);
+        CURLMcode result = curl_multi_perform(_multiHandle, &stillRunning);
+        if (result != CURLM_OK) {
+            EMAS_LOG_ERROR(@"EC-Manager", @"curl_multi_perform failed: %s", curl_multi_strerror(result));
+            break;
+        }
 
         while ((msg = curl_multi_info_read(_multiHandle, &msgsLeft))) {
             if (msg->msg == CURLMSG_DONE) {
@@ -133,15 +192,30 @@
 
                 BOOL succeeded = (msg->data.result == CURLE_OK);
                 NSError *error = nil;
-                if (!succeeded) {
-                    char *urlp = NULL;
-                    curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &urlp);
-                    NSString *url = urlp ? @(urlp) : @"unknownURL";
-                    NSDictionary *userInfo = @{ NSLocalizedDescriptionKey: @(curl_easy_strerror(msg->data.result)), NSURLErrorFailingURLStringErrorKey: url };
+
+                // 获取请求的URL以便记录日志
+                char *urlp = NULL;
+                curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &urlp);
+                NSString *url = urlp ? @(urlp) : @"unknown URL";
+
+                // 获取响应状态码
+                long responseCode = 0;
+                curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, &responseCode);
+
+                if (succeeded) {
+                    EMAS_LOG_INFO(@"EC-Manager", @"Transfer completed successfully for URL: %@ (HTTP %ld)", url, responseCode);
+                } else {
+                    EMAS_LOG_ERROR(@"EC-Manager", @"Transfer failed for URL: %@ - %s", url, curl_easy_strerror(msg->data.result));
+
+                    NSDictionary *userInfo = @{
+                        NSLocalizedDescriptionKey: @(curl_easy_strerror(msg->data.result)),
+                        NSURLErrorFailingURLStringErrorKey: url
+                    };
                     error = [NSError errorWithDomain:@"MultiCurlManager" code:msg->data.result userInfo:userInfo];
                 }
 
                 curl_multi_remove_handle(_multiHandle, easy);
+                EMAS_LOG_DEBUG(@"EC-Manager", @"Removed easy handle from multi handle (remaining: %lu)", (unsigned long)_completionMap.count);
 
                 if (completion) {
                     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{

@@ -7,6 +7,7 @@
 
 #import "EMASCurlResponseCache.h"
 #import "NSCachedURLResponse+EMASCurl.h"
+#import "EMASCurlLogger.h"
 
 @interface EMASCurlResponseCache ()
 
@@ -28,7 +29,7 @@
            forRequest:(NSURLRequest *)request
       withHTTPVersion:(NSString *)httpVersion {
     if (!request || !response || !data) {
-        NSLog(@"[Cache] Attempted to cache with nil request, response, or data.");
+        EMAS_LOG_ERROR(@"EC-Cache", @"Failed to cache response: nil request, response, or data");
         return;
     }
 
@@ -40,7 +41,10 @@
                                                                                              httpVersion:httpVersion];
 
     if (emasCachedResponse) {
+        EMAS_LOG_DEBUG(@"EC-Cache", @"Storing response in cache for URL: %@", request.URL.absoluteString);
         [self.urlCache storeCachedResponse:emasCachedResponse forRequest:request];
+    } else {
+        EMAS_LOG_DEBUG(@"EC-Cache", @"Response not cacheable for URL: %@", request.URL.absoluteString);
     }
 }
 
@@ -52,6 +56,7 @@
     NSCachedURLResponse *cachedResponse = [self.urlCache cachedResponseForRequest:request];
 
     if (!cachedResponse) {
+        EMAS_LOG_DEBUG(@"EC-Cache", @"No cached response found for URL: %@", request.URL.absoluteString);
         return nil;
     }
 
