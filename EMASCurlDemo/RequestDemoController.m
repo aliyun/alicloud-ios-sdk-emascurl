@@ -24,7 +24,7 @@
     configuration.timeoutIntervalForRequest = 30;
     configuration.timeoutIntervalForResource = 300;
 
-    [EMASCurlProtocol setLogLevel:EMASCurlLogLevelError];
+    [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
     [EMASCurlProtocol setCacheEnabled:YES];
     [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
     [EMASCurlProtocol installIntoSessionConfiguration:configuration];

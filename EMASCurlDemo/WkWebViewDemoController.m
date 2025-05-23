@@ -55,7 +55,7 @@
     WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
 
     NSURLSessionConfiguration *urlSessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
-    [EMASCurlProtocol setLogLevel:EMASCurlLogLevelError];
+    [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
     [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
     [EMASCurlProtocol setCacheEnabled:YES];
     // [EMASCurlProtocol setDNSResolver:[SampleDnsResolver class]];

@@ -13,7 +13,6 @@
     CURLSH *_shareHandle;
     NSThread *_networkThread;
     NSCondition *_condition;
-    BOOL _shouldStop;
     NSMutableDictionary<NSNumber *, void (^)(BOOL, NSError *)> *_completionMap;
 }
 
@@ -61,7 +60,6 @@
         _completionMap = [NSMutableDictionary dictionary];
 
         _condition = [[NSCondition alloc] init];
-        _shouldStop = NO;
         _networkThread = [[NSThread alloc] initWithTarget:self selector:@selector(networkThreadEntry) object:nil];
         _networkThread.qualityOfService = NSQualityOfServiceUserInitiated;
         [_networkThread start];
@@ -71,43 +69,14 @@
     return self;
 }
 
-- (void)dealloc {
-    EMAS_LOG_INFO(@"EC-Manager", @"Deallocating EMASCurlManager");
-
-    [self stop];
-    if (_multiHandle) {
-        curl_multi_cleanup(_multiHandle);
-        _multiHandle = NULL;
-        EMAS_LOG_DEBUG(@"EC-Manager", @"Cleaned up curl multi handle");
-    }
-    if (_shareHandle) {
-        curl_share_cleanup(_shareHandle);
-        _shareHandle = NULL;
-        EMAS_LOG_DEBUG(@"EC-Manager", @"Cleaned up curl share handle");
-    }
-    curl_global_cleanup();
-
-    EMAS_LOG_INFO(@"EC-Manager", @"EMASCurlManager deallocation completed");
-}
-
-- (void)stop {
-    EMAS_LOG_INFO(@"EC-Manager", @"Stopping EMASCurlManager");
-
-    [_condition lock];
-    _shouldStop = YES;
-    [_condition signal];
-    [_condition unlock];
-
-    EMAS_LOG_DEBUG(@"EC-Manager", @"Stop signal sent to network thread");
-}
-
 - (void)enqueueNewEasyHandle:(CURL *)easyHandle completion:(void (^)(BOOL, NSError *))completion {
     NSNumber *easyKey = @((uintptr_t)easyHandle);
-    _completionMap[easyKey] = completion;
-
-    EMAS_LOG_DEBUG(@"EC-Manager", @"Enqueueing new easy handle (total pending: %lu)", (unsigned long)_completionMap.count);
 
     [_condition lock];
+
+    // 在锁保护下操作_completionMap
+    _completionMap[easyKey] = completion;
+    EMAS_LOG_DEBUG(@"EC-Manager", @"Enqueueing new easy handle (total pending: %lu)", (unsigned long)_completionMap.count);
 
     curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
     CURLMcode result = curl_multi_add_handle(_multiHandle, easyHandle);
@@ -121,7 +90,9 @@
             NSError *error = [NSError errorWithDomain:@"EMASCurlManager"
                                                code:result
                                            userInfo:@{NSLocalizedDescriptionKey: @(curl_multi_strerror(result))}];
-            completion(NO, error);
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                completion(NO, error);
+            });
         }
         return;
     }
@@ -140,18 +111,15 @@
     @autoreleasepool {
         [_condition lock];
 
-        while (!_shouldStop) {
+        while (YES) {
             if (_completionMap.count == 0) {
                 EMAS_LOG_DEBUG(@"EC-Manager", @"No pending requests, waiting for new work");
                 [_condition wait];
-                if (_shouldStop) {
-                    break;
-                }
             }
 
             [self performCurlTransfers];
 
-            if (_completionMap.count > 0 && !_shouldStop) {
+            if (_completionMap.count > 0) {
                 [_condition unlock];
 
                 // 等待网络事件，最多1秒超时
