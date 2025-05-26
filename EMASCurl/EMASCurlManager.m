@@ -132,7 +132,6 @@
                 [_condition lock];
             }
         }
-        [_condition unlock];
     }
 
     EMAS_LOG_INFO(@"EC-Manager", @"Network thread stopped");
