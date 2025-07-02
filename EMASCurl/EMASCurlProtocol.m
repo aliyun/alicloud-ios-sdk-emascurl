@@ -10,6 +10,7 @@
 #import "EMASCurlCookieStorage.h"
 #import "EMASCurlResponseCache.h"
 #import "NSCachedURLResponse+EMASCurl.h"
+#import "EMASCurlLogger.h"
 #import <curl/curl.h>
 
 #define HTTP_METHOD_GET @"GET"

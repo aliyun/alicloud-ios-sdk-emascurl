@@ -9,16 +9,10 @@
 #define EMASCurlLogger_h
 
 #import <Foundation/Foundation.h>
+#import "EMASCurlProtocol.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-// 日志级别枚举
-typedef NS_ENUM(NSInteger, EMASCurlLogLevel) {
-    EMASCurlLogLevelOff = 0,      // 禁用所有日志
-    EMASCurlLogLevelError = 1,    // 仅错误信息
-    EMASCurlLogLevelInfo = 2,     // 信息和错误
-    EMASCurlLogLevelDebug = 3,    // 调试信息和以上所有，包括libcurl输出
-};
 
 @interface EMASCurlLogger : NSObject
 
