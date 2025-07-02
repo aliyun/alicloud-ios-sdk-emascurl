@@ -146,7 +146,7 @@ static NSURLSession *session;
         XCTAssertEqual([responseData[@"size"] integerValue], 1024 * 1024, @"File size should be exactly 1MB");
 
         XCTAssertGreaterThan(strongSelf.progressValues.count, 0, @"Should have received progress updates");
-        XCTAssertEqualWithAccuracy([[strongSelf.progressValues lastObject] doubleValue], 1.0, 0.01, @"Final progress should be 100%");
+        XCTAssertEqualWithAccuracy([[strongSelf.progressValues lastObject] doubleValue], 1.0, 0.01, @"Final progress should be 100%%");
 
         double previousProgress = 0;
         for (NSNumber *progress in strongSelf.progressValues) {
@@ -167,7 +167,7 @@ static NSURLSession *session;
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"POST";
 
-    NSData *testData = [self generateTestData:1024 * 1024];
+    NSData *testData = [self generateTestData:1024 * 1024 * 10];
     NSString *formDataPath = [self createMultipartFormDataFileWithData:testData filename:@"test_large.bin"];
     NSURL *fileURL = [NSURL fileURLWithPath:formDataPath];
 
@@ -201,7 +201,7 @@ static NSURLSession *session;
         XCTAssertEqual(error.code, -999, @"Expected cancellation error code");
 
         typeof(self) strongSelf = weakSelf;
-        XCTAssertLessThan([[strongSelf.progressValues lastObject] doubleValue], 0.5, @"Final progress should be less than 50%");
+        XCTAssertLessThan([[strongSelf.progressValues lastObject] doubleValue], 0.5, @"Final progress should be less than 50%%");
 
         dispatch_semaphore_signal(semaphore);
     }];
