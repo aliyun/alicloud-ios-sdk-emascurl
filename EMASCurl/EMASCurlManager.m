@@ -182,7 +182,7 @@
                     NSLocalizedDescriptionKey: @(curl_easy_strerror(msg->data.result)),
                     NSURLErrorFailingURLStringErrorKey: url
                 };
-                error = [NSError errorWithDomain:@"MultiCurlManager" code:msg->data.result userInfo:userInfo];
+                error = [NSError errorWithDomain:@"EMASCurlManager" code:msg->data.result userInfo:userInfo];
             }
 
             curl_multi_remove_handle(_multiHandle, easy);
