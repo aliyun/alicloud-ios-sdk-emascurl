@@ -633,13 +633,36 @@ static dispatch_queue_t s_cacheQueue;
             break;
     }
 
-    if (s_enableBuiltInGzip) {
-        // 配置支持的HTTP压缩算法，""代表自动检测内置的算法，目前zlib支持deflate与gzip
-        curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
-    }
-
     // 将拦截到的request的header字段进行透传
     self.requestHeaderFields = [self convertHeadersToCurlSlist:request.allHTTPHeaderFields];
+
+    // 检查是否手动设置了Accept-Encoding头部
+    NSString *manualAcceptEncoding = [request valueForHTTPHeaderField:@"Accept-Encoding"];
+    if (manualAcceptEncoding != nil) {
+        // 用户手动设置了Accept-Encoding头部，完全尊重用户的意图
+        // 即使是空字符串也表示用户明确要求不使用压缩
+        NSString *trimmedEncoding = [manualAcceptEncoding stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+        if (trimmedEncoding.length == 0) {
+            // 用户设置了空的Accept-Encoding，明确禁用压缩
+            EMAS_LOG_DEBUG(@"EC-Headers", @"Empty Accept-Encoding header detected, compression disabled by user");
+            // 不设置CURLOPT_ACCEPT_ENCODING，即使s_enableBuiltInGzip为true
+        } else {
+            // 用户设置了非空的Accept-Encoding，过滤出支持的编码方法
+            NSString *filteredEncoding = [self filterSupportedEncodings:trimmedEncoding];
+            if (filteredEncoding.length > 0) {
+                curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, [filteredEncoding UTF8String]);
+                EMAS_LOG_DEBUG(@"EC-Headers", @"Using filtered Accept-Encoding: %@", filteredEncoding);
+            } else {
+                // 如果过滤后没有支持的编码，则不设置压缩
+                EMAS_LOG_DEBUG(@"EC-Headers", @"No supported encodings found in manual Accept-Encoding: %@", trimmedEncoding);
+            }
+        }
+    } else if (s_enableBuiltInGzip) {
+        // 用户没有手动设置Accept-Encoding头部，使用内置gzip设置
+        curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
+        EMAS_LOG_DEBUG(@"EC-Headers", @"Using built-in gzip encoding");
+    }
 
     // 只对GET请求添加缓存相关条件头
     if (s_cacheEnabled && [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
@@ -892,6 +915,45 @@ static dispatch_queue_t s_cacheQueue;
     return NO;
 }
 
+// 过滤Accept-Encoding头部，只保留libcurl支持的编码方法（gzip和deflate）
+- (NSString *)filterSupportedEncodings:(NSString *)acceptEncoding {
+    if (!acceptEncoding || acceptEncoding.length == 0) {
+        return nil;
+    }
+
+    // libcurl支持的编码方法
+    NSSet *supportedEncodings = [NSSet setWithObjects:@"gzip", @"deflate", @"identity", nil];
+
+    // 解析Accept-Encoding头部值
+    NSArray *encodings = [acceptEncoding componentsSeparatedByString:@","];
+    NSMutableArray *filteredEncodings = [NSMutableArray array];
+
+    for (NSString *encoding in encodings) {
+        // 清理每个编码值（去除空格和质量值）
+        NSString *cleanEncoding = [encoding stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+
+        // 如果包含质量值（如 "gzip;q=0.8"），只取编码名称部分
+        NSRange semicolonRange = [cleanEncoding rangeOfString:@";"];
+        if (semicolonRange.location != NSNotFound) {
+            cleanEncoding = [cleanEncoding substringToIndex:semicolonRange.location];
+            cleanEncoding = [cleanEncoding stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        }
+
+        // 检查是否为支持的编码
+        if ([supportedEncodings containsObject:cleanEncoding.lowercaseString]) {
+            [filteredEncodings addObject:encoding]; // 保留原始格式（包括质量值）
+        } else {
+            EMAS_LOG_DEBUG(@"EC-Headers", @"Filtering out unsupported encoding: %@", cleanEncoding);
+        }
+    }
+
+    if (filteredEncodings.count == 0) {
+        return nil;
+    }
+
+    return [filteredEncodings componentsJoinedByString:@","];
+}
+
 // 将拦截到的request中的header字段，转换为一个curl list
 - (struct curl_slist *)convertHeadersToCurlSlist:(NSDictionary<NSString *, NSString *> *)headers {
     struct curl_slist *headerFields = NULL;
@@ -900,6 +962,10 @@ static dispatch_queue_t s_cacheQueue;
     for (NSString *key in headers) {
         // 对于Content-Length，使用CURLOPT_POSTFIELDSIZE_LARGE指定，不要在这里透传，否则POST重定向为GET时仍会保留Content-Length，导致错误
         if ([key caseInsensitiveCompare:@"Content-Length"] == NSOrderedSame) {
+            continue;
+        }
+        // 对于Accept-Encoding，已经在populateRequestHeader中单独处理了，这里跳过避免重复设置
+        if ([key caseInsensitiveCompare:@"Accept-Encoding"] == NSOrderedSame) {
             continue;
         }
         // 检查是否已提供User-Agent
