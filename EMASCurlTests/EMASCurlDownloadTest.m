@@ -202,7 +202,7 @@ static NSURLSession *session;
 @implementation EMASCurlDownloadTestHttp2
 
 + (void)setUp {
-    [EMASCurlProtocol setDebugLogEnabled:YES];
+    [EMASCurlProtocol setLogLevel:EMASCurlLogLevelError];
     [EMASCurlProtocol setHTTPVersion:HTTP2];
 
     NSBundle *testBundle = [NSBundle bundleForClass:[self class]];
