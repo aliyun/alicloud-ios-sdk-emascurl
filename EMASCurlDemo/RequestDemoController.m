@@ -25,9 +25,12 @@
     configuration.timeoutIntervalForResource = 300;
 
     [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
-    [EMASCurlProtocol setCacheEnabled:YES];
-    [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
-    [EMASCurlProtocol installIntoSessionConfiguration:configuration];
+
+    EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+    [config setCacheEnabled:YES];
+    [config setBuiltInGzipEnabled:NO];
+    [config setBuiltInRedirectionEnabled:NO];
+    [EMASCurlProtocol installIntoSessionConfiguration:configuration configuration:config];
 
     self.session = [NSURLSession sessionWithConfiguration:configuration
                                                delegate:self
