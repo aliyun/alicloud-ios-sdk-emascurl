@@ -252,3 +252,6 @@ __pycache__/
 
 # windsurf rules
 .windsurfrules
+
+# claude code
+.claude/

@@ -62,6 +62,8 @@
 		94978CFB2D5742BB0042BE44 /* cookie.js in Resources */ = {isa = PBXBuildFile; fileRef = 94978CCA2D5742BB0042BE44 /* cookie.js */; };
 		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
 		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
+		94DC95002E2218E4003AFEDE /* EMASCurlConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 94DC94FE2E2218E4003AFEDE /* EMASCurlConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		94DC95012E2218E4003AFEDE /* EMASCurlConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 94DC94FF2E2218E4003AFEDE /* EMASCurlConfiguration.m */; };
 		9ED156F40066301702A9AC72 /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7550AA13D3ADD72163B2F6 /* libcurl-HTTP2.xcframework */; };
 /* End PBXBuildFile section */
 
@@ -181,6 +183,8 @@
 		94978EB22D57FFCC0042BE44 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "precompiled/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
 		94C5B5D82D071D86006BC856 /* EMASCurlManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlManager.h; sourceTree = "<group>"; };
 		94C5B5D92D071D86006BC856 /* EMASCurlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlManager.m; sourceTree = "<group>"; };
+		94DC94FE2E2218E4003AFEDE /* EMASCurlConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlConfiguration.h; sourceTree = "<group>"; };
+		94DC94FF2E2218E4003AFEDE /* EMASCurlConfiguration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlConfiguration.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
 		FC63873258AC2D2C8BE72105 /* Pods-AVPlayerDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AVPlayerDemo.debug.xcconfig"; path = "Target Support Files/Pods-AVPlayerDemo/Pods-AVPlayerDemo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -268,6 +272,8 @@
 			isa = PBXGroup;
 			children = (
 				6F3F601F2CD0E07F0014025B /* EMASCurl.h */,
+				94DC94FE2E2218E4003AFEDE /* EMASCurlConfiguration.h */,
+				94DC94FF2E2218E4003AFEDE /* EMASCurlConfiguration.m */,
 				6F3F60202CD0E07F0014025B /* EMASCurlProtocol.h */,
 				6F3F60212CD0E07F0014025B /* EMASCurlProtocol.m */,
 				94C5B5D82D071D86006BC856 /* EMASCurlManager.h */,
@@ -440,6 +446,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				949788D92D4FAA0D0042BE44 /* EMASCurlCookieStorage.h in Headers */,
+				94DC95002E2218E4003AFEDE /* EMASCurlConfiguration.h in Headers */,
 				6F3F60232CD0E07F0014025B /* EMASCurl.h in Headers */,
 				944708112DE01D5800856898 /* EMASCurlLogger.h in Headers */,
 				941470C02DD1A9680072507F /* NSCachedURLResponse+EMASCurl.h in Headers */,
@@ -665,13 +672,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -708,6 +711,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				949788D82D4FAA0D0042BE44 /* EMASCurlCookieStorage.m in Sources */,
+				94DC95012E2218E4003AFEDE /* EMASCurlConfiguration.m in Sources */,
 				6F3F60252CD0E07F0014025B /* EMASCurlProtocol.m in Sources */,
 				94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */,
 				941470C42DD1A9680072507F /* NSCachedURLResponse+EMASCurl.m in Sources */,

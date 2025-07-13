@@ -6,12 +6,14 @@
 //
 
 #import "EMASCurlProtocol.h"
+#import "EMASCurlConfiguration.h"
 #import "EMASCurlManager.h"
 #import "EMASCurlCookieStorage.h"
 #import "EMASCurlResponseCache.h"
 #import "NSCachedURLResponse+EMASCurl.h"
 #import "EMASCurlLogger.h"
 #import <curl/curl.h>
+#import <objc/runtime.h>
 
 #define HTTP_METHOD_GET @"GET"
 #define HTTP_METHOD_PUT @"PUT"
@@ -27,6 +29,10 @@ static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMAS
 static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
 static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
+
+// 关联对象的key常量
+static const void *kEMASCurlConfigurationKey = &kEMASCurlConfigurationKey;
+static const void *kEMASCurlWrapperKey = &kEMASCurlWrapperKey;
 
 @interface CurlHTTPResponse : NSObject
 
@@ -62,6 +68,37 @@ static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 
 @end
 
+// 会话配置包装器，用于管理动态类的生命周期
+@interface EMASCurlSessionConfigurationWrapper : NSObject
+
+@property (nonatomic, assign) Class dynamicClass;
+
+- (instancetype)initWithDynamicClass:(Class)dynamicClass;
+
+@end
+
+@implementation EMASCurlSessionConfigurationWrapper
+
+- (instancetype)initWithDynamicClass:(Class)dynamicClass {
+    self = [super init];
+    if (self) {
+        _dynamicClass = dynamicClass;
+    }
+    return self;
+}
+
+- (void)dealloc {
+    // 当sessionConfiguration被释放时，自动清理动态类
+    if (_dynamicClass) {
+        // 调用EMASCurlProtocol的类方法来进行清理
+        [EMASCurlProtocol cleanupDynamicClass:_dynamicClass];
+
+        EMAS_LOG_DEBUG(@"EC-Memory", @"Cleaned up dynamic class: %@", NSStringFromClass(_dynamicClass));
+    }
+}
+
+@end
+
 @interface EMASCurlProtocol()
 
 @property (nonatomic, assign) CURL *easyHandle;
@@ -90,9 +127,10 @@ static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 
 @property (nonatomic, strong) NSMutableData *receivedResponseData;
 
-@end
+// Configuration for this protocol instance
+@property (nonatomic, strong) EMASCurlConfiguration *configuration;
 
-static HTTPVersion s_httpVersion;
+@end
 
 // runtime 的libcurl xcframework是否支持HTTP2
 static bool curlFeatureHttp2;
@@ -100,44 +138,56 @@ static bool curlFeatureHttp2;
 // runtime 的libcurl xcframework是否支持HTTP3
 static bool curlFeatureHttp3;
 
-static bool s_enableBuiltInGzip;
-
-static NSString *s_caFilePath;
-
-static BOOL s_enableBuiltInRedirection;
-
+// 基础设施组件 - 保持静态变量
 static NSString *s_proxyServer;
 static dispatch_queue_t s_serialQueue;
+static dispatch_queue_t s_cacheQueue;
+static EMASCurlResponseCache *s_responseCache;
 
-static Class<EMASCurlProtocolDNSResolver> s_dnsResolverClass;
-
-static bool s_enableDebugLog;
-
-// 标记是否启用了手动代理
+// 代理管理
 static BOOL s_manualProxyEnabled;
-// 定时更新系统代理设置的定时器
 static NSTimer *s_proxyUpdateTimer;
 
-// 拦截域名白名单
-static NSArray<NSString *> *s_domainWhiteList;
-static NSArray<NSString *> *s_domainBlackList;
-
-// 公钥固定(Public Key Pinning)的公钥文件路径
-static NSString *s_publicKeyPinningKeyPath;
-
-// 是否开启证书校验
-static BOOL s_certificateValidationEnabled;
-
-// 是否开启域名校验
-static BOOL s_domainNameVerificationEnabled;
-
-static EMASCurlResponseCache *s_responseCache;
-static BOOL s_cacheEnabled;
-static dispatch_queue_t s_cacheQueue;
+// 全局配置对象 - 替代分散的静态变量
+static EMASCurlConfiguration *s_globalConfiguration;
 
 @implementation EMASCurlProtocol
 
 #pragma mark * user API
+
+#pragma mark - New Configuration-based API
+
++ (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration*)sessionConfiguration
+                          configuration:(nonnull EMASCurlConfiguration *)configuration {
+    // 为每个session创建唯一的协议子类
+    static NSUInteger classCounter = 0;
+    NSString *className = [NSString stringWithFormat:@"EMASCurlProtocol_%lu", (unsigned long)++classCounter];
+
+    Class dynamicClass = objc_allocateClassPair([EMASCurlProtocol class], [className UTF8String], 0);
+    if (!dynamicClass) {
+        // 如果类创建失败，回退到全局配置方式
+        NSMutableArray *protocolsArray = [NSMutableArray arrayWithArray:sessionConfiguration.protocolClasses];
+        [protocolsArray insertObject:self atIndex:0];
+        [sessionConfiguration setProtocolClasses:protocolsArray];
+        return;
+    }
+
+    objc_registerClassPair(dynamicClass);
+
+    // 直接将配置关联到动态类
+    objc_setAssociatedObject(dynamicClass, kEMASCurlConfigurationKey, [configuration copy], OBJC_ASSOCIATION_RETAIN);
+
+    // 创建包装器来管理动态类的生命周期
+    EMASCurlSessionConfigurationWrapper *wrapper = [[EMASCurlSessionConfigurationWrapper alloc]
+                                                     initWithDynamicClass:dynamicClass];
+    objc_setAssociatedObject(sessionConfiguration, kEMASCurlWrapperKey, wrapper, OBJC_ASSOCIATION_RETAIN);
+
+    NSMutableArray *protocolsArray = [NSMutableArray arrayWithArray:sessionConfiguration.protocolClasses];
+    [protocolsArray insertObject:dynamicClass atIndex:0];
+    [sessionConfiguration setProtocolClasses:protocolsArray];
+}
+
+#pragma mark - Legacy API (Backward Compatibility)
 
 + (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration*)sessionConfiguration {
     NSMutableArray *protocolsArray = [NSMutableArray arrayWithArray:sessionConfiguration.protocolClasses];
@@ -154,33 +204,32 @@ static dispatch_queue_t s_cacheQueue;
 }
 
 + (void)setHTTPVersion:(HTTPVersion)version {
-    s_httpVersion = version;
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.httpVersion = version;
 }
 
 + (void)setBuiltInGzipEnabled:(BOOL)enabled {
-    s_enableBuiltInGzip = enabled;
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.builtInGzipEnabled = enabled;
 }
 
 + (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath {
-    s_caFilePath = selfSignedCAFilePath;
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.selfSignedCAFilePath = selfSignedCAFilePath;
 }
 
 + (void)setBuiltInRedirectionEnabled:(BOOL)enabled {
-    s_enableBuiltInRedirection = enabled;
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.builtInRedirectionEnabled = enabled;
 }
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
-    s_enableDebugLog = debugLogEnabled;
-    // 向后兼容性：映射到新的日志级别系统
-    if (debugLogEnabled) {
-        [EMASCurlLogger setLogLevel:EMASCurlLogLevelDebug];
-    } else {
-        [EMASCurlLogger setLogLevel:EMASCurlLogLevelOff];
-    }
+    [EMASCurlLogger setLogLevel:EMASCurlLogLevelDebug];
 }
 
 + (void)setDNSResolver:(nonnull Class<EMASCurlProtocolDNSResolver>)dnsResolver {
-    s_dnsResolverClass = dnsResolver;
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.dnsResolverClass = dnsResolver;
 }
 
 + (void)setUploadProgressUpdateBlockForRequest:(nonnull NSMutableURLRequest *)request uploadProgressUpdateBlock:(nonnull EMASCurlUploadProgressUpdateBlock)uploadProgressUpdateBlock {
@@ -196,26 +245,34 @@ static dispatch_queue_t s_cacheQueue;
 }
 
 + (void)setHijackDomainWhiteList:(nullable NSArray<NSString *> *)domainWhiteList {
-    s_domainWhiteList = domainWhiteList;
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.hijackDomainWhiteList = domainWhiteList;
 }
 
 + (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList {
-    s_domainBlackList = domainBlackList;
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.hijackDomainBlackList = domainBlackList;
 }
 
 + (void)setPublicKeyPinningKeyPath:(nullable NSString *)publicKeyPath {
-    s_publicKeyPinningKeyPath = [publicKeyPath copy];
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.publicKeyPinningKeyPath = publicKeyPath;
 }
 
 + (void)setCertificateValidationEnabled:(BOOL)enabled {
-    s_certificateValidationEnabled = enabled;
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.certificateValidationEnabled = enabled;
 }
 
 + (void)setDomainNameVerificationEnabled:(BOOL)enabled {
-    s_domainNameVerificationEnabled = enabled;
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.domainNameVerificationEnabled = enabled;
 }
 
 + (void)setManualProxyServer:(nullable NSString *)proxyServerURL {
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.manualProxyServer = proxyServerURL;
+
     __block BOOL shouldInvalidateTimer = NO;
     __block BOOL shouldStartTimer = NO;
 
@@ -243,10 +300,43 @@ static dispatch_queue_t s_cacheQueue;
     });
 }
 
+#pragma mark - 日志相关方法
+
 + (void)setCacheEnabled:(BOOL)enabled {
-    dispatch_sync(s_cacheQueue, ^{
-        s_cacheEnabled = enabled;
-    });
+    [self ensureGlobalConfiguration];
+    s_globalConfiguration.cacheEnabled = enabled;
+}
+
++ (void)setLogLevel:(EMASCurlLogLevel)logLevel {
+    [EMASCurlLogger setLogLevel:logLevel];
+}
+
++ (EMASCurlLogLevel)currentLogLevel {
+    return [EMASCurlLogger currentLogLevel];
+}
+
+#pragma mark - Configuration Helper Methods
+
++ (void)ensureGlobalConfiguration {
+    if (!s_globalConfiguration) {
+        s_globalConfiguration = [EMASCurlConfiguration defaultConfiguration];
+    }
+}
+
++ (EMASCurlConfiguration *)globalConfiguration {
+    [self ensureGlobalConfiguration];
+    return s_globalConfiguration;
+}
+
++ (EMASCurlConfiguration *)configurationForCurrentClass {
+    // 直接从动态类获取关联的配置
+    EMASCurlConfiguration *config = objc_getAssociatedObject(self, kEMASCurlConfigurationKey);
+    if (config) {
+        return config;
+    }
+
+    // 兼容性回退：如果没有特定的配置，则使用全局配置
+    return [self globalConfiguration];
 }
 
 #pragma mark * NSURLProtocol overrides
@@ -264,6 +354,8 @@ static dispatch_queue_t s_cacheQueue;
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
+
+        _configuration = [[self class] configurationForCurrentClass];
     }
     return self;
 }
@@ -277,19 +369,16 @@ static dispatch_queue_t s_cacheQueue;
     curlFeatureHttp2 = (version_info->features & CURL_VERSION_HTTP2) ? YES : NO;
     curlFeatureHttp3 = (version_info->features & CURL_VERSION_HTTP3) ? YES : NO;
 
-    s_httpVersion = HTTP1;
-    s_enableDebugLog = NO;
-
-    s_enableBuiltInGzip = YES;
-    s_enableBuiltInRedirection = YES;
-
-    // 默认开启证书和域名校验
-    s_certificateValidationEnabled = YES;
-    s_domainNameVerificationEnabled = YES;
-
+    // 初始化基础设施组件
     s_responseCache = [EMASCurlResponseCache new];
-
     s_proxyServer = nil;
+    s_manualProxyEnabled = NO;
+
+    // 初始化全局配置为默认值
+    s_globalConfiguration = [EMASCurlConfiguration defaultConfiguration];
+    // 调整默认值以保持向后兼容
+    s_globalConfiguration.httpVersion = HTTP1; // 为了向后兼容，保持HTTP1作为默认
+
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         s_serialQueue = dispatch_queue_create("com.alicloud.emascurl.serialQueue", DISPATCH_QUEUE_SERIAL);
@@ -372,22 +461,25 @@ static dispatch_queue_t s_cacheQueue;
         return NO;
     }
 
+    EMASCurlConfiguration *config = [self configurationForCurrentClass];
+
     // 检查请求的host是否在白名单或黑名单中
     NSString *host = request.URL.host;
     if (!host) {
         EMAS_LOG_DEBUG(@"EC-Request", @"Rejected request without host");
         return NO;
     }
-    if (s_domainBlackList && s_domainBlackList.count > 0) {
-        for (NSString *blacklistDomain in s_domainBlackList) {
+
+    if (config.hijackDomainBlackList && config.hijackDomainBlackList.count > 0) {
+        for (NSString *blacklistDomain in config.hijackDomainBlackList) {
             if ([host hasSuffix:blacklistDomain]) {
                 EMAS_LOG_DEBUG(@"EC-Request", @"Request rejected by domain blacklist: %@", host);
                 return NO;
             }
         }
     }
-    if (s_domainWhiteList && s_domainWhiteList.count > 0) {
-        for (NSString *whitelistDomain in s_domainWhiteList) {
+    if (config.hijackDomainWhiteList && config.hijackDomainWhiteList.count > 0) {
+        for (NSString *whitelistDomain in config.hijackDomainWhiteList) {
             if ([host hasSuffix:whitelistDomain]) {
                 EMAS_LOG_DEBUG(@"EC-Request", @"Request filtered by domain whitelist: %@", host);
                 return YES;
@@ -421,7 +513,7 @@ static dispatch_queue_t s_cacheQueue;
     __block BOOL useCache = NO;
 
     dispatch_sync(s_cacheQueue, ^{
-        if (!s_cacheEnabled) {
+        if (!self.configuration.cacheEnabled) {
             return;
         }
 
@@ -491,7 +583,7 @@ static dispatch_queue_t s_cacheQueue;
         // 如果请求成功且状态码为200，则尝试缓存响应
         if (succeed &&
             self.currentResponse.statusCode == 200 &&
-            s_cacheEnabled &&
+            self.configuration.cacheEnabled &&
             [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
 
             dispatch_sync(s_cacheQueue, ^{
@@ -606,7 +698,7 @@ static dispatch_queue_t s_cacheQueue;
     curl_easy_setopt(easyHandle, CURLOPT_URL, request.URL.absoluteString.UTF8String);
 
     // 配置 http version
-    switch (s_httpVersion) {
+    switch (self.configuration.httpVersion) {
         case HTTP3:
             // 仅https url能使用quic
             if (curlFeatureHttp3 && [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame) {
@@ -658,14 +750,14 @@ static dispatch_queue_t s_cacheQueue;
                 EMAS_LOG_DEBUG(@"EC-Headers", @"No supported encodings found in manual Accept-Encoding: %@", trimmedEncoding);
             }
         }
-    } else if (s_enableBuiltInGzip) {
+    } else if (self.configuration.builtInGzipEnabled) {
         // 用户没有手动设置Accept-Encoding头部，使用内置gzip设置
         curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
         EMAS_LOG_DEBUG(@"EC-Headers", @"Using built-in gzip encoding");
     }
 
     // 只对GET请求添加缓存相关条件头
-    if (s_cacheEnabled && [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
+    if (self.configuration.cacheEnabled && [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
         // 再次从缓存获取，看是否有可用于条件GET的项
         // 注意：这里的 request 应该是用于网络请求的 NSMutableURLRequest
         // 而 s_responseCache.cachedResponseForRequest 需要原始的 self.request (或其副本) 作为键
@@ -763,12 +855,12 @@ static dispatch_queue_t s_cacheQueue;
     }
 
     // 是否设置自定义根证书
-    if (s_caFilePath) {
-        curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [s_caFilePath UTF8String]);
+    if (self.configuration.selfSignedCAFilePath) {
+        curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [self.configuration.selfSignedCAFilePath UTF8String]);
     }
 
     // 配置证书校验
-    if (s_certificateValidationEnabled) {
+    if (self.configuration.certificateValidationEnabled) {
         curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYPEER, 1L);
     } else {
         EMAS_LOG_INFO(@"EC-SSL", @"Certificate validation disabled");
@@ -779,7 +871,7 @@ static dispatch_queue_t s_cacheQueue;
     // 0: 不校验域名
     // 1: 校验域名是否存在于证书中，但仅用于提示 (libcurl < 7.28.0)
     // 2: 校验域名是否存在于证书中且匹配 (libcurl >= 7.28.0 推荐)
-    if (s_domainNameVerificationEnabled) {
+    if (self.configuration.domainNameVerificationEnabled) {
         curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYHOST, 2L);
     } else {
         EMAS_LOG_INFO(@"EC-SSL", @"Domain name verification disabled");
@@ -787,13 +879,13 @@ static dispatch_queue_t s_cacheQueue;
     }
 
     // 设置公钥固定
-    if (s_publicKeyPinningKeyPath) {
+    if (self.configuration.publicKeyPinningKeyPath) {
         EMAS_LOG_INFO(@"EC-SSL", @"Using public key pinning for host: %@", self.request.URL.host);
-        curl_easy_setopt(easyHandle, CURLOPT_PINNEDPUBLICKEY, [s_publicKeyPinningKeyPath UTF8String]);
+        curl_easy_setopt(easyHandle, CURLOPT_PINNEDPUBLICKEY, [self.configuration.publicKeyPinningKeyPath UTF8String]);
     }
 
     // 假如设置了自定义resolve，则使用
-    if (s_dnsResolverClass) {
+    if (self.configuration.dnsResolverClass) {
         NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
         if ([self preResolveDomain:easyHandle]) {
             self.resolveDomainTimeInterval = [[NSDate date] timeIntervalSince1970] - startTime;
@@ -815,7 +907,7 @@ static dispatch_queue_t s_cacheQueue;
     });
 
     // 设置debug回调函数以输出日志
-    if (s_enableDebugLog) {
+    if (EMASCurlLogger.currentLogLevel >= EMASCurlLogLevelDebug) {
         curl_easy_setopt(easyHandle, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(easyHandle, CURLOPT_DEBUGFUNCTION, debug_cb);
     }
@@ -851,7 +943,7 @@ static dispatch_queue_t s_cacheQueue;
     }
 
     // 开启重定向
-    if (s_enableBuiltInRedirection) {
+    if (self.configuration.builtInRedirectionEnabled) {
         curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
     } else {
         curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 0L);
@@ -887,7 +979,7 @@ static dispatch_queue_t s_cacheQueue;
     EMAS_LOG_INFO(@"EC-DNS", @"Using custom DNS resolver for domain: %@", host);
 
     CFAbsoluteTime startTime = CFAbsoluteTimeGetCurrent();
-    NSString *address = [s_dnsResolverClass resolveDomain:host];
+    NSString *address = [self.configuration.dnsResolverClass resolveDomain:host];
     CFAbsoluteTime endTime = CFAbsoluteTimeGetCurrent();
 
     double resolutionTime = (endTime - startTime) * 1000; // 转换为毫秒
@@ -1062,7 +1154,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         NSString *reasonPhrase = protocol.currentResponse.reasonPhrase;
 
         // 处理304 Not Modified响应
-        if (statusCode == 304 && s_cacheEnabled) {
+        if (statusCode == 304 && protocol.configuration.cacheEnabled) {
             // 查找缓存
             NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:protocol.request];
             if (cachedResponse) {
@@ -1086,7 +1178,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                                                                      HTTPVersion:protocol.currentResponse.httpVersion
                                                                     headerFields:protocol.currentResponse.headers];
         if (isRedirectionStatusCode(statusCode)) {
-            if (!s_enableBuiltInRedirection) {
+            if (!protocol.configuration.builtInRedirectionEnabled) {
                 // 关闭了重定向支持，则把重定向信息往外传递
                 __block NSString *location = nil;
                 [protocol.currentResponse.headers enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSString * _Nonnull obj, BOOL * _Nonnull stop) {
@@ -1148,7 +1240,7 @@ static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
     NSData *data = [[NSData alloc] initWithBytes:contents length:totalSize];
 
     // 收集响应数据用于缓存
-    if (s_cacheEnabled && protocol.currentResponse.statusCode == 200 &&
+    if (protocol.configuration.cacheEnabled && protocol.currentResponse.statusCode == 200 &&
         [[protocol.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
         [protocol.receivedResponseData appendData:data];
     }
@@ -1250,16 +1342,18 @@ static int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, v
     return 0;
 }
 
-#pragma mark - 日志相关方法
+#pragma mark - Dynamic Class Management
 
-+ (void)setLogLevel:(EMASCurlLogLevel)logLevel {
-    [EMASCurlLogger setLogLevel:logLevel];
-    // 同步更新旧的debug标志，保持一致性
-    s_enableDebugLog = (logLevel >= EMASCurlLogLevelDebug);
-}
++ (void)cleanupDynamicClass:(Class)dynamicClass {
+    if (!dynamicClass || ![dynamicClass isSubclassOfClass:[EMASCurlProtocol class]]) {
+        return;
+    }
 
-+ (EMASCurlLogLevel)currentLogLevel {
-    return [EMASCurlLogger currentLogLevel];
+    // 清理直接关联到动态类的配置对象
+    objc_setAssociatedObject(dynamicClass, kEMASCurlConfigurationKey, nil, OBJC_ASSOCIATION_RETAIN);
+
+    // 注销类（注意：在实际使用中要谨慎，确保没有实例在使用）
+    // objc_disposeClassPair(dynamicClass); // 暂时注释掉
 }
 
 @end
