@@ -61,7 +61,7 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
 
 ## 最新版本
 
-- 当前版本：1.3.2
+- 当前版本：1.3.3
 
 ## 快速入门
 
@@ -421,51 +421,89 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 
 ### 设置性能指标回调
 
-```objc
-typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
-                                   BOOL success,
-                                   NSError * _Nullable error,
-                                   double nameLookUpTimeMS,
-                                   double connectTimeMs,
-                                   double appConnectTimeMs,
-                                   double preTransferTimeMs,
-                                   double startTransferTimeMs,
-                                   double totalTimeMs);
+#### 全局综合性能指标回调（强烈推荐）
 
-+ (void)setMetricsObserverBlockForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlock)metricsObserverBlock;
+EMASCurl提供基本等价于`URLSessionTaskTransactionMetrics`的完整性能指标：
+
+```objc
+/// 综合性能指标数据结构
+@interface EMASCurlTransactionMetrics : NSObject
+// 时间戳信息
+@property (nonatomic, strong, nullable) NSDate *fetchStartDate;
+@property (nonatomic, strong, nullable) NSDate *domainLookupStartDate;
+@property (nonatomic, strong, nullable) NSDate *domainLookupEndDate;
+@property (nonatomic, strong, nullable) NSDate *connectStartDate;
+@property (nonatomic, strong, nullable) NSDate *secureConnectionStartDate;
+@property (nonatomic, strong, nullable) NSDate *secureConnectionEndDate;
+@property (nonatomic, strong, nullable) NSDate *connectEndDate;
+@property (nonatomic, strong, nullable) NSDate *requestStartDate;
+@property (nonatomic, strong, nullable) NSDate *requestEndDate;
+@property (nonatomic, strong, nullable) NSDate *responseStartDate;
+@property (nonatomic, strong, nullable) NSDate *responseEndDate;
+
+// 网络信息
+@property (nonatomic, copy, nullable) NSString *networkProtocolName;
+@property (nonatomic, assign) BOOL proxyConnection;
+@property (nonatomic, assign) BOOL reusedConnection;
+@property (nonatomic, assign) NSInteger requestHeaderBytesSent;
+@property (nonatomic, assign) NSInteger responseHeaderBytesReceived;
+@property (nonatomic, copy, nullable) NSString *localAddress;
+@property (nonatomic, assign) NSInteger localPort;
+@property (nonatomic, copy, nullable) NSString *remoteAddress;
+@property (nonatomic, assign) NSInteger remotePort;
+
+// SSL/TLS信息（暂不支持，留空）
+@property (nonatomic, copy, nullable) NSString *tlsProtocolVersion;
+@property (nonatomic, copy, nullable) NSString *tlsCipherSuite;
+
+@end
+
+/// 全局综合性能指标回调
++ (void)setGlobalTransactionMetricsObserverBlock:(nullable EMASCurlTransactionMetricsObserverBlock)transactionMetricsObserverBlock;
 ```
 
-性能指标回调参数说明：
-- `request`: 发起请求使用的请求实例
-- `success`: 请求是否成功
-- `error`: 如果请求失败，包含错误信息
-- `nameLookUpTimeMS`: DNS解析耗时，单位毫秒
-- `connectTimeMs`: TCP连接耗时，单位毫秒
-- `appConnectTimeMs`: SSL/TLS握手耗时，单位毫秒
-- `preTransferTimeMs`: 从开始到传输前准备完成的耗时，单位毫秒
-- `startTransferTimeMs`: 从开始到收到第一个字节的耗时，单位毫秒
-- `totalTimeMs`: 整个请求的总耗时，单位毫秒
-
-网络请求性能指标回调，可以帮助您监控请求的各项耗时指标。
-
-例如：
+**使用综合性能指标回调示例：**
 
 ```objc
-NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-[EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
+// 在应用启动时设置一次，所有请求都会自动使用此回调（推荐使用）
+[EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
     if (!success) {
-        NSLog(@"请求失败，错误信息: %@", error.localizedDescription);
+        NSLog(@"请求失败，URL: %@, 错误: %@", request.URL.absoluteString, error.localizedDescription);
         return;
     }
-    NSLog(@"性能指标:");
-    NSLog(@"DNS解析耗时: %.2f ms", nameLookUpTimeMS);
-    NSLog(@"TCP连接耗时: %.2f ms", connectTimeMs);
-    NSLog(@"SSL/TLS握手耗时: %.2f ms", appConnectTimeMs);
-    NSLog(@"传输前准备耗时: %.2f ms", preTransferTimeMs);
-    NSLog(@"收到第一个字节耗时: %.2f ms", startTransferTimeMs);
-    NSLog(@"总耗时: %.2f ms", totalTimeMs);
+
+    NSLog(@"综合性能指标 [%@]:", request.URL.absoluteString);
+    NSLog(@"获取开始时间: %@", metrics.fetchStartDate);
+    NSLog(@"域名解析: %@ - %@", metrics.domainLookupStartDate, metrics.domainLookupEndDate);
+    NSLog(@"连接建立: %@ - %@", metrics.connectStartDate, metrics.connectEndDate);
+    NSLog(@"安全连接: %@ - %@", metrics.secureConnectionStartDate, metrics.secureConnectionEndDate);
+    NSLog(@"请求处理: %@ - %@", metrics.requestStartDate, metrics.requestEndDate);
+    NSLog(@"响应接收: %@ - %@", metrics.responseStartDate, metrics.responseEndDate);
+    NSLog(@"协议: %@", metrics.networkProtocolName);
+    NSLog(@"连接重用: %@", metrics.reusedConnection ? @"是" : @"否");
+    NSLog(@"请求头字节: %ld, 响应头字节: %ld", (long)metrics.requestHeaderBytesSent, (long)metrics.responseHeaderBytesReceived);
+    NSLog(@"地址: %@:%ld -> %@:%ld", metrics.localAddress, (long)metrics.localPort, metrics.remoteAddress, (long)metrics.remotePort);
+    NSLog(@"TLS: %@ (%@)", metrics.tlsProtocolVersion, metrics.tlsCipherSuite);
+    NSLog(@"网络类型: %@", metrics.cellular ? @"蜂窝网络" : @"WiFi/以太网");
+}];
+
+// 清除全局综合回调
+// [EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:nil];
+```
+
+#### 单个请求性能指标回调（已废弃）
+
+为了向下兼容，仍支持为单个请求设置性能指标回调，但建议使用全局回调：
+
+```objc
+// 不推荐：需要为每个请求单独设置
+NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+[EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
+    // 处理性能指标...
 }];
 ```
+
+**注意：** 单个请求回调的优先级高于全局回调。如果某个请求设置了单独的回调，将使用该回调而不是全局回调。
 
 ### 开启调试日志
 
@@ -746,7 +784,7 @@ target 'yourAppTarget' do
 end
 ```
 
-当前版本: 1.3.2
+当前版本: 1.3.3
 
 ### 配置WKWebView
 

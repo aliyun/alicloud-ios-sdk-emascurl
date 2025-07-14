@@ -15,6 +15,55 @@
     self.title = @"Request Demo";
     self.view.backgroundColor = [UIColor whiteColor];
 
+    // 设置全局综合性能指标回调（推荐使用）- 等价于URLSessionTaskTransactionMetrics
+    [EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
+        NSLog(@"全局综合性能指标 [%@]:\n"
+              "成功: %d\n"
+              "错误: %@\n"
+              "获取开始: %@\n"
+              "域名解析开始: %@\n"
+              "域名解析结束: %@\n"
+              "连接开始: %@\n"
+              "安全连接开始: %@\n"
+              "安全连接结束: %@\n"
+              "连接结束: %@\n"
+              "请求开始: %@\n"
+              "请求结束: %@\n"
+              "响应开始: %@\n"
+              "响应结束: %@\n"
+              "协议名称: %@\n"
+              "代理连接: %@\n"
+              "重用连接: %@\n"
+              "请求头字节数: %ld\n"
+              "响应头字节数: %ld\n"
+              "本地地址: %@:%ld\n"
+              "远程地址: %@:%ld\n"
+              "TLS协议版本: %@\n"
+              "TLS密码套件: %@\n",
+              request.URL.absoluteString,
+              success, error,
+              metrics.fetchStartDate,
+              metrics.domainLookupStartDate,
+              metrics.domainLookupEndDate,
+              metrics.connectStartDate,
+              metrics.secureConnectionStartDate,
+              metrics.secureConnectionEndDate,
+              metrics.connectEndDate,
+              metrics.requestStartDate,
+              metrics.requestEndDate,
+              metrics.responseStartDate,
+              metrics.responseEndDate,
+              metrics.networkProtocolName ?: @"未知",
+              metrics.proxyConnection ? @"是" : @"否",
+              metrics.reusedConnection ? @"是" : @"否",
+              (long)metrics.requestHeaderBytesSent,
+              (long)metrics.responseHeaderBytesReceived,
+              metrics.localAddress ?: @"未知", (long)metrics.localPort,
+              metrics.remoteAddress ?: @"未知", (long)metrics.remotePort,
+              metrics.tlsProtocolVersion ?: @"未使用",
+              metrics.tlsCipherSuite ?: @"未使用");
+    }];
+
     [self setupSession];
     [self setupUI];
 }
@@ -60,7 +109,7 @@
 }
 
 - (void)getButtonTapped {
-    NSString *urlString = @"https://m.taobao.com";
+    NSString *urlString = @"https://hk.xuyecan1919.tech/api/config";
     NSURL *url = [NSURL URLWithString:urlString];
 
     self.resultTextView.text = @""; // Clear previous results
@@ -72,20 +121,8 @@
     NSString *urlString = @"https://httpbin.org/post";
     NSURL *url = [NSURL URLWithString:urlString];
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
-    [EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
-        NSLog(@"Network Metrics:\n"
-              "Success: %d\n"
-              "Error: %@\n"
-              "DNS Lookup: %.2fms\n"
-              "Connect: %.2fms\n"
-              "App Connect: %.2fms\n"
-              "Pre-transfer: %.2fms\n"
-              "Start Transfer: %.2fms\n"
-              "Total: %.2fms",
-              success, error,
-              nameLookUpTimeMS, connectTimeMs, appConnectTimeMs,
-              preTransferTimeMs, startTransferTimeMs, totalTimeMs);
-    }];
+
+    // 注意：使用在viewDidLoad中设置的全局性能指标回调，无需为每个请求单独设置
     request.HTTPMethod = @"POST";
 
     // Create sample data to upload

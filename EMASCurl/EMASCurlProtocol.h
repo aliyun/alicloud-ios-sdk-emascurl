@@ -10,7 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
-#define EMASCURL_SDK_VERSION @"1.3.2"
+#define EMASCURL_SDK_VERSION @"1.3.3"
 
 /// 提供一个便捷易用的DNS Hook机制，类似OKHTTP中的DNS配置
 @protocol EMASCurlProtocolDNSResolver <NSObject>
@@ -57,6 +57,47 @@ typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
                                    double preTransferTimeMs,
                                    double startTransferTimeMs,
                                    double totalTimeMs);
+
+/// 综合性能指标数据结构（类似于URLSessionTaskTransactionMetrics）
+@interface EMASCurlTransactionMetrics : NSObject
+
+// 时间戳信息
+@property (nonatomic, strong, nullable) NSDate *fetchStartDate;
+@property (nonatomic, strong, nullable) NSDate *domainLookupStartDate;
+@property (nonatomic, strong, nullable) NSDate *domainLookupEndDate;
+@property (nonatomic, strong, nullable) NSDate *connectStartDate;
+@property (nonatomic, strong, nullable) NSDate *secureConnectionStartDate;
+@property (nonatomic, strong, nullable) NSDate *secureConnectionEndDate;
+@property (nonatomic, strong, nullable) NSDate *connectEndDate;
+@property (nonatomic, strong, nullable) NSDate *requestStartDate;
+@property (nonatomic, strong, nullable) NSDate *requestEndDate;
+@property (nonatomic, strong, nullable) NSDate *responseStartDate;
+@property (nonatomic, strong, nullable) NSDate *responseEndDate;
+
+// 网络信息
+@property (nonatomic, copy, nullable) NSString *networkProtocolName;
+@property (nonatomic, assign) BOOL proxyConnection;
+@property (nonatomic, assign) BOOL reusedConnection;
+@property (nonatomic, assign) NSInteger requestHeaderBytesSent;
+@property (nonatomic, assign) NSInteger requestBodyBytesSent;
+@property (nonatomic, assign) NSInteger responseHeaderBytesReceived;
+@property (nonatomic, assign) NSInteger responseBodyBytesReceived;
+@property (nonatomic, copy, nullable) NSString *localAddress;
+@property (nonatomic, assign) NSInteger localPort;
+@property (nonatomic, copy, nullable) NSString *remoteAddress;
+@property (nonatomic, assign) NSInteger remotePort;
+
+// SSL/TLS信息 (暂不支持，留空)
+@property (nonatomic, copy, nullable) NSString *tlsProtocolVersion;
+@property (nonatomic, copy, nullable) NSString *tlsCipherSuite;
+
+@end
+
+/// 综合性能指标回调（等价于URLSessionTaskTransactionMetrics）
+typedef void(^EMASCurlTransactionMetricsObserverBlock)(NSURLRequest * _Nonnull request,
+                                                      BOOL success,
+                                                      NSError * _Nullable error,
+                                                      EMASCurlTransactionMetrics * _Nonnull metrics);
 
 
 // HTTP版本，高版本一定包含支持低版本
@@ -127,8 +168,15 @@ typedef NS_ENUM(NSInteger, EMASCurlLogLevel) {
 // 设置上传进度回调
 + (void)setUploadProgressUpdateBlockForRequest:(nonnull NSMutableURLRequest *)request uploadProgressUpdateBlock:(nonnull EMASCurlUploadProgressUpdateBlock)uploadProgressUpdateBlock;
 
-// 设置性能指标回调
-+ (void)setMetricsObserverBlockForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlock)metricsObserverBlock;
+/// 设置全局综合性能指标观察回调（推荐使用）
+/// 提供等价于URLSessionTaskTransactionMetrics的完整性能指标
+/// @param transactionMetricsObserverBlock 综合性能指标回调，传入nil清除回调
++ (void)setGlobalTransactionMetricsObserverBlock:(nullable EMASCurlTransactionMetricsObserverBlock)transactionMetricsObserverBlock;
+
+/// 为指定请求设置性能指标观察回调（已废弃，请使用全局回调）
+/// @param request 请求对象
+/// @param metricsObserverBlock 性能指标回调
++ (void)setMetricsObserverBlockForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlock)metricsObserverBlock NS_DEPRECATED(10_0, 18_0, 10_0, 18_0, "请使用 setGlobalMetricsObserverBlock: 替代");
 
 // 设置拦截域名白名单，处理请求时，先检查黑名单，再检查白名单
 // 只拦截白名单中的域名
