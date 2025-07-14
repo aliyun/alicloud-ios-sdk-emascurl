@@ -59,13 +59,79 @@ typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
                                    double startTransferTimeMs,
                                    double totalTimeMs);
 
+/// 资源获取类型，对应URLSessionTaskMetrics.ResourceFetchType
+typedef NS_ENUM(NSInteger, EMASCurlResourceFetchType) {
+    EMASCurlResourceFetchTypeNetworkLoad,    // 从网络加载
+    EMASCurlResourceFetchTypeLocalCache,     // 从本地缓存加载
+    EMASCurlResourceFetchTypeServerPush      // 服务器推送（暂不支持）
+};
+
+/// 网络请求性能指标回调V2，兼容URLSessionTaskTransactionMetrics
+///
+/// param @request 发起请求使用的请求实例
+/// param @response 响应对象，如果出错则为nil
+/// param @success 请求是否成功
+/// param @error 错误信息，成功时为nil
+/// param @networkProtocolName 网络协议名称，如"h2", "http/1.1"等
+/// param @resourceFetchType 资源获取类型
+/// param @isProxyConnection 是否使用代理连接
+/// param @isReusedConnection 是否复用连接
+/// param @isCellular 是否使用蜂窝网络
+/// param @isExpensive 是否使用昂贵网络接口（如蜂窝网络）
+/// param @isConstrained 是否使用受限网络接口
+/// param @localAddress 本地IP地址
+/// param @localPort 本地端口号
+/// param @remoteAddress 远程IP地址
+/// param @remotePort 远程端口号
+/// param @tlsProtocolVersion TLS协议版本字符串，如"TLSv1.3"
+/// param @tlsCipherSuite TLS加密套件字符串
+/// param @requestHeaderBytesSent 发送的请求头字节数
+/// param @requestBodyBytesSent 发送的请求体字节数
+/// param @responseHeaderBytesReceived 接收的响应头字节数
+/// param @responseBodyBytesReceived 接收的响应体字节数
+/// param @domainLookupTime DNS查询耗时，单位毫秒
+/// param @connectTime TCP连接耗时，单位毫秒
+/// param @secureConnectionTime SSL/TLS握手耗时，单位毫秒
+/// param @requestTime 发送请求耗时，单位毫秒
+/// param @responseTime 接收响应耗时，单位毫秒
+/// param @totalTime 总耗时，单位毫秒
+typedef void(^EMASCurlMetricsObserverBlockV2)(
+    NSURLRequest * _Nonnull request,
+    NSURLResponse * _Nullable response,
+    BOOL success,
+    NSError * _Nullable error,
+    NSString * _Nullable networkProtocolName,
+    EMASCurlResourceFetchType resourceFetchType,
+    BOOL isProxyConnection,
+    BOOL isReusedConnection,
+    BOOL isCellular,
+    BOOL isExpensive,
+    BOOL isConstrained,
+    NSString * _Nullable localAddress,
+    NSNumber * _Nullable localPort,
+    NSString * _Nullable remoteAddress,
+    NSNumber * _Nullable remotePort,
+    NSString * _Nullable tlsProtocolVersion,
+    NSString * _Nullable tlsCipherSuite,
+    int64_t requestHeaderBytesSent,
+    int64_t requestBodyBytesSent,
+    int64_t responseHeaderBytesReceived,
+    int64_t responseBodyBytesReceived,
+    double domainLookupTime,
+    double connectTime,
+    double secureConnectionTime,
+    double requestTime,
+    double responseTime,
+    double totalTime
+);
+
 
 @interface EMASCurlProtocol : NSURLProtocol
 
 #pragma mark - New Configuration-based API (Recommended)
 
 // 使用配置对象拦截使用自定义`NSURLSessionConfiguration`创建的session发起的请求
-+ (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration *)sessionConfiguration 
++ (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration *)sessionConfiguration
                           configuration:(nonnull EMASCurlConfiguration *)configuration;
 
 #pragma mark - Legacy Static API (Backward Compatibility)
@@ -124,6 +190,9 @@ typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
 
 // 设置性能指标回调
 + (void)setMetricsObserverBlockForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlock)metricsObserverBlock;
+
+// 设置性能指标回调V2（推荐使用，兼容URLSessionTaskTransactionMetrics）
++ (void)setMetricsObserverBlockV2ForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlockV2)metricsObserverBlock;
 
 // 设置拦截域名白名单（全局设置，推荐使用配置对象）
 // 处理请求时，先检查黑名单，再检查白名单，只拦截白名单中的域名，传入nil时清除白名单

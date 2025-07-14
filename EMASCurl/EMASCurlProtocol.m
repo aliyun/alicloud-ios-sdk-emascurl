@@ -27,6 +27,7 @@
 
 static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMASCurlUploadProgressUpdateBlockKey";
 static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
+static NSString * _Nonnull const kEMASCurlMetricsObserverBlockV2Key = @"kEMASCurlMetricsObserverBlockV2Key";
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
 static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 
@@ -122,6 +123,8 @@ static const void *kEMASCurlWrapperKey = &kEMASCurlWrapperKey;
 @property (nonatomic, copy) EMASCurlUploadProgressUpdateBlock uploadProgressUpdateBlock;
 
 @property (nonatomic, copy) EMASCurlMetricsObserverBlock metricsObserverBlock;
+
+@property (nonatomic, copy) EMASCurlMetricsObserverBlockV2 metricsObserverBlockV2;
 
 @property (nonatomic, assign) double resolveDomainTimeInterval;
 
@@ -240,6 +243,10 @@ static EMASCurlConfiguration *s_globalConfiguration;
     [NSURLProtocol setProperty:[metricsObserverBlock copy] forKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
 }
 
++ (void)setMetricsObserverBlockV2ForRequest:(nonnull NSMutableURLRequest *)request metricsObserverBlock:(nonnull EMASCurlMetricsObserverBlockV2)metricsObserverBlock {
+    [NSURLProtocol setProperty:[metricsObserverBlock copy] forKey:kEMASCurlMetricsObserverBlockV2Key inRequest:request];
+}
+
 + (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)timeoutInterval {
     [NSURLProtocol setProperty:@(timeoutInterval) forKey:kEMASCurlConnectTimeoutIntervalKey inRequest:request];
 }
@@ -354,6 +361,7 @@ static EMASCurlConfiguration *s_globalConfiguration;
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
+        _metricsObserverBlockV2 = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockV2Key inRequest:request];
 
         _configuration = [[self class] configurationForCurrentClass];
     }
@@ -639,10 +647,12 @@ static EMASCurlConfiguration *s_globalConfiguration;
 }
 
 - (void)reportNetworkMetric:(BOOL)success error:(NSError *)error {
-    if (!self.metricsObserverBlock || !self.easyHandle) {
+    // 支持V1和V2两种metrics回调
+    if (!self.metricsObserverBlock && !self.metricsObserverBlockV2) {
         return;
     }
 
+    // 基础计时信息
     double nameLookupTime = 0;
     double connectTime = 0;
     double appConnectTime = 0;
@@ -650,30 +660,285 @@ static EMASCurlConfiguration *s_globalConfiguration;
     double startTransferTime = 0;
     double totalTime = 0;
 
-    if (self.resolveDomainTimeInterval > 0) {
-        nameLookupTime = self.resolveDomainTimeInterval;
-    } else {
-        curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+    if (self.easyHandle) {
+        if (self.resolveDomainTimeInterval > 0) {
+            nameLookupTime = self.resolveDomainTimeInterval;
+        } else {
+            curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+        }
+        curl_easy_getinfo(self.easyHandle, CURLINFO_CONNECT_TIME, &connectTime);
+        curl_easy_getinfo(self.easyHandle, CURLINFO_APPCONNECT_TIME, &appConnectTime);
+        curl_easy_getinfo(self.easyHandle, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
+        curl_easy_getinfo(self.easyHandle, CURLINFO_STARTTRANSFER_TIME, &startTransferTime);
+        curl_easy_getinfo(self.easyHandle, CURLINFO_TOTAL_TIME, &totalTime);
     }
-    curl_easy_getinfo(self.easyHandle, CURLINFO_CONNECT_TIME, &connectTime);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_APPCONNECT_TIME, &appConnectTime);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_STARTTRANSFER_TIME, &startTransferTime);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_TOTAL_TIME, &totalTime);
 
     // 记录性能指标
     EMAS_LOG_INFO(@"EC-Performance", @"Request completed in %.0fms (DNS: %.0fms, Connect: %.0fms, Transfer: %.0fms)",
                   totalTime * 1000, nameLookupTime * 1000, connectTime * 1000, startTransferTime * 1000);
 
-    self.metricsObserverBlock(self.request,
-                              success,
-                              error,
-                              nameLookupTime * 1000,
-                              connectTime * 1000,
-                              appConnectTime * 1000,
-                              preTransferTime * 1000,
-                              startTransferTime * 1000,
-                              totalTime * 1000);
+    // 调用V1回调（向后兼容）
+    if (self.metricsObserverBlock) {
+        self.metricsObserverBlock(self.request,
+                                  success,
+                                  error,
+                                  nameLookupTime * 1000,
+                                  connectTime * 1000,
+                                  appConnectTime * 1000,
+                                  preTransferTime * 1000,
+                                  startTransferTime * 1000,
+                                  totalTime * 1000);
+    }
+
+    // 调用V2回调（完整metrics）
+    if (self.metricsObserverBlockV2) {
+        [self reportNetworkMetricV2:success error:error];
+    }
+}
+
+- (void)reportNetworkMetricV2:(BOOL)success error:(NSError *)error {
+    // 基础时间信息
+    double nameLookupTime = 0;
+    double connectTime = 0;
+    double appConnectTime = 0;
+    double preTransferTime = 0;
+    double startTransferTime = 0;
+    double totalTime = 0;
+
+    // 网络协议信息
+    NSString *networkProtocolName = nil;
+
+    // 连接信息
+    BOOL isProxyConnection = NO;
+    BOOL isReusedConnection = NO;
+    NSString *localAddress = nil;
+    NSNumber *localPort = nil;
+    NSString *remoteAddress = nil;
+    NSNumber *remotePort = nil;
+
+    // TLS信息
+    NSString *tlsProtocolVersion = nil;
+    NSString *tlsCipherSuite = nil;
+
+    // 字节计数信息
+    int64_t requestHeaderBytesSent = 0;
+    int64_t requestBodyBytesSent = 0;
+    int64_t responseHeaderBytesReceived = 0;
+    int64_t responseBodyBytesReceived = 0;
+
+    if (self.easyHandle) {
+        // 获取基础时间信息（检查返回值确保数据有效）
+        if (self.resolveDomainTimeInterval > 0) {
+            nameLookupTime = self.resolveDomainTimeInterval;
+        } else {
+            if (curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime) != CURLE_OK) {
+                nameLookupTime = 0;
+            }
+        }
+
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_CONNECT_TIME, &connectTime) != CURLE_OK) {
+            connectTime = 0;
+        }
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_APPCONNECT_TIME, &appConnectTime) != CURLE_OK) {
+            appConnectTime = 0;
+        }
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_PRETRANSFER_TIME, &preTransferTime) != CURLE_OK) {
+            preTransferTime = 0;
+        }
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_STARTTRANSFER_TIME, &startTransferTime) != CURLE_OK) {
+            startTransferTime = 0;
+        }
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_TOTAL_TIME, &totalTime) != CURLE_OK) {
+            totalTime = 0;
+        }
+
+        // 获取HTTP版本信息
+        long httpVersion = 0;
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_HTTP_VERSION, &httpVersion) != CURLE_OK) {
+            httpVersion = CURL_HTTP_VERSION_1_1; // 默认值
+        }
+        switch (httpVersion) {
+            case CURL_HTTP_VERSION_1_0:
+                networkProtocolName = @"http/1.0";
+                break;
+            case CURL_HTTP_VERSION_1_1:
+                networkProtocolName = @"http/1.1";
+                break;
+            case CURL_HTTP_VERSION_2_0:
+                networkProtocolName = @"h2";
+                break;
+            case CURL_HTTP_VERSION_3:
+                networkProtocolName = @"h3";
+                break;
+            default:
+                networkProtocolName = @"http/1.1";
+                break;
+        }
+
+        // 获取连接信息
+        long proxyUsed = 0;
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_USED_PROXY, &proxyUsed) != CURLE_OK) {
+            proxyUsed = 0;
+        }
+        isProxyConnection = (proxyUsed != 0);
+
+        // 获取本地和远程地址信息
+        char *localIP = NULL;
+        char *remoteIP = NULL;
+        long localPortLong = 0;
+        long remotePortLong = 0;
+
+        curl_easy_getinfo(self.easyHandle, CURLINFO_LOCAL_IP, &localIP);
+        curl_easy_getinfo(self.easyHandle, CURLINFO_LOCAL_PORT, &localPortLong);
+        curl_easy_getinfo(self.easyHandle, CURLINFO_PRIMARY_IP, &remoteIP);
+        curl_easy_getinfo(self.easyHandle, CURLINFO_PRIMARY_PORT, &remotePortLong);
+
+        if (localIP) localAddress = [NSString stringWithUTF8String:localIP];
+        if (localPortLong > 0) localPort = @(localPortLong);
+        if (remoteIP) remoteAddress = [NSString stringWithUTF8String:remoteIP];
+        if (remotePortLong > 0) remotePort = @(remotePortLong);
+
+        // 获取TLS信息（如果是HTTPS）
+        if ([self.request.URL.scheme isEqualToString:@"https"] && appConnectTime > 0) {
+            // 如果有SSL握手时间，说明使用了TLS/SSL
+            // libcurl没有直接暴露TLS版本和加密套件的简单API
+            // 这里提供基于连接成功的推断信息
+            tlsProtocolVersion = @"TLS"; // 通用TLS指示
+            tlsCipherSuite = @"unknown"; // libcurl未直接提供
+        }
+
+        // 获取字节计数信息
+        double requestSize = 0;
+        double responseSize = 0;
+        long totalRequestSize = 0;
+        long responseHeaderSize = 0;
+
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_SIZE_UPLOAD, &requestSize) != CURLE_OK) {
+            requestSize = 0;
+        }
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_SIZE_DOWNLOAD, &responseSize) != CURLE_OK) {
+            responseSize = 0;
+        }
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_REQUEST_SIZE, &totalRequestSize) != CURLE_OK) {
+            totalRequestSize = 0;
+        }
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_HEADER_SIZE, &responseHeaderSize) != CURLE_OK) {
+            responseHeaderSize = 0;
+        }
+
+        // 请求体字节数（上传的实际数据）
+        requestBodyBytesSent = (int64_t)requestSize;
+
+        // 响应体字节数（下载的实际数据，不包括响应头）
+        responseBodyBytesReceived = (int64_t)responseSize;
+
+        // 请求头字节数（总请求大小减去请求体大小）
+        requestHeaderBytesSent = totalRequestSize - requestBodyBytesSent;
+        if (requestHeaderBytesSent < 0) {
+            requestHeaderBytesSent = 0;
+        }
+
+        // 响应头字节数（从libcurl直接获取）
+        responseHeaderBytesReceived = responseHeaderSize;
+    }
+
+    // 连接复用检测
+    long numConnects = 0;
+    if (self.easyHandle) {
+        if (curl_easy_getinfo(self.easyHandle, CURLINFO_NUM_CONNECTS, &numConnects) == CURLE_OK) {
+            // 如果没有建立新连接，说明复用了现有连接
+            isReusedConnection = (numConnects == 0);
+        }
+    }
+
+    // 网络类型检测（基于系统API）
+    BOOL isCellular = NO;
+    BOOL isExpensive = NO;
+    BOOL isConstrained = NO;
+
+    // 检测网络类型（需要导入SystemConfiguration框架）
+    #if TARGET_OS_IOS
+    // 在iOS上检测网络类型
+    if (@available(iOS 12.0, *)) {
+        // 使用现代网络检测API
+        // 这里需要额外的实现来检测网络类型
+        // 为了简化，暂时保持默认值
+    }
+    #endif
+
+    // 计算各阶段时间（转换为毫秒）
+    // 注意：libcurl的时间是累积的，需要正确计算各阶段时间差
+    double domainLookupTimeMs = nameLookupTime * 1000;
+    double connectTimeMs = connectTime > nameLookupTime ? (connectTime - nameLookupTime) * 1000 : 0;
+    double secureConnectionTimeMs = 0;
+    double requestTimeMs = 0;
+    double responseTimeMs = 0;
+    double totalTimeMs = totalTime * 1000;
+
+    // SSL握手时间计算（仅HTTPS有效）
+    if (appConnectTime > 0 && appConnectTime > connectTime) {
+        secureConnectionTimeMs = (appConnectTime - connectTime) * 1000;
+        // 如果有SSL，请求时间从appConnectTime开始计算
+        requestTimeMs = preTransferTime > appConnectTime ? (preTransferTime - appConnectTime) * 1000 : 0;
+    } else {
+        // 无SSL，请求时间从connectTime开始计算
+        requestTimeMs = preTransferTime > connectTime ? (preTransferTime - connectTime) * 1000 : 0;
+    }
+
+    // 响应时间计算
+    responseTimeMs = startTransferTime > preTransferTime ? (startTransferTime - preTransferTime) * 1000 : 0;
+
+    // 确保所有时间值为非负数
+    if (domainLookupTimeMs < 0) domainLookupTimeMs = 0;
+    if (connectTimeMs < 0) connectTimeMs = 0;
+    if (secureConnectionTimeMs < 0) secureConnectionTimeMs = 0;
+    if (requestTimeMs < 0) requestTimeMs = 0;
+    if (responseTimeMs < 0) responseTimeMs = 0;
+
+    // 构建响应对象
+    NSURLResponse *response = success ? [self buildResponseFromCurrentResponse] : nil;
+
+    // 调用V2回调
+    self.metricsObserverBlockV2(
+        self.request,
+        response,
+        success,
+        error,
+        networkProtocolName,
+        EMASCurlResourceFetchTypeNetworkLoad, // 当前实现总是网络加载
+        isProxyConnection,
+        isReusedConnection,
+        isCellular,
+        isExpensive,
+        isConstrained,
+        localAddress,
+        localPort,
+        remoteAddress,
+        remotePort,
+        tlsProtocolVersion,
+        tlsCipherSuite,
+        requestHeaderBytesSent,
+        requestBodyBytesSent,
+        responseHeaderBytesReceived,
+        responseBodyBytesReceived,
+        domainLookupTimeMs,
+        connectTimeMs,
+        secureConnectionTimeMs,
+        requestTimeMs,
+        responseTimeMs,
+        totalTimeMs
+    );
+}
+
+- (NSURLResponse *)buildResponseFromCurrentResponse {
+    if (!self.currentResponse || self.currentResponse.statusCode <= 0) {
+        return nil;
+    }
+
+    return [[NSHTTPURLResponse alloc] initWithURL:self.request.URL
+                                       statusCode:self.currentResponse.statusCode
+                                      HTTPVersion:self.currentResponse.httpVersion
+                                     headerFields:self.currentResponse.headers];
 }
 
 #pragma mark * curl option setup
