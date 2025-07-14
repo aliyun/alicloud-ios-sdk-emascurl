@@ -10,7 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
-#define EMASCURL_SDK_VERSION @"1.3.2"
+#define EMASCURL_SDK_VERSION @"1.3.3"
 
 /// 提供一个便捷易用的DNS Hook机制，类似OKHTTP中的DNS配置
 @protocol EMASCurlProtocolDNSResolver <NSObject>
