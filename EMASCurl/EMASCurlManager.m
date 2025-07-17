@@ -126,9 +126,9 @@
             if (_completionMap.count > 0) {
                 [_condition unlock];
 
-                // 等待网络事件，超时时间为1秒
+                // 等待网络事件，超时时间为250ms
                 int numfds = 0;
-                CURLMcode result = curl_multi_wait(_multiHandle, NULL, 0, 1000, &numfds);
+                CURLMcode result = curl_multi_wait(_multiHandle, NULL, 0, 250, &numfds);
                 if (result != CURLM_OK) {
                     EMAS_LOG_ERROR(@"EC-Manager", @"curl_multi_wait failed: %s", curl_multi_strerror(result));
                 }
@@ -136,7 +136,8 @@
                 [_condition lock];
             }
         }
-        [_condition unlock];
+        // 因为全局都复用同一个manager，不会释放，因此理论上不会退出while循环
+        // [_condition unlock];
     }
 
     EMAS_LOG_INFO(@"EC-Manager", @"Network thread stopped");

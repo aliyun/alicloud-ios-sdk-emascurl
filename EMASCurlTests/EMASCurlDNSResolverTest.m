@@ -25,6 +25,21 @@ static NSURLSession *session;
 
 @end
 
+@interface TestDNSResolverWithFallback : NSObject <EMASCurlProtocolDNSResolver>
+@end
+
+@implementation TestDNSResolverWithFallback
+
++ (nullable NSString *)resolveDomain:(nonnull NSString *)domain {
+    if ([domain isEqualToString:@"fallback.emascurl.local"]) {
+        // 返回多个IP，第一个是不可访问的10.254.254.254，第二个是可用的127.0.0.1
+        return @"10.254.254.254,127.0.0.1";
+    }
+    return nil;
+}
+
+@end
+
 @interface EMASCurlDNSResolverTestBase : XCTestCase
 @property (nonatomic, strong) NSMutableData *receivedData;
 @end
@@ -112,6 +127,42 @@ static NSURLSession *session;
 
 - (void)testCustomDNSResolutionWithInvalidDomain {
     [self verifyCustomDNSResolutionWithInvalidDomainAndEndpoint:HTTP11_ENDPOINT];
+}
+
+- (void)testDNSFallbackToSecondIP {
+    // 使用返回多个IP的DNS解析器
+    [EMASCurlProtocol setDNSResolver:[TestDNSResolverWithFallback class]];
+
+    NSString *testURL = [NSString stringWithFormat:@"%@%@", HTTP11_ENDPOINT, PATH_ECHO];
+    // 替换为测试域名
+    testURL = [testURL stringByReplacingOccurrencesOfString:@"127.0.0.1" withString:@"fallback.emascurl.local"];
+
+    NSURL *url = [NSURL URLWithString:testURL];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    __block NSError *receivedError = nil;
+    __block NSHTTPURLResponse *receivedResponse = nil;
+
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        receivedError = error;
+        receivedResponse = (NSHTTPURLResponse *)response;
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    [dataTask resume];
+
+    // 等待请求完成，给予足够的时间让libcurl尝试第一个IP并回退到第二个
+    XCTAssertEqual(dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC)), 0, @"Request timed out");
+
+    // 验证请求成功（说明libcurl成功回退到了第二个IP）
+    XCTAssertNil(receivedError, @"Request should succeed after falling back to second IP, but got error: %@", receivedError);
+    XCTAssertNotNil(receivedResponse, @"Should receive a response");
+    XCTAssertEqual(receivedResponse.statusCode, 200, @"Expected 200 status code after DNS fallback");
+
+    // 恢复原来的DNS解析器
+    [EMASCurlProtocol setDNSResolver:[TestDNSResolver class]];
 }
 
 @end
