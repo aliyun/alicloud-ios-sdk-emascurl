@@ -10,7 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
-#define EMASCURL_SDK_VERSION @"1.3.3"
+#define EMASCURL_SDK_VERSION @"1.3.4"
 
 /// 提供一个便捷易用的DNS Hook机制，类似OKHTTP中的DNS配置
 @protocol EMASCurlProtocolDNSResolver <NSObject>
@@ -159,6 +159,10 @@ typedef NS_ENUM(NSInteger, EMASCurlLogLevel) {
 
 // 设置DNS解析器
 + (void)setDNSResolver:(nonnull Class<EMASCurlProtocolDNSResolver>)dnsResolver;
+
+// 设置连接超时，单位秒，默认2.5秒
+// 影响所有未单独设置连接超时的请求
++ (void)setConnectTimeoutInterval:(NSTimeInterval)timeoutInterval;
 
 // 设置连接超时，单位秒
 // `NSURLSession`未提供设置连接超时的方式，因此这里单独提供

@@ -61,7 +61,7 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
 
 ## 最新版本
 
-- 当前版本：1.3.3
+- 当前版本：1.3.4
 
 ## 快速入门
 
@@ -784,7 +784,7 @@ target 'yourAppTarget' do
 end
 ```
 
-当前版本: 1.3.3
+当前版本: 1.3.4
 
 ### 配置WKWebView
 

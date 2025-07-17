@@ -159,6 +159,9 @@ static dispatch_queue_t s_cacheQueue;
 // 全局综合性能指标观察回调
 static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverBlock = nil;
 
+// 全局连接超时时间（毫秒），默认2500ms
+static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
+
 @implementation EMASCurlProtocol
 
 #pragma mark * user API
@@ -223,6 +226,11 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
 + (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)timeoutInterval {
     [NSURLProtocol setProperty:@(timeoutInterval) forKey:kEMASCurlConnectTimeoutIntervalKey inRequest:request];
+}
+
++ (void)setConnectTimeoutInterval:(NSTimeInterval)timeoutInterval {
+    s_globalConnectTimeoutInterval = timeoutInterval;
+    EMAS_LOG_INFO(@"EC-Config", @"Connect timeout set to %.1f seconds", timeoutInterval);
 }
 
 + (void)setHijackDomainWhiteList:(nullable NSArray<NSString *> *)domainWhiteList {
@@ -673,7 +681,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     }
 
     if (startTransferTime > 0) {
-        metrics.responseStartDate = [NSDate dateWithTimeIntervalSince1970:baseTime + preTransferTime];
+        metrics.responseStartDate = [NSDate dateWithTimeIntervalSince1970:baseTime + startTransferTime];
     }
 
     if (totalTime > 0) {
@@ -1018,9 +1026,16 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 设置连接超时时间
     NSNumber *connectTimeoutInterval = [NSURLProtocol propertyForKey:(NSString *)kEMASCurlConnectTimeoutIntervalKey inRequest:self.request];
+    NSTimeInterval connectTimeout;
     if (connectTimeoutInterval) {
-        curl_easy_setopt(easyHandle, CURLOPT_CONNECTTIMEOUT, connectTimeoutInterval.longValue);
+        // 使用请求级别的连接超时设置
+        connectTimeout = connectTimeoutInterval.doubleValue;
+        EMAS_LOG_DEBUG(@"EC-Timeout", @"Using per-request connect timeout: %.1f seconds", connectTimeout);
+    } else {
+        // 使用全局连接超时设置
+        connectTimeout = s_globalConnectTimeoutInterval;
     }
+    curl_easy_setopt(easyHandle, CURLOPT_CONNECTTIMEOUT_MS, (long)(connectTimeout * 1000));
 
     // 设置请求超时时间
     NSTimeInterval requestTimeoutInterval = self.request.timeoutInterval;
