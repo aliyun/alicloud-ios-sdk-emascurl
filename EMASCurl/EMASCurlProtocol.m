@@ -681,7 +681,7 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     }
 
     if (startTransferTime > 0) {
-        metrics.responseStartDate = [NSDate dateWithTimeIntervalSince1970:baseTime + preTransferTime];
+        metrics.responseStartDate = [NSDate dateWithTimeIntervalSince1970:baseTime + startTransferTime];
     }
 
     if (totalTime > 0) {

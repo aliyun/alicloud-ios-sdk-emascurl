@@ -33,7 +33,7 @@ static NSURLSession *session;
 + (nullable NSString *)resolveDomain:(nonnull NSString *)domain {
     if ([domain isEqualToString:@"fallback.emascurl.local"]) {
         // 返回多个IP，第一个是不可访问的10.254.254.254，第二个是可用的127.0.0.1
-        return @"10.254.254.254,127.0.0.1";
+        return @"10.254.254.253,10.254.254.254,127.0.0.1";
     }
     return nil;
 }
@@ -114,6 +114,7 @@ static NSURLSession *session;
 
 + (void)setUp {
     [EMASCurlProtocol setDebugLogEnabled:YES];
+    [EMASCurlProtocol setConnectTimeoutInterval:1.5];
     [EMASCurlProtocol setDNSResolver:[TestDNSResolver class]];
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];

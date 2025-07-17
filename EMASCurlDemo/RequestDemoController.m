@@ -15,7 +15,20 @@
     self.title = @"Request Demo";
     self.view.backgroundColor = [UIColor whiteColor];
 
-    // 设置全局综合性能指标回调（推荐使用）- 等价于URLSessionTaskTransactionMetrics
+    [self setupSession];
+    [self setupUI];
+}
+
+- (void)setupSession {
+    NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    configuration.timeoutIntervalForRequest = 30;
+    configuration.timeoutIntervalForResource = 300;
+
+    [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
+    [EMASCurlProtocol setCacheEnabled:YES];
+    [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
+
+    // 设置全局综合性能指标回调（推荐使用）- 基本等价于URLSessionTaskTransactionMetrics
     [EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
         NSLog(@"全局综合性能指标 [%@]:\n"
               "成功: %d\n"
@@ -64,18 +77,7 @@
               metrics.tlsCipherSuite ?: @"未使用");
     }];
 
-    [self setupSession];
-    [self setupUI];
-}
-
-- (void)setupSession {
-    NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
-    configuration.timeoutIntervalForRequest = 30;
-    configuration.timeoutIntervalForResource = 300;
-
-    [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
-    [EMASCurlProtocol setCacheEnabled:YES];
-    [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
+    [EMASCurlProtocol setConnectTimeoutInterval:3];
     [EMASCurlProtocol installIntoSessionConfiguration:configuration];
 
     self.session = [NSURLSession sessionWithConfiguration:configuration
@@ -109,7 +111,7 @@
 }
 
 - (void)getButtonTapped {
-    NSString *urlString = @"https://hk.xuyecan1919.tech/api/config";
+    NSString *urlString = @"https://httpbin.org/get";
     NSURL *url = [NSURL URLWithString:urlString];
 
     self.resultTextView.text = @""; // Clear previous results
