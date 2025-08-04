@@ -136,8 +136,6 @@ static BOOL s_enableDebugLog;
 
 // 标记是否启用了手动代理
 static BOOL s_manualProxyEnabled;
-// 定时更新系统代理设置的定时器
-static NSTimer *s_proxyUpdateTimer;
 
 // 拦截域名白名单
 static NSArray<NSString *> *s_domainWhiteList;
@@ -254,29 +252,15 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
 }
 
 + (void)setManualProxyServer:(nullable NSString *)proxyServerURL {
-    __block BOOL shouldInvalidateTimer = NO;
-    __block BOOL shouldStartTimer = NO;
-
     dispatch_sync(s_serialQueue, ^{
         if (proxyServerURL && proxyServerURL.length > 0) {
             s_manualProxyEnabled = YES;
             s_proxyServer = [proxyServerURL copy];
-            shouldInvalidateTimer = YES;
+            EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy enabled: %@", proxyServerURL);
         } else {
             s_manualProxyEnabled = NO;
             s_proxyServer = nil;
-            shouldStartTimer = YES;
-        }
-    });
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if (shouldInvalidateTimer && s_proxyUpdateTimer) {
-            [s_proxyUpdateTimer invalidate];
-            s_proxyUpdateTimer = nil;
-            EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy enabled: %@", proxyServerURL);
-        } else if (shouldStartTimer && !s_proxyUpdateTimer) {
-            [self startProxyUpdatingTimer];
-            EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy disabled, reverting to system settings");
+            EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy disabled, will use system settings");
         }
     });
 }
@@ -336,48 +320,30 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         s_serialQueue = dispatch_queue_create("com.alicloud.emascurl.serialQueue", DISPATCH_QUEUE_SERIAL);
         s_cacheQueue = dispatch_queue_create("com.alicloud.emascurl.cacheQueue", DISPATCH_QUEUE_SERIAL);
     });
-
-    // 设置定时任务读取proxy
-    [self startProxyUpdatingTimer];
 }
 
-+ (void)startProxyUpdatingTimer {
-    // 确保在主线程上操作定时器
-    dispatch_async(dispatch_get_main_queue(), ^{
-        // 如果定时器已存在，先停止旧的
-        if (s_proxyUpdateTimer) {
-            [s_proxyUpdateTimer invalidate];
-            s_proxyUpdateTimer = nil;
-        }
-        // 设置一个定时器，10s更新一次proxy设置
-        NSTimer *timer = [NSTimer timerWithTimeInterval:10.0
-                                                 target:self
-                                               selector:@selector(updateProxySettings)
-                                               userInfo:nil
-                                                repeats:YES];
-        [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
-        s_proxyUpdateTimer = timer; // 保存定时器实例
-        [self updateProxySettings]; // 立即执行一次更新
-    });
-}
+// 获取当前代理设置，优先使用手动设置的代理，否则读取系统代理设置
++ (nullable NSString *)getCurrentProxyServer {
+    __block NSString *currentProxy = nil;
 
-+ (void)updateProxySettings {
     dispatch_sync(s_serialQueue, ^{
-        // If manual proxy is enabled, don't update anything
+        // 如果启用了手动代理，直接返回手动设置的代理
         if (s_manualProxyEnabled) {
+            currentProxy = s_proxyServer;
             return;
         }
 
-        // Get and process system proxy within the locked section
+        // 否则读取系统代理设置
         CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
         if (!proxySettings) {
-            s_proxyServer = nil;
             return;
         }
 
         NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
-        if (!(proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable])) {
-            s_proxyServer = nil;
+
+        // 检查是否启用了HTTP代理
+        NSNumber *httpEnabled = proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable];
+        if (!httpEnabled || ![httpEnabled boolValue]) {
             CFRelease(proxySettings);
             return;
         }
@@ -386,13 +352,13 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
 
         if (httpProxy && httpPort) {
-            s_proxyServer = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
-        } else {
-            s_proxyServer = nil;
+            currentProxy = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
         }
 
         CFRelease(proxySettings);
     });
+
+    return currentProxy;
 }
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
@@ -993,12 +959,14 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         curl_easy_setopt(easyHandle, CURLOPT_COOKIE, [cookieString UTF8String]);
     }
 
-    dispatch_sync(s_serialQueue, ^{
-        // 设置proxy
-        if (s_proxyServer) {
-            curl_easy_setopt(easyHandle, CURLOPT_PROXY, [s_proxyServer UTF8String]);
-        }
-    });
+    // 设置代理，每次请求时动态读取
+    NSString *currentProxy = [self.class getCurrentProxyServer];
+    if (currentProxy) {
+        curl_easy_setopt(easyHandle, CURLOPT_PROXY, [currentProxy UTF8String]);
+        EMAS_LOG_DEBUG(@"EC-Proxy", @"Using proxy: %@", currentProxy);
+    } else {
+        EMAS_LOG_DEBUG(@"EC-Proxy", @"No proxy configured");
+    }
 
     // 设置debug回调函数以输出日志
     if (s_enableDebugLog) {
