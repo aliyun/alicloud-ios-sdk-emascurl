@@ -45,7 +45,7 @@ typedef NS_ENUM(NSInteger, EMASLocalHttpProxyLogLevel) {
  *  - 多客户端支持：同时支持NSURLSession和WKWebView
  *
  *  支持的网络客户端：
- *  - NSURLSession：支持iOS 12.0+，通过connectionProxyDictionary配置
+ *  - NSURLSession：支持iOS 17.0+，通过proxyConfigurations API配置
  *  - WKWebView：需要iOS 17.0+，通过WKWebsiteDataStore配置
  *
  *  使用场景：
@@ -128,13 +128,13 @@ API_AVAILABLE(ios(12.0))
  *  配置NSURLSessionConfiguration使用本地代理
  *
  *  将本地代理服务集成到NSURLSession网络请求中，支持HTTPS请求通过代理转发
- *  支持iOS 12.0+，基于Network.framework实现，是推荐的集成方式
+ *  支持iOS 17.0+，使用现代proxyConfigurations API，基于Network.framework实现
  *
  *  执行流程：
  *  1. 检查代理服务运行状态
  *  2. 获取当前代理端口信息
- *  3. 配置URLSession代理字典
- *  4. 应用HTTPS代理配置
+ *  3. 创建nw_proxy_config_t代理配置对象
+ *  4. 应用proxyConfigurations到URLSession配置
  *
  *  @return YES表示代理配置成功，NO表示使用系统网络
  *
@@ -145,7 +145,7 @@ API_AVAILABLE(ios(12.0))
  *  NSURLSession *session = [NSURLSession sessionWithConfiguration:config];
  *  @endcode
  */
-+ (BOOL)installIntoUrlSessionConfiguration:(NSURLSessionConfiguration *)configuration API_AVAILABLE(ios(12.0));
++ (BOOL)installIntoUrlSessionConfiguration:(NSURLSessionConfiguration *)configuration API_AVAILABLE(ios(17.0));
 
 
 #pragma mark - WKWebView集成（iOS 17.0+）

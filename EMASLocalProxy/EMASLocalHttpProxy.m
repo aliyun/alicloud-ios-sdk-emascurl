@@ -18,8 +18,6 @@
 //
 
 #import "EMASLocalHttpProxy.h"
-#import <Network/Network.h>
-#import <netdb.h>
 
 #pragma mark - 常量定义
 
@@ -88,6 +86,15 @@ static BOOL _shouldLog(EMASLocalHttpProxyLogLevel level) {
 
 /// 数据中继辅助方法，避免递归调用
 - (void)scheduleNextReceiveFrom:(nw_connection_t)source to:(nw_connection_t)destination onQueue:(dispatch_queue_t)queue;
+
+@end
+
+// iOS 17+ Proxy Configuration Support
+// https://developer.apple.com/documentation/foundation/nsurlsessionconfiguration/proxyconfigurations?language=objc
+API_AVAILABLE(ios(17.0))
+@interface NSURLSessionConfiguration (ProxyConfigurations)
+
+@property (copy) NSArray<NSObject<OS_nw_proxy_config> *> *proxyConfigurations;
 
 @end
 
@@ -964,33 +971,44 @@ static BOOL _shouldLog(EMASLocalHttpProxyLogLevel level) {
         return NO;
     }
 
-    EMASLocalHttpProxy *proxy = [EMASLocalHttpProxy sharedInstance];
+    // 系统版本检查 - 要求iOS 17.0+
+    if (@available(iOS 17.0, *)) {
+        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("System version supports URLSession proxy configuration");
 
-    // 检查代理服务运行状态
-    if (!proxy.isProxyReady) {
-        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Proxy service not running, clearing proxy configuration");
-        // 清理代理配置，恢复使用系统网络
-        configuration.connectionProxyDictionary = nil;
-        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Configured URLSession to use system network (proxy cleared)");
+        EMASLocalHttpProxy *proxy = [EMASLocalHttpProxy sharedInstance];
+
+        // 检查代理服务运行状态
+        if (!proxy.isProxyReady) {
+            EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Proxy service not running, clearing URLSession proxy configuration");
+            // 清理代理配置，恢复使用系统网络
+            configuration.proxyConfigurations = @[];
+            EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Configured URLSession to use system network (proxy cleared)");
+            return NO;
+        }
+
+        // 代理服务正常运行，配置URLSession使用本地代理
+        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Proxy service running normally, starting URLSession proxy configuration");
+
+        // 创建代理端点配置
+        NSString *proxyHost = @"127.0.0.1";
+        NSString *proxyPortString = [NSString stringWithFormat:@"%d", proxy.proxyPort];
+        nw_endpoint_t proxyEndpoint = nw_endpoint_create_host([proxyHost UTF8String], [proxyPortString UTF8String]);
+
+        // 创建HTTP CONNECT代理配置
+        nw_proxy_config_t proxyConfig = nw_proxy_config_create_http_connect(proxyEndpoint, NULL);
+        if (proxyConfig) {
+            configuration.proxyConfigurations = @[proxyConfig];
+            EMAS_LOCAL_HTTP_PROXY_LOG_INFO("URLSession proxy configuration successful (iOS 17.0+ API) - listening address: %@:%d", proxyHost, proxy.proxyPort);
+            return YES;
+        } else {
+            EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("Cannot create proxy configuration object");
+            configuration.proxyConfigurations = @[];
+            return NO;
+        }
+    } else {
+        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("System version below iOS 17.0, URLSession proxy configuration not supported");
         return NO;
     }
-
-    // 代理服务正常运行，配置URLSession使用本地代理
-    EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Proxy service running normally, starting URLSession proxy configuration");
-
-    NSString *proxyHost = @"127.0.0.1";
-    NSNumber *proxyPort = @(proxy.proxyPort);
-
-    // 创建代理配置字典
-    // 仅配置HTTPS代理，使用CONNECT隧道处理所有HTTPS请求
-    configuration.connectionProxyDictionary = @{
-        @"HTTPSEnable": @1,
-        @"HTTPSProxy": proxyHost,
-        @"HTTPSPort": proxyPort,
-    };
-
-    EMAS_LOCAL_HTTP_PROXY_LOG_INFO("URLSession proxy configuration successful (HTTPS only) - listening address: %@:%@", proxyHost, proxyPort);
-    return YES;
 }
 
 

@@ -45,6 +45,7 @@
 		94F806892E52B6E300B6FE7A /* EMASLocalProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = 94F806882E52B6E300B6FE7A /* EMASLocalProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		94F806A02E52C26100B6FE7A /* EMASLocalHttpProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = 94F8069F2E52C26100B6FE7A /* EMASLocalHttpProxy.m */; };
 		94F806A12E52C26100B6FE7A /* EMASLocalHttpProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = 94F8069E2E52C26100B6FE7A /* EMASLocalHttpProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		94F806C22E53141100B6FE7A /* LocalProxyDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 94F806C12E53141100B6FE7A /* LocalProxyDemoController.m */; };
 		9ED156F40066301702A9AC72 /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7550AA13D3ADD72163B2F6 /* libcurl-HTTP2.xcframework */; };
 /* End PBXBuildFile section */
 
@@ -139,6 +140,8 @@
 		94F806882E52B6E300B6FE7A /* EMASLocalProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalProxy.h; sourceTree = "<group>"; };
 		94F8069E2E52C26100B6FE7A /* EMASLocalHttpProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalHttpProxy.h; sourceTree = "<group>"; };
 		94F8069F2E52C26100B6FE7A /* EMASLocalHttpProxy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASLocalHttpProxy.m; sourceTree = "<group>"; };
+		94F806C02E53141100B6FE7A /* LocalProxyDemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LocalProxyDemoController.h; sourceTree = "<group>"; };
+		94F806C12E53141100B6FE7A /* LocalProxyDemoController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LocalProxyDemoController.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -267,6 +270,8 @@
 				6F3F60352CD0E0890014025B /* ViewController.m */,
 				9492D6A42D30226200008A84 /* RequestDemoController.h */,
 				9492D6A52D30226200008A84 /* RequestDemoController.m */,
+				94F806C02E53141100B6FE7A /* LocalProxyDemoController.h */,
+				94F806C12E53141100B6FE7A /* LocalProxyDemoController.m */,
 				9492D6A62D30226200008A84 /* WkWebViewDemoController.h */,
 				9492D6A72D30226200008A84 /* WkWebViewDemoController.m */,
 			);
@@ -628,6 +633,7 @@
 				9492D6A82D30226200008A84 /* RequestDemoController.m in Sources */,
 				9492D6A92D30226200008A84 /* WkWebViewDemoController.m in Sources */,
 				6F3F60372CD0E0890014025B /* AppDelegate.m in Sources */,
+				94F806C22E53141100B6FE7A /* LocalProxyDemoController.m in Sources */,
 				6F3F60382CD0E0890014025B /* main.m in Sources */,
 				6F3F60392CD0E0890014025B /* SceneDelegate.m in Sources */,
 				6F3F603A2CD0E0890014025B /* ViewController.m in Sources */,
@@ -933,7 +939,7 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -968,7 +974,7 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

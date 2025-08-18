@@ -18,7 +18,6 @@ Pod::Spec.new do |s|
     ]
 
     s.requires_arc = true
-    s.frameworks = 'Foundation', 'Network'
 
     s.xcconfig = {
       'HEADER_SEARCH_PATHS' => '$(inherited) ${PODS_ROOT}/EMASLocalProxy/EMASLocalProxy'
