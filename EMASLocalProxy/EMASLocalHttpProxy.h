@@ -7,11 +7,10 @@
 //  提供透明代理支持，集成自定义DNS解析服务
 //
 //  主要功能：
-//  • 自动启动本地HTTP代理服务（支持iOS 12.0+）
-//  • 支持HTTPS CONNECT协议代理
+//  • 自动启动本地HTTP代理服务
 //  • 无缝集成自定义DNS解析服务（如HTTPDNS）
 //  • WKWebView代理配置支持（需要iOS 17.0+）
-//  • NSURLSession代理配置支持（支持iOS 12.0+）
+//  • NSURLSession代理配置支持（支持iOS 17.0+）
 //
 //  Created by Alibaba Cloud EMAS Team on 2025/06/28.
 //
@@ -103,21 +102,29 @@ API_AVAILABLE(ios(12.0))
  *  设置自定义DNS解析器
  *
  *  通过此方法可注入自定义DNS解析逻辑，实现与具体DNS服务的解耦
- *  支持各种DNS服务，如阿里云HTTPDNS、腾讯云HTTPDNS、自建DNS等
- *
  *
  *  @code
  *  // 示例：集成阿里云HTTPDNS
- *  [EMASLocalHttpProxy setDNSResolverBlock:^NSArray<NSString *> *(NSString *hostname) {
- *      NSString *ip = [[HttpDnsService sharedInstance] getIpByHostSync:hostname];
- *      return ip ? @[ip] : nil;
+ *  [EMASLocalHttpProxy setDNSResolverBlock:^NSArray<NSString *> * _Nullable(NSString * _Nonnull hostname) {
+ *      HttpDnsService *httpdns = [HttpDnsService sharedInstance];
+ *      HttpdnsResult *result = [httpdns resolveHostSyncNonBlocking:hostname byIpType:HttpdnsQueryIPTypeBoth];
+ *
+ *      if (result && (result.hasIpv4Address || result.hasIpv6Address)) {
+ *          NSMutableArray<NSString *> *allIPs = [NSMutableArray array];
+ *          if (result.hasIpv4Address) {
+ *              [allIPs addObjectsFromArray:result.ips];
+ *          }
+ *          if (result.hasIpv6Address) {
+ *              [allIPs addObjectsFromArray:result.ipv6s];
+ *          }
+ *          NSLog(@"HTTPDNS解析成功，域名: %@, IP: %@", hostname, allIPs);
+ *          return allIPs;
+ *      }
+ *
+ *      NSLog(@"HTTPDNS解析失败，域名: %@", hostname);
+ *      return nil;
  *  }];
  *
- *  // 示例：集成自定义DNS解析
- *  [EMASLocalHttpProxy setDNSResolverBlock:^NSArray<NSString *> *(NSString *hostname) {
- *      NSArray *ips = [MyCustomDNSResolver resolveHostToMultipleIPs:hostname];
- *      return ips;
- *  }];
  *  @endcode
  */
 + (void)setDNSResolverBlock:(NSArray<NSString *> * _Nullable (^)(NSString *hostname))resolverBlock API_AVAILABLE(ios(12.0));

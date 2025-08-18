@@ -2,17 +2,15 @@
 //  EMASLocalHttpProxy.m
 //  iOS Local HTTP Proxy Solution
 //
-//  EMAS本地HTTPS代理服务实现
-//  支持多种网络客户端（NSURLSession、WKWebView）通过HTTPS CONNECT隧道进行安全连接
-//  集成自定义DNS解析服务，提供网络访问优化和监控功能
+//  EMAS本地HTTP代理服务实现
+//  支持多种客户端类型：WKWebView、NSURLSession等
+//  提供透明代理支持，集成自定义DNS解析服务
 //
-//  功能特性：
-//  - 自动启动本地HTTPS代理服务（支持iOS 12.0+）
-//  - 仅支持HTTPS CONNECT协议隧道
-//  - 支持集成自定义DNS解析器
-//  - 运行时异常自动降级到系统网络
-//  - NSURLSession代理配置支持（iOS 12.0+）
-//  - WKWebView代理配置支持（iOS 17.0+）
+//  主要功能：
+//  • 自动启动本地HTTP代理服务
+//  • 无缝集成自定义DNS解析服务（如HTTPDNS）
+//  • WKWebView代理配置支持（需要iOS 17.0+）
+//  • NSURLSession代理配置支持（支持iOS 17.0+）
 //
 //  Created by Alibaba Cloud EMAS Team on 2025/06/28.
 //
