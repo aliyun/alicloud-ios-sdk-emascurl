@@ -53,44 +53,44 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
     - [快速入门](#快速入门)
       - [从CocoaPods引入依赖](#从cocoapods引入依赖-1)
       - [使用EMASCurl发送网络请求](#使用emascurl发送网络请求)
-  - [构建EMASCurl](#构建emascurl)
-    - [构建工具安装](#构建工具安装)
-    - [拉取子模块](#拉取子模块)
-    - [构建libcurl.xcframework](#构建libcurlxcframework)
-    - [构建EMASCurl xcframework](#构建emascurl-xcframework)
-  - [集成EMASCurl](#集成emascurl)
-    - [CocoaPods引入依赖](#cocoapods引入依赖)
-      - [指定Master仓库和阿里云仓库](#指定master仓库和阿里云仓库)
-      - [添加依赖](#添加依赖)
-      - [安装依赖](#安装依赖)
-    - [本地手动集成依赖](#本地手动集成依赖)
-      - [将framework文件添加到工程中](#将framework文件添加到工程中)
-      - [添加Linker Flags](#添加linker-flags)
-      - [添加CA证书文件路径（如果使用自签名证书）](#添加ca证书文件路径如果使用自签名证书)
-  - [使用EMASCurl](#使用emascurl)
-    - [开启EMASCurl拦截](#开启emascurl拦截)
-      - [拦截`NSURLSessionConfiguration`](#拦截nsurlsessionconfiguration)
-      - [拦截`sharedSession`](#拦截sharedsession)
-    - [与HTTPDNS配合使用](#与httpdns配合使用-1)
-    - [选择HTTP版本](#选择http版本)
-    - [设置CA证书文件路径](#设置ca证书文件路径)
-    - [设置Cookie存储](#设置cookie存储)
-    - [设置连接超时](#设置连接超时)
-    - [设置上传进度回调](#设置上传进度回调)
-    - [设置性能指标回调](#设置性能指标回调)
-      - [全局综合性能指标回调（强烈推荐）](#全局综合性能指标回调强烈推荐)
-      - [单个请求性能指标回调（已废弃）](#单个请求性能指标回调已废弃)
-    - [开启调试日志](#开启调试日志)
-      - [设置日志级别](#设置日志级别)
-      - [组件化日志](#组件化日志)
-    - [设置请求拦截域名白名单和黑名单](#设置请求拦截域名白名单和黑名单)
-    - [设置Gzip压缩](#设置gzip压缩)
-    - [设置内部重定向支持](#设置内部重定向支持)
-    - [设置公钥固定 (Public Key Pinning)](#设置公钥固定-public-key-pinning)
-    - [设置证书校验](#设置证书校验)
-    - [设置域名校验](#设置域名校验)
-    - [设置手动代理服务器](#设置手动代理服务器)
-    - [设置HTTP缓存](#设置http缓存)
+    - [构建EMASCurl](#构建emascurl)
+      - [构建工具安装](#构建工具安装)
+      - [拉取子模块](#拉取子模块)
+      - [构建libcurl.xcframework](#构建libcurlxcframework)
+      - [构建EMASCurl xcframework](#构建emascurl-xcframework)
+    - [集成EMASCurl](#集成emascurl)
+      - [CocoaPods引入依赖](#cocoapods引入依赖)
+        - [指定Master仓库和阿里云仓库](#指定master仓库和阿里云仓库)
+        - [添加依赖](#添加依赖)
+        - [安装依赖](#安装依赖)
+      - [本地手动集成依赖](#本地手动集成依赖)
+        - [将framework文件添加到工程中](#将framework文件添加到工程中)
+        - [添加Linker Flags](#添加linker-flags)
+        - [添加CA证书文件路径（如果使用自签名证书）](#添加ca证书文件路径如果使用自签名证书)
+    - [使用EMASCurl](#使用emascurl)
+      - [开启EMASCurl拦截](#开启emascurl拦截)
+        - [拦截`NSURLSessionConfiguration`](#拦截nsurlsessionconfiguration)
+        - [拦截`sharedSession`](#拦截sharedsession)
+      - [与HTTPDNS配合使用](#与httpdns配合使用-1)
+      - [选择HTTP版本](#选择http版本)
+      - [设置CA证书文件路径](#设置ca证书文件路径)
+      - [设置Cookie存储](#设置cookie存储)
+      - [设置连接超时](#设置连接超时)
+      - [设置上传进度回调](#设置上传进度回调)
+      - [设置性能指标回调](#设置性能指标回调)
+        - [全局综合性能指标回调（强烈推荐）](#全局综合性能指标回调强烈推荐)
+        - [单个请求性能指标回调（已废弃）](#单个请求性能指标回调已废弃)
+      - [开启调试日志](#开启调试日志)
+        - [设置日志级别](#设置日志级别)
+        - [组件化日志](#组件化日志)
+      - [设置请求拦截域名白名单和黑名单](#设置请求拦截域名白名单和黑名单)
+      - [设置Gzip压缩](#设置gzip压缩)
+      - [设置内部重定向支持](#设置内部重定向支持)
+      - [设置公钥固定 (Public Key Pinning)](#设置公钥固定-public-key-pinning)
+      - [设置证书校验](#设置证书校验)
+      - [设置域名校验](#设置域名校验)
+      - [设置手动代理服务器](#设置手动代理服务器)
+      - [设置HTTP缓存](#设置http缓存)
   - [License](#license)
   - [联系我们](#联系我们)
 
@@ -383,11 +383,11 @@ NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
 [dataTask resume];
 ```
 
-## 构建EMASCurl
+### 构建EMASCurl
 
 本章节介绍如何使用本仓库本地构建EMASCurl `xcframework`。
 
-### 构建工具安装
+#### 构建工具安装
 
 构建过程中需要使用`git`克隆代码、使用`automake`、`autoconf`、`libtool`、`pkg-config`等构建工具、使用`gem`、`ruby`、`xcodeproj`等工具，请您确认这些命令行工具已经安装在本机。如果尚未安装，请参考以下安装命令：
 
@@ -397,7 +397,7 @@ brew install ruby
 gem install xcodeproj
 ```
 
-### 拉取子模块
+#### 拉取子模块
 
 本仓库以`submodule`的形式管理依赖的仓库，在克隆后需要手动拉取子模块。
 
@@ -412,7 +412,7 @@ git submodule update --init --recursive --progress
 | curl             | curl-8_10_1 |
 | nghttp2         | v1.64.0     |
 
-### 构建libcurl.xcframework
+#### 构建libcurl.xcframework
 
 ```shell
 ./build_libcurl_xcframework.sh
@@ -420,7 +420,7 @@ git submodule update --init --recursive --progress
 
 运行完脚本后，在`out`文件夹下会生成**libcurl-HTTP2.xcframework**。
 
-### 构建EMASCurl xcframework
+#### 构建EMASCurl xcframework
 
 ```shell
 pod install --repo-update
@@ -428,15 +428,15 @@ pod install --repo-update
 ```
 运行完脚本后，在`Build/http2/emascurl`文件夹下会生成**EMASCurl.xcframework**，本框架目前支持HTTP1、HTTP2。
 
-## 集成EMASCurl
+### 集成EMASCurl
 
 本章节介绍如何将EMASCurl添加到您的应用中。
 
 我们提供了CocoaPods引入依赖和本地手动集成两种方式，推荐工程使用CocoaPods管理依赖。
 
-### CocoaPods引入依赖
+#### CocoaPods引入依赖
 
-#### 指定Master仓库和阿里云仓库
+##### 指定Master仓库和阿里云仓库
 
 EMASCurl和其他EMAS产品的iOS SDK，都是发布到阿里云EMAS官方维护的GitHub仓库中，因此，您需要在您的`Podfile`文件中包含该仓库地址。
 
@@ -444,7 +444,7 @@ EMASCurl和其他EMAS产品的iOS SDK，都是发布到阿里云EMAS官方维护
 source 'https://github.com/aliyun/aliyun-specs.git'
 ```
 
-#### 添加依赖
+##### 添加依赖
 
 为您需要依赖EMASCurl的target添加如下依赖。
 
@@ -454,7 +454,7 @@ use_framework!
 pod 'EMASCurl', 'x.x.x'
 ```
 
-#### 安装依赖
+##### 安装依赖
 
 在您的Terminal中进入`Podfile`所在目录，执行以下命令安装依赖。
 
@@ -462,27 +462,27 @@ pod 'EMASCurl', 'x.x.x'
 pod install --repo-update
 ```
 
-### 本地手动集成依赖
+#### 本地手动集成依赖
 
-#### 将framework文件添加到工程中
+##### 将framework文件添加到工程中
 
 您需要首先按照**EMASCurl构建**的步骤在本地构建出**EMASCurl.xcframework**，然后在Xcode工程项目中（`Build Phases` -> `Link Binary With Libraries`）添加对于**EMASCurl.xcframework**的依赖。
 
-#### 添加Linker Flags
+##### 添加Linker Flags
 
 EMASCurl会使用`zlib`进行HTTP压缩与解压，因此您需要为应用的TARGETS -> Build Settings -> Linking -> Other Linker Flags添加上`-lz`与`-ObjC`。
 
-#### 添加CA证书文件路径（如果使用自签名证书）
+##### 添加CA证书文件路径（如果使用自签名证书）
 
 如果您使用自签名证书，还需将CA证书文件路径设置到EMASCurl中，具体请参考[使用EMASCurl](#使用emascurl)章节中的相关内容。
 
-## 使用EMASCurl
+### 使用EMASCurl
 
-### 开启EMASCurl拦截
+#### 开启EMASCurl拦截
 
 目前EMASCurl有两种开启方式，第一种方式是拦截指定`NSURLSessionConfiguration`创建的`NSURLSession`发起的请求，第二种方式是拦截全局的`sharedSession`发起的请求。
 
-#### 拦截`NSURLSessionConfiguration`
+##### 拦截`NSURLSessionConfiguration`
 
 ```objc
 + (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration *)sessionConfiguration;
@@ -517,7 +517,7 @@ NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
 [dataTask resume];
 ```
 
-#### 拦截`sharedSession`
+##### 拦截`sharedSession`
 
 ```objc
 + (void)registerCurlProtocol;
@@ -557,7 +557,7 @@ NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
 + (void)unregisterCurlProtocol;
 ```
 
-### 与HTTPDNS配合使用
+#### 与HTTPDNS配合使用
 
 EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需要实现以下的DNS接口：
 
@@ -613,7 +613,7 @@ EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需
 [EMASCurlProtocol setDNSResolver:[MyDNSResolver class]];
 ```
 
-### 选择HTTP版本
+#### 选择HTTP版本
 
 ```objc
 + (void)setHTTPVersion:(HTTPVersion)version;
@@ -624,7 +624,7 @@ EMASCurl默认使用HTTP2版本，更高版本会包含低版本的能力。需�
 **HTTP1**: 使用HTTP1.1
 **HTTP2**: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
 
-### 设置CA证书文件路径
+#### 设置CA证书文件路径
 
 ```objc
 + (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath;
@@ -639,7 +639,7 @@ NSString *caFilePath = [[NSBundle mainBundle] pathForResource:@"my_ca" ofType:@"
 [EMASCurlProtocol setSelfSignedCAFilePath:caFilePath];
 ```
 
-### 设置Cookie存储
+#### 设置Cookie存储
 
 ```objc
 + (void)setBuiltInCookieStorageEnabled:(BOOL)enabled;
@@ -647,7 +647,7 @@ NSString *caFilePath = [[NSBundle mainBundle] pathForResource:@"my_ca" ofType:@"
 
 EMASCurl默认开启内部Cookie存储功能，但只支持到[RFC 6265]标准。如果您选择关闭内置Cookie存储，在依赖cookie能力时，需要自行处理请求/响应中的cookie字段。
 
-### 设置连接超时
+#### 设置连接超时
 
 ```objc
 + (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)connectTimeoutInSeconds;
@@ -665,7 +665,7 @@ request.timeoutInterval = 20;
 [EMASCurlProtocol setConnectTimeoutIntervalForRequest:request connectTimeoutInterval:10.0];
 ```
 
-### 设置上传进度回调
+#### 设置上传进度回调
 
 ```objc
 typedef void(^EMASCurlUploadProgressUpdateBlock)(NSURLRequest * _Nonnull request,
@@ -687,9 +687,9 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 }];
 ```
 
-### 设置性能指标回调
+#### 设置性能指标回调
 
-#### 全局综合性能指标回调（强烈推荐）
+##### 全局综合性能指标回调（强烈推荐）
 
 EMASCurl提供基本等价于`URLSessionTaskTransactionMetrics`的完整性能指标：
 
@@ -759,7 +759,7 @@ EMASCurl提供基本等价于`URLSessionTaskTransactionMetrics`的完整性能�
 // [EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:nil];
 ```
 
-#### 单个请求性能指标回调（已废弃）
+##### 单个请求性能指标回调（已废弃）
 
 为了向下兼容，仍支持为单个请求设置性能指标回调，但建议使用全局回调：
 
@@ -773,11 +773,11 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 
 **注意：** 单个请求回调的优先级高于全局回调。如果某个请求设置了单独的回调，将使用该回调而不是全局回调。
 
-### 开启调试日志
+#### 开启调试日志
 
 EMASCurl提供了多级别的日志系统，支持组件化的日志记录，便于调试和问题排查。
 
-#### 设置日志级别
+##### 设置日志级别
 
 ```objc
 + (void)setLogLevel:(EMASCurlLogLevel)logLevel;
@@ -805,7 +805,7 @@ NSLog(@"当前日志级别: %ld", (long)currentLevel);
 [EMASCurlProtocol setLogLevel:EMASCurlLogLevelDebug];
 ```
 
-#### 组件化日志
+##### 组件化日志
 
 EMASCurl使用组件化的日志记录，每个日志消息都会标明来源组件，便于问题定位：
 
@@ -833,7 +833,7 @@ EMASCurl使用组件化的日志记录，每个日志消息都会标明来源组
 [2024-12-27 10:30:15.200] [INFO] [EC-Manager] Transfer completed successfully for URL: https://example.com (HTTP 200)
 ```
 
-### 设置请求拦截域名白名单和黑名单
+#### 设置请求拦截域名白名单和黑名单
 
 ```objc
 + (void)setHijackDomainWhiteList:(nullable NSArray<NSString *> *)domainWhiteList;
@@ -859,7 +859,7 @@ EMASCurl允许您设置域名白名单和黑名单来控制哪些请求会被拦
 [EMASCurlProtocol setHijackDomainWhiteList:nil];
 ```
 
-### 设置Gzip压缩
+#### 设置Gzip压缩
 
 ```objc
 + (void)setBuiltInGzipEnabled:(BOOL)enabled;
@@ -874,7 +874,7 @@ EMASCurl默认开启内部Gzip压缩。开启后，请求的header中会自动�
 [EMASCurlProtocol setBuiltInGzipEnabled:NO];
 ```
 
-### 设置内部重定向支持
+#### 设置内部重定向支持
 
 ```objc
 + (void)setBuiltInRedirectionEnabled:(BOOL)enabled;
@@ -889,7 +889,7 @@ EMASCurl可以配置是否自动处理HTTP重定向（如301、302等状态码�
 [EMASCurlProtocol setBuiltInRedirectionEnabled:YES];
 ```
 
-### 设置公钥固定 (Public Key Pinning)
+#### 设置公钥固定 (Public Key Pinning)
 
 ```objc
 + (void)setPublicKeyPinningKeyPath:(nullable NSString *)publicKeyPath;
@@ -925,7 +925,7 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 // [EMASCurlProtocol setPublicKeyPinningKeyPath:nil];
 ```
 
-### 设置证书校验
+#### 设置证书校验
 
 ```objc
 + (void)setCertificateValidationEnabled:(BOOL)enabled;
@@ -946,7 +946,7 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 // [EMASCurlProtocol setCertificateValidationEnabled:YES];
 ```
 
-### 设置域名校验
+#### 设置域名校验
 
 ```objc
 + (void)setDomainNameVerificationEnabled:(BOOL)enabled;
@@ -967,7 +967,7 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 // [EMASCurlProtocol setDomainNameVerificationEnabled:YES];
 ```
 
-### 设置手动代理服务器
+#### 设置手动代理服务器
 
 ```objc
 + (void)setManualProxyServer:(nullable NSString *)proxyServerURL;
@@ -992,7 +992,7 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 // [EMASCurlProtocol setManualProxyServer:nil];
 ```
 
-### 设置HTTP缓存
+#### 设置HTTP缓存
 
 ```objc
 + (void)setCacheEnabled:(BOOL)enabled;
