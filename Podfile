@@ -8,7 +8,7 @@ target 'EMASCurlDemo' do
 
   pod 'AlicloudHTTPDNS', '3.2.1'
   pod 'EMASCurl', :path => './EMASCurlHttp2.podspec'
-  pod 'EMASCurlWeb', :path => './EMASCurlWeb.podspec'
+  pod 'EMASLocalProxy', :path => './EMASLocalProxy.podspec'
 end
 
 post_install do |installer|
