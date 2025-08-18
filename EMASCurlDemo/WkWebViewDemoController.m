@@ -3,9 +3,6 @@
 #import "EMASLocalProxy.h"
 #import <AlicloudHttpDNS/AlicloudHttpDNS.h>
 
-
-
-
 @interface WkWebViewDemoController () <UITextFieldDelegate>
 @property (nonatomic, strong) WKWebView *webView;
 @property (nonatomic, strong) UILabel *statusLabel;

@@ -1,5 +1,6 @@
 #import "LocalProxyDemoController.h"
 #import <EMASLocalProxy/EMASLocalHttpProxy.h>
+#import <AlicloudHttpDNS/AlicloudHttpDNS.h>
 
 @interface LocalProxyDemoController () <NSURLSessionDataDelegate>
 @property (nonatomic, strong) UIButton *getButton;
@@ -31,6 +32,30 @@
 
     if (@available(iOS 17.0, *)) {
         if ([EMASLocalHttpProxy isProxyReady]) {
+            // 设置HTTPDNS解析器（类似于WkWebViewDemoController中的模式）
+            [EMASLocalHttpProxy setDNSResolverBlock:^NSArray<NSString *> *(NSString *hostname) {
+                HttpDnsService *httpdns = [HttpDnsService sharedInstance];
+                HttpdnsResult* result = [httpdns resolveHostSyncNonBlocking:hostname byIpType:HttpdnsQueryIPTypeBoth];
+
+                if (result && (result.hasIpv4Address || result.hasIpv6Address)) {
+                    NSMutableArray<NSString *> *allIPs = [NSMutableArray array];
+                    if (result.hasIpv4Address) {
+                        [allIPs addObjectsFromArray:result.ips];
+                    }
+                    if (result.hasIpv6Address) {
+                        [allIPs addObjectsFromArray:result.ipv6s];
+                    }
+                    NSLog(@"HTTPDNS解析成功，域名: %@, IP: %@", hostname, allIPs);
+                    return allIPs;
+                }
+
+                NSLog(@"HTTPDNS解析失败，域名: %@", hostname);
+                return nil;
+            }];
+
+            // 设置代理日志级别
+            [EMASLocalHttpProxy setLogLevel:EMASLocalHttpProxyLogLevelInfo];
+
             BOOL success = [EMASLocalHttpProxy installIntoUrlSessionConfiguration:configuration];
             NSLog(@"Local proxy installation: %@", success ? @"SUCCESS" : @"FAILED");
         }

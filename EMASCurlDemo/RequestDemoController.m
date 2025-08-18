@@ -1,5 +1,33 @@
 #import "RequestDemoController.h"
 #import <EMASCurl/EMASCurl.h>
+#import <AlicloudHttpDNS/AlicloudHttpDNS.h>
+
+// DNS resolver implementation for HTTPDNS integration
+@interface RequestDemoDNSResolver : NSObject <EMASCurlProtocolDNSResolver>
+@end
+
+@implementation RequestDemoDNSResolver
++ (nullable NSString *)resolveDomain:(nonnull NSString *)domain {
+    HttpDnsService *httpdns = [HttpDnsService sharedInstance];
+    HttpdnsResult* result = [httpdns resolveHostSyncNonBlocking:domain byIpType:HttpdnsQueryIPTypeBoth];
+
+    if (result && (result.hasIpv4Address || result.hasIpv6Address)) {
+        NSMutableArray<NSString *> *allIPs = [NSMutableArray array];
+        if (result.hasIpv4Address) {
+            [allIPs addObjectsFromArray:result.ips];
+        }
+        if (result.hasIpv6Address) {
+            [allIPs addObjectsFromArray:result.ipv6s];
+        }
+        NSString *combinedIPs = [allIPs componentsJoinedByString:@","];
+        NSLog(@"HTTPDNS解析成功，域名: %@, IP: %@", domain, combinedIPs);
+        return combinedIPs;
+    }
+
+    NSLog(@"HTTPDNS解析失败，域名: %@", domain);
+    return nil;
+}
+@end
 
 @interface RequestDemoController () <NSURLSessionDataDelegate>
 @property (nonatomic, strong) UIButton *getButton;
@@ -29,6 +57,9 @@
     [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
     [EMASCurlProtocol setCacheEnabled:YES];
     [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
+
+    // 设置HTTPDNS解析器
+    [EMASCurlProtocol setDNSResolver:[RequestDemoDNSResolver class]];
 
     // 设置全局综合性能指标回调（推荐使用）- 基本等价于URLSessionTaskTransactionMetrics
     [EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
