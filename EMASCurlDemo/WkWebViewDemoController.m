@@ -1,6 +1,6 @@
 #import "WkWebViewDemoController.h"
 #import <WebKit/WebKit.h>
-#import "EMASLocalProxy.h"
+#import <EMASLocalProxy/EMASLocalProxy.h>
 #import <AlicloudHttpDNS/AlicloudHttpDNS.h>
 
 @interface WkWebViewDemoController () <UITextFieldDelegate>
@@ -14,7 +14,7 @@
 
 #pragma mark - Proxy Configuration
 
-- (BOOL)configureWithLocalProxy:(WKWebViewConfiguration *)configuration API_AVAILABLE(ios(17.0)) {
+- (BOOL)configureWithLocalProxy:(WKWebViewConfiguration *)configuration {
     // Check if proxy service is ready first
     if (![EMASLocalHttpProxy isProxyReady]) {
         NSLog(@"EMASLocalHttpProxy service is not ready yet");

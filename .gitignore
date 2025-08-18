@@ -259,3 +259,6 @@ CLAUDE.md
 
 # cursor
 .cursor/
+
+# tmp
+tmp/

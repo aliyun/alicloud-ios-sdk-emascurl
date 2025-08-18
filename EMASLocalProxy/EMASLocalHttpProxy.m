@@ -899,7 +899,7 @@ API_AVAILABLE(ios(17.0))
     }
 }
 
-+ (BOOL)installIntoWebViewConfiguration:(WKWebViewConfiguration *)configuration API_AVAILABLE(ios(17.0)) {
++ (BOOL)installIntoWebViewConfiguration:(WKWebViewConfiguration *)configuration {
     // 参数有效性检查
     if (!configuration) {
         EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("WebView configuration object is null, cannot install proxy");

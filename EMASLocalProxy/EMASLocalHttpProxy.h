@@ -53,7 +53,6 @@ typedef NS_ENUM(NSInteger, EMASLocalHttpProxyLogLevel) {
  *  - 网络访问监控和分析
  *  - 网络请求调试和优化
  */
-API_AVAILABLE(ios(12.0))
 @interface EMASLocalHttpProxy : NSObject
 
 #pragma mark - 核心服务管理
@@ -80,7 +79,7 @@ API_AVAILABLE(ios(12.0))
  *  }
  *  @endcode
  */
-+ (BOOL)isProxyReady API_AVAILABLE(ios(12.0));
++ (BOOL)isProxyReady;
 
 /**
  *  设置代理服务日志级别
@@ -96,7 +95,7 @@ API_AVAILABLE(ios(12.0))
  *  [EMASLocalHttpProxy setLogLevel:EMASLocalHttpProxyLogLevelError];
  *  @endcode
  */
-+ (void)setLogLevel:(EMASLocalHttpProxyLogLevel)logLevel API_AVAILABLE(ios(12.0));
++ (void)setLogLevel:(EMASLocalHttpProxyLogLevel)logLevel;
 
 /**
  *  设置自定义DNS解析器
@@ -127,7 +126,7 @@ API_AVAILABLE(ios(12.0))
  *
  *  @endcode
  */
-+ (void)setDNSResolverBlock:(NSArray<NSString *> * _Nullable (^)(NSString *hostname))resolverBlock API_AVAILABLE(ios(12.0));
++ (void)setDNSResolverBlock:(NSArray<NSString *> * _Nullable (^)(NSString *hostname))resolverBlock;
 
 #pragma mark - NSURLSession集成
 
@@ -152,7 +151,7 @@ API_AVAILABLE(ios(12.0))
  *  NSURLSession *session = [NSURLSession sessionWithConfiguration:config];
  *  @endcode
  */
-+ (BOOL)installIntoUrlSessionConfiguration:(NSURLSessionConfiguration *)configuration API_AVAILABLE(ios(17.0));
++ (BOOL)installIntoUrlSessionConfiguration:(NSURLSessionConfiguration *)configuration;
 
 
 #pragma mark - WKWebView集成（iOS 17.0+）
@@ -180,7 +179,7 @@ API_AVAILABLE(ios(12.0))
  *
  *  @warning 此方法需要iOS 17.0+，在较低版本系统上会返回NO
  */
-+ (BOOL)installIntoWebViewConfiguration:(WKWebViewConfiguration *)configuration API_AVAILABLE(ios(17.0));
++ (BOOL)installIntoWebViewConfiguration:(WKWebViewConfiguration *)configuration;
 
 
 @end

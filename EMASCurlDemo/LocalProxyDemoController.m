@@ -1,5 +1,5 @@
 #import "LocalProxyDemoController.h"
-#import <EMASLocalProxy/EMASLocalHttpProxy.h>
+#import <EMASLocalProxy/EMASLocalProxy.h>
 #import <AlicloudHttpDNS/AlicloudHttpDNS.h>
 
 @interface LocalProxyDemoController () <NSURLSessionDataDelegate>
