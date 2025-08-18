@@ -18,6 +18,12 @@
 #pragma mark - Proxy Configuration
 
 - (BOOL)configureWithLocalProxy:(WKWebViewConfiguration *)configuration API_AVAILABLE(ios(17.0)) {
+    // Check if proxy service is ready first
+    if (![EMASLocalHttpProxy isProxyReady]) {
+        NSLog(@"EMASLocalHttpProxy service is not ready yet");
+        return NO;
+    }
+    
     // Setup DNS resolver with Block-based interface for EMASHttpLocalProxy
     [EMASLocalHttpProxy setDNSResolverBlock:^NSArray<NSString *> *(NSString *hostname) {
         HttpDnsService *httpdns = [HttpDnsService sharedInstance];
@@ -102,13 +108,13 @@
         NSLog(@"iOS < 17.0: Using standard WebView without proxy");
     }
 
-    // Update status label
+    // Update status label based on installation result
     if (@available(iOS 17.0, *)) {
         if (proxyConfigured) {
-            self.statusLabel.text = @"LocalProxy: Active ✓";
+            self.statusLabel.text = @"LocalProxy: Installed ✓";
             self.statusLabel.textColor = [UIColor systemGreenColor];
         } else {
-            self.statusLabel.text = @"LocalProxy: Configuration Failed";
+            self.statusLabel.text = @"LocalProxy: Installation Failed";
             self.statusLabel.textColor = [UIColor systemRedColor];
         }
     } else {
@@ -189,5 +195,6 @@
                                    safeArea.size.width,
                                    safeArea.size.height - topControlsHeight);
 }
+
 
 @end
