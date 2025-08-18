@@ -256,3 +256,6 @@ __pycache__/
 # claude
 .claude/
 CLAUDE.md
+
+# cursor
+.cursor/
