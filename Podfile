@@ -1,7 +1,7 @@
 source 'https://github.com/CocoaPods/Specs.git'
 source 'https://github.com/aliyun/aliyun-specs.git'
 
-platform :ios, '13.0'
+platform :ios, '12.0'
 
 target 'EMASCurlDemo' do
   use_frameworks!
