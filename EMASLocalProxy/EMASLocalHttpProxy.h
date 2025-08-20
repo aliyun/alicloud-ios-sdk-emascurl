@@ -134,13 +134,13 @@ typedef NS_ENUM(NSInteger, EMASLocalHttpProxyLogLevel) {
  *  配置NSURLSessionConfiguration使用本地代理
  *
  *  将本地代理服务集成到NSURLSession网络请求中，支持HTTPS请求通过代理转发
- *  支持iOS 17.0+，使用现代proxyConfigurations API，基于Network.framework实现
+ *  支持iOS 10.0+，iOS 17.0+优先使用proxyConfigurations API，低版本使用connectionProxyDictionary
  *
  *  执行流程：
  *  1. 检查代理服务运行状态
  *  2. 获取当前代理端口信息
- *  3. 创建nw_proxy_config_t代理配置对象
- *  4. 应用proxyConfigurations到URLSession配置
+ *  3. iOS 17.0+: 创建nw_proxy_config_t并使用proxyConfigurations API
+ *  4. iOS 10.0-16.x: 使用connectionProxyDictionary配置代理字典
  *
  *  @return YES表示代理配置成功，NO表示使用系统网络
  *

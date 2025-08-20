@@ -12,7 +12,7 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
 ### EMASLocalProxy - 统一代理方案 (推荐)
 
 **适用场景**：
-本方案只面向iOS 17.0+的系统生效。对于低版本系统，会自动忽略代理，走到默认系统网络库实现，无副作用。
+本方案推荐在 iOS 17.0+ 系统使用，充分利用原生 proxyConfigurations 能力；在低版本系统下，WKWebView 不支持；NSURLSession 仅对 HTTPS 请求生效（明文 HTTP 不经代理，直连系统网络）。
 
 根据Apple官方统计数据（截至2025年6月4日），在系统版本分布上，iOS 17+已经占全部iPhone设备的85%以上，且在持续增长中。因此，考虑到HTTPDNS为WkWebView场景带来的是防劫持、调度精准、解析及时生效等非功能性提升，建议只需要在iOS 17+的系统版本上接入HTTPDNS，通过一个比较终态的接入方案，覆盖大部分客户，且旧版本系统用户，也会在后续的陆续版本升级中，逐渐享受这个能力。
 
@@ -25,9 +25,9 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
 
 | 特性 | EMASLocalProxy | EMASCurl |
 |:---|:---:|:---:|
-| **iOS版本要求** | iOS 17.0+ | iOS 10.0+ |
-| **NSURLSession支持** | ✅ 原生代理 | ✅ 协议拦截 |
-| **WKWebView支持** | ✅ 原生代理 | ❌ |
+| **iOS版本要求** | iOS 17.0+（<17 有兼容差异） | iOS 10.0+ |
+| **NSURLSession支持** | ✅ iOS17+ 原生代理；<17 仅HTTPS | ✅ 协议拦截 |
+| **WKWebView支持** | ✅ iOS17+ 原生代理；<17 ❌ | ❌ |
 | **配置复杂度** | 简单 | 中等 |
 | **HTTPDNS集成** | ✅ | ✅ |
 | **维护成本** | 低 | 中等 |
@@ -97,6 +97,11 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
 
 ## EMASLocalProxy - 统一代理方案
 
+### 已知限制
+
+- iOS 17 以下：WKWebView 不支持代理
+- iOS 17 以下：NSURLSession 仅 HTTPS 走代理，HTTP 明文请求不走代理
+
 ### 简介
 
 EMASLocalProxy是阿里云EMAS团队提供的本地HTTPS代理服务，为iOS应用提供统一的网络代理解决方案。通过在本地启动HTTPS代理服务，EMASLocalProxy能够同时为NSURLSession和WKWebView提供网络代理能力，使所有网络请求都能享受以下好处：
@@ -121,11 +126,13 @@ target 'yourAppTarget' do
 end
 ```
 
-当前版本: 1.3.5
+当前版本: 1.3.6
 
 ### NSURLSession集成
 
 EMASLocalProxy为NSURLSession提供了简单的集成方式，只需要一行代码即可启用代理。
+
+> 兼容性说明：iOS 17 以下系统仅 HTTPS 请求会通过本地代理，明文 HTTP 请求不会走代理（直连系统网络）。
 
 **重要提示**：EMASLocalProxy代理服务启动需要数百毫秒时间，建议您根据应用场景选择合适的初始化策略。
 
@@ -246,6 +253,8 @@ EMASLocalProxy为NSURLSession提供了简单的集成方式，只需要一行代
 ```
 
 ### WKWebView集成
+
+仅在 iOS 17.0+ 支持通过 proxyConfigurations 配置代理；低于 iOS 17 不支持 WKWebView 代理。
 
 WKWebView的代理配置相对简单，因为WebView通常不会在应用启动时立即加载：
 
