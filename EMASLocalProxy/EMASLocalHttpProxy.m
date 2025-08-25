@@ -904,6 +904,13 @@ API_AVAILABLE(ios(17.0))
 
 #pragma mark - 静态API实现
 
++ (uint16_t)proxyPort {
+    // 获取共享实例并返回其代理端口
+    // atomic 属性确保读取操作的线程安全性
+    EMASLocalHttpProxy *proxy = [EMASLocalHttpProxy sharedInstance];
+    return proxy.proxyPort;
+}
+
 + (BOOL)isProxyReady {
     // 获取共享实例并返回其就绪状态
     // atomic 属性确保读取操作的线程安全性
