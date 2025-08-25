@@ -150,16 +150,128 @@ def create_app():
         total_size = 0
 
         content_type = request.headers.get("Content-Type", "application/octet-stream")
+        logger.info(f"Starting slow PUT upload, Content-Type: {content_type}")
 
         # Read the body data in chunks
+        chunk_count = 0
         async for chunk in request.stream():
-            total_size += len(chunk)
+            chunk_count += 1
+            chunk_len = len(chunk)
+            total_size += chunk_len
+            logger.info(f"Received chunk {chunk_count}: {chunk_len} bytes, total so far: {total_size}")
             await asyncio.sleep(1)  # Simulate slow processing
 
+        logger.info(f"Upload complete: {total_size} bytes in {chunk_count} chunks")
         return {
             "content_type": content_type,
             "size": total_size
         }
+
+    @app.post("/upload/post/slow_403")
+    async def upload_file_slow_403(request: Request):
+        """Handle file upload with slow reading and return 403 error during transfer"""
+        logger.info("Starting slow upload with 403 error endpoint")
+        total_size = 0
+
+        # 直接读取原始请求体，不解析multipart
+        content_length = int(request.headers.get("content-length", 0))
+        logger.info(f"Content-Length: {content_length}")
+
+        # 模拟慢速读取并在中途返回403错误
+        try:
+            # 读取原始字节流
+            body = await request.body()
+            total_size = len(body)
+            logger.info(f"Read total body: {total_size} bytes")
+
+            # 模拟分块处理
+            chunk_size = 200 * 1024
+            processed = 0
+            while processed < total_size:
+                chunk_end = min(processed + chunk_size, total_size)
+                processed = chunk_end
+
+                logger.info(f"Processed {processed} bytes of {total_size}")
+
+                # 模拟服务器慢速处理
+                await asyncio.sleep(1)
+
+                # 当处理超过500KB后返回403错误
+                if processed > 500 * 1024:
+                    logger.info(f"Returning 403 error after processing {processed} bytes")
+                    raise HTTPException(status_code=403, detail="Forbidden: File rejected during upload")
+
+        except HTTPException:
+            # 重新抛出HTTP异常
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during upload: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error during upload")
+
+        # 这个分支不应该被执行到
+        return {
+            "status": "upload_completed",
+            "size": total_size
+        }
+
+    @app.put("/upload/put/slow_403")
+    async def upload_file_put_slow_403(request: Request):
+        """Handle PUT upload with slow reading and return 403 error during transfer"""
+        logger.info("Starting slow PUT upload with 403 error endpoint")
+        total_size = 0
+
+        content_type = request.headers.get("Content-Type", "application/octet-stream")
+        content_length = int(request.headers.get("content-length", 0))
+        logger.info(f"Content-Length: {content_length}")
+
+        # 模拟慢速读取并在中途返回403错误
+        try:
+            # 读取原始字节流
+            body = await request.body()
+            total_size = len(body)
+            logger.info(f"Read total body: {total_size} bytes")
+
+            # 模拟分块处理
+            chunk_size = 200 * 1024
+            processed = 0
+            while processed < total_size:
+                chunk_end = min(processed + chunk_size, total_size)
+                processed = chunk_end
+
+                logger.info(f"Processed {processed} bytes of {total_size}")
+
+                # 模拟服务器慢速处理
+                await asyncio.sleep(1)
+
+                # 当处理超过500KB后返回403错误
+                if processed > 500 * 1024:
+                    logger.info(f"Returning 403 error after processing {processed} bytes")
+                    raise HTTPException(status_code=403, detail="Forbidden: File rejected during upload")
+
+        except HTTPException:
+            # 重新抛出HTTP异常
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during upload: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error during upload")
+
+        # 这个分支不应该被执行到
+        return {
+            "content_type": content_type,
+            "size": total_size
+        }
+
+    @app.post("/upload/post/immediate_403")
+    async def upload_file_immediate_403(request: Request):
+        """Immediately return 403 error without reading any data"""
+        logger.info("Immediately returning 403 error for upload request")
+        raise HTTPException(status_code=403, detail="Forbidden: Upload rejected immediately")
+
+    @app.put("/upload/put/immediate_403")
+    async def upload_file_put_immediate_403(request: Request):
+        """Immediately return 403 error without reading any data"""
+        logger.info("Immediately returning 403 error for PUT upload request")
+        raise HTTPException(status_code=403, detail="Forbidden: PUT upload rejected immediately")
 
 
     @app.get("/download/1MB_data_at_200KBps_speed")
@@ -254,6 +366,47 @@ def create_app():
         # Sleep for 2 seconds to simulate a slow response
         await asyncio.sleep(2)
         return {"message": "Response after delay"}
+
+    @app.post("/half_close_test")
+    async def half_close_test(request: Request):
+        """
+        专门用于测试半关闭场景的端点
+        根据请求头中的测试场景参数执行不同的半关闭行为
+        """
+        test_scenario = request.headers.get("X-Test-Scenario", "default")
+        logger.info(f"Half-close test scenario: {test_scenario}")
+
+        # 读取请求体数据
+        body_data = await request.body()
+        content_length = len(body_data) if body_data else 0
+
+        # 模拟处理延时
+        await asyncio.sleep(1)
+
+        if test_scenario == "bidirectional":
+            # 双向半关闭场景：接收完整数据后返回响应
+            return {
+                "scenario": "bidirectional",
+                "received_bytes": content_length,
+                "status": "half_close_handled",
+                "message": "Bidirectional half-close test completed"
+            }
+        elif test_scenario == "server_close":
+            # 服务器主动关闭场景
+            return {
+                "scenario": "server_close",
+                "received_bytes": content_length,
+                "status": "server_initiated_close",
+                "message": "Server initiated close after processing"
+            }
+        else:
+            # 默认半关闭处理
+            return {
+                "scenario": "default",
+                "received_bytes": content_length,
+                "status": "normal_processing",
+                "message": "Default half-close handling completed"
+            }
 
     return app
 
