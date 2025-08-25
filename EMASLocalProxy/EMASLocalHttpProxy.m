@@ -82,8 +82,8 @@ static BOOL _shouldLog(EMASLocalHttpProxyLogLevel level) {
 
 #pragma mark - 私有方法
 
-/// 数据中继辅助方法，避免递归调用
-- (void)scheduleNextReceiveFrom:(nw_connection_t)source to:(nw_connection_t)destination onQueue:(dispatch_queue_t)queue;
+/// 数据中继：保持单次接收在飞，发送完成后再继续接收
+- (void)scheduleNextReceiveFrom:(nw_connection_t)source to:(nw_connection_t)destination;
 
 /// NSURLSession代理配置相关私有方法
 + (BOOL)setupModernProxyConfiguration:(NSURLSessionConfiguration *)configuration proxy:(EMASLocalHttpProxy *)proxy;
@@ -638,16 +638,16 @@ API_AVAILABLE(ios(17.0))
 #pragma mark - 数据转发
 
 - (void)relayFrom:(nw_connection_t)source to:(nw_connection_t)destination {
-    // 使用专用串行队列进行数据中继，避免递归调用
-    dispatch_queue_t relayQueue = dispatch_queue_create("com.alicloud.httpdns.relay", DISPATCH_QUEUE_SERIAL);
-
-    // 启动持续的数据中继循环
-    [self scheduleNextReceiveFrom:source to:destination onQueue:relayQueue];
+    // 直接启动接收-发送链路；仅保持单次接收在飞，形成背压
+    [self scheduleNextReceiveFrom:source to:destination];
 }
 
-- (void)scheduleNextReceiveFrom:(nw_connection_t)source to:(nw_connection_t)destination onQueue:(dispatch_queue_t)queue {
-    nw_connection_receive(source, 1, 128 * 1024, ^(dispatch_data_t content, nw_content_context_t context, bool is_complete, nw_error_t error) {
-        // 处理接收错误
+-(void)scheduleNextReceiveFrom:(nw_connection_t)source to:(nw_connection_t)destination {
+    // 减小单次读取大小，降低峰值内存占用
+    const size_t kMaxChunk = 64 * 1024;
+
+    nw_connection_receive(source, 1, kMaxChunk, ^(dispatch_data_t content, nw_content_context_t context, bool is_complete, nw_error_t error) {
+        // 接收错误处理
         if (error) {
             nw_error_domain_t domain = nw_error_get_error_domain(error);
             int code = nw_error_get_error_code(error);
@@ -664,28 +664,51 @@ API_AVAILABLE(ios(17.0))
             return;
         }
 
-        // 转发有效数据
-        if (content && dispatch_data_get_size(content) > 0) {
-            // 发送数据到目标连接
-            nw_connection_send(destination, content, NW_CONNECTION_DEFAULT_MESSAGE_CONTEXT, false, ^(nw_error_t sendError) {
+        size_t contentSize = content ? dispatch_data_get_size(content) : 0;
+
+        // 如果上游发送完成且没有剩余数据，需要半关闭下游写端
+        if (is_complete && contentSize == 0) {
+            // 发送零长度并标记完成，表示写端关闭
+            nw_connection_send(destination, dispatch_data_empty, NW_CONNECTION_DEFAULT_MESSAGE_CONTEXT, true, ^(nw_error_t sendError) {
+                if (sendError) {
+                    EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data relay finalization send failed");
+                    nw_connection_cancel(source);
+                    nw_connection_cancel(destination);
+                    return;
+                }
+                // 不再继续读取；另一方向的转发仍可继续
+                EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream transmission completed (half-close write)");
+            });
+            return;
+        }
+
+        // 正常转发数据（或最后一块数据）
+        if (contentSize > 0) {
+            // 如果这是最后一块数据，将 is_complete=true 传递给下游以进行半关闭
+            bool markComplete = is_complete ? true : false;
+
+            nw_connection_send(destination, content, NW_CONNECTION_DEFAULT_MESSAGE_CONTEXT, markComplete, ^(nw_error_t sendError) {
                 if (sendError) {
                     EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data relay send failed");
                     nw_connection_cancel(source);
                     nw_connection_cancel(destination);
                     return;
                 }
+
+                // 发送完成后再调度下一次接收，从而实现背压
+                if (!is_complete) {
+                    [self scheduleNextReceiveFrom:source to:destination];
+                } else {
+                    // 已完成写半关闭，不再继续读取
+                    EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream transmission completed (sent last chunk)");
+                }
             });
+            return;
         }
 
-        // 处理流结束
-        if (is_complete) {
-            EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream transmission completed");
-            nw_connection_cancel(destination);
-        } else {
-            // 使用队列异步调度下一次接收，避免栈递归
-            dispatch_async(queue, ^{
-                [self scheduleNextReceiveFrom:source to:destination onQueue:queue];
-            });
+        // 可能的空读但未完成，继续读取
+        if (!is_complete) {
+            [self scheduleNextReceiveFrom:source to:destination];
         }
     });
 }
