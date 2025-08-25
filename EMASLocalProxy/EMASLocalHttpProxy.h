@@ -58,6 +58,29 @@ typedef NS_ENUM(NSInteger, EMASLocalHttpProxyLogLevel) {
 #pragma mark - 核心服务管理
 
 /**
+ *  获取当前代理服务监听端口
+ *
+ *  返回本地代理服务当前使用的端口号，可用于调试和监控
+ *  如果代理服务未启动，返回0
+ *
+ *  @return 代理服务端口号，0表示服务未启动
+ *
+ *  @note 此方法是线程安全的，可以从任意线程调用
+ *  @note 端口号在代理服务启动时自动分配，范围为31000-32000
+ *
+ *  @code
+ *  // 获取当前代理端口
+ *  uint16_t port = [EMASLocalHttpProxy proxyPort];
+ *  if (port > 0) {
+ *      NSLog(@"代理服务运行在端口: %d", port);
+ *  } else {
+ *      NSLog(@"代理服务未启动");
+ *  }
+ *  @endcode
+ */
++ (uint16_t)proxyPort;
+
+/**
  *  检查代理服务是否已就绪
  *
  *  此方法提供线程安全的代理服务状态检查，可用于判断是否可以安全地配置网络客户端使用代理
