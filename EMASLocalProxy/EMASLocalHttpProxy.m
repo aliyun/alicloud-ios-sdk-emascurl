@@ -82,7 +82,7 @@ static BOOL _shouldLog(EMASLocalHttpProxyLogLevel level) {
 
 #pragma mark - 私有方法
 
-/// 数据中继：保持单次接收在飞，发送完成后再继续接收
+/// 数据中继：保持单次接收在飞，传输完成后关闭双向连接
 - (void)scheduleNextReceiveFrom:(nw_connection_t)source to:(nw_connection_t)destination;
 
 /// NSURLSession代理配置相关私有方法
@@ -666,25 +666,24 @@ API_AVAILABLE(ios(17.0))
 
         size_t contentSize = content ? dispatch_data_get_size(content) : 0;
 
-        // 如果上游发送完成且没有剩余数据，需要半关闭下游写端
+        // 如果上游发送完成且没有剩余数据，完全关闭连接
         if (is_complete && contentSize == 0) {
-            // 发送零长度并标记完成，表示写端关闭
+            // 发送零长度并标记完成，表示传输结束
             nw_connection_send(destination, dispatch_data_empty, NW_CONNECTION_DEFAULT_MESSAGE_CONTEXT, true, ^(nw_error_t sendError) {
                 if (sendError) {
                     EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data relay finalization send failed");
-                    nw_connection_cancel(source);
-                    nw_connection_cancel(destination);
-                    return;
                 }
-                // 不再继续读取；另一方向的转发仍可继续
-                EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream transmission completed (half-close write)");
+                // 关闭双向连接，防止连接被错误复用
+                EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream completed, closing bidirectional connection");
+                nw_connection_cancel(source);
+                nw_connection_cancel(destination);
             });
             return;
         }
 
         // 正常转发数据（或最后一块数据）
         if (contentSize > 0) {
-            // 如果这是最后一块数据，将 is_complete=true 传递给下游以进行半关闭
+            // 如果这是最后一块数据，传输完成后关闭连接
             bool markComplete = is_complete ? true : false;
 
             nw_connection_send(destination, content, NW_CONNECTION_DEFAULT_MESSAGE_CONTEXT, markComplete, ^(nw_error_t sendError) {
@@ -699,8 +698,10 @@ API_AVAILABLE(ios(17.0))
                 if (!is_complete) {
                     [self scheduleNextReceiveFrom:source to:destination];
                 } else {
-                    // 已完成写半关闭，不再继续读取
-                    EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream transmission completed (sent last chunk)");
+                    // 传输完成，关闭双向连接
+                    EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream completed (sent last chunk), closing bidirectional connection");
+                    nw_connection_cancel(source);
+                    nw_connection_cancel(destination);
                 }
             });
             return;
