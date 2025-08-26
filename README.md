@@ -41,6 +41,7 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
     - [方案对比](#方案对比)
   - [目录](#目录)
   - [EMASLocalProxy - 统一代理方案](#emaslocalproxy---统一代理方案)
+    - [已知限制](#已知限制)
     - [简介](#简介)
     - [从CocoaPods引入依赖](#从cocoapods引入依赖)
     - [NSURLSession集成](#nsurlsession集成)
@@ -145,18 +146,14 @@ EMASLocalProxy为NSURLSession提供了简单的集成方式，只需要一行代
 #import <EMASLocalProxy/EMASLocalHttpProxy.h>
 
 - (void)setupNetworkingWhenReady {
-    if (@available(iOS 17.0, *)) {
-        // 检查代理服务是否已准备就绪
-        if ([EMASLocalHttpProxy isProxyReady]) {
-            [self createSessionWithProxy];
-        } else {
-            // 延迟检查代理状态
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [self setupNetworkingWhenReady];
-            });
-        }
+    // 检查代理服务是否已准备就绪
+    if ([EMASLocalHttpProxy isProxyReady]) {
+        [self createSessionWithProxy];
     } else {
-        [self createSessionWithoutProxy];
+        // 延迟检查代理状态
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self setupNetworkingWhenReady];
+        });
     }
 }
 
@@ -184,8 +181,7 @@ EMASLocalProxy为NSURLSession提供了简单的集成方式，只需要一行代
 
 ```objc
 @interface NetworkManager : NSObject
-@property (nonatomic, strong) NSURLSession *session;
-@property (nonatomic, assign) BOOL isUsingProxy;
+@property (atomic, strong) NSURLSession *session;
 @end
 
 @implementation NetworkManager
@@ -193,7 +189,7 @@ EMASLocalProxy为NSURLSession提供了简单的集成方式，只需要一行代
 - (instancetype)init {
     self = [super init];
     if (self) {
-        // 立即创建标准session以支持紧急网络请求
+        // 立即创建标准session以支持即时的网络请求
         [self createStandardSession];
 
         // 异步尝试升级到代理session
@@ -205,29 +201,18 @@ EMASLocalProxy为NSURLSession提供了简单的集成方式，只需要一行代
 - (void)createStandardSession {
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     self.session = [NSURLSession sessionWithConfiguration:config];
-    self.isUsingProxy = NO;
     NSLog(@"创建标准URLSession");
 }
 
 - (void)tryUpgradeToProxySession {
-    if (@available(iOS 17.0, *)) {
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            // 等待代理服务启动（最多等待3秒）
-            int attempts = 0;
-            while (attempts < 3 && ![EMASLocalHttpProxy isProxyReady]) {
-                usleep(500000); // 等待500ms
-                attempts++;
-            }
-
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if ([EMASLocalHttpProxy isProxyReady]) {
-                    [self upgradeToProxySession];
-                } else {
-                    NSLog(@"代理服务启动超时，继续使用标准URLSession");
-                }
-            });
-        });
-    }
+    // 延迟1秒后检查代理服务状态（仅尝试一次）
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if ([EMASLocalHttpProxy isProxyReady]) {
+            [self upgradeToProxySession];
+        } else {
+            NSLog(@"代理服务未就绪，继续使用标准URLSession");
+        }
+    });
 }
 
 - (void)upgradeToProxySession {
@@ -240,7 +225,6 @@ EMASLocalProxy为NSURLSession提供了简单的集成方式，只需要一行代
 
         // 创建新的代理session
         self.session = [NSURLSession sessionWithConfiguration:config];
-        self.isUsingProxy = YES;
         NSLog(@"已升级到代理URLSession");
 
         // 优雅地关闭旧session：等待现有任务完成后再关闭
@@ -265,11 +249,9 @@ WKWebView的代理配置相对简单，因为WebView通常不会在应用启动�
 - (void)setupWebViewWithProxy {
     WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
 
-    if (@available(iOS 17.0, *)) {
-        // 检查代理是否就绪，如果没有就绪会自动使用系统网络
-        BOOL success = [EMASLocalHttpProxy installIntoWkWebViewConfiguration:config];
-        NSLog(@"WebView代理配置: %@", success ? @"成功" : @"失败，使用系统网络");
-    }
+    // EMASLocalProxy会内部检查系统版本，iOS 17以下会返回NO
+    BOOL success = [EMASLocalHttpProxy installIntoWkWebViewConfiguration:config];
+    NSLog(@"WebView代理配置: %@", success ? @"成功" : @"失败，使用系统网络");
 
     self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:config];
     [self.view addSubview:self.webView];
