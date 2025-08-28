@@ -7,10 +7,8 @@
 @property (nonatomic, strong) UIButton *uploadButton;
 @property (nonatomic, strong) UIButton *cacheButton;
 @property (nonatomic, strong) UIButton *timeoutButton;
-@property (nonatomic, strong) UIButton *proxyToggleButton;
 @property (nonatomic, strong) UITextView *resultTextView;
-@property (nonatomic, strong) NSURLSession *session;
-@property (nonatomic, assign) BOOL proxyEnabled;
+@property (atomic, strong) NSURLSession *session;
 @end
 
 @implementation LocalProxyDemoController
@@ -19,61 +17,91 @@
     [super viewDidLoad];
     self.title = @"Local Proxy Demo";
     self.view.backgroundColor = [UIColor whiteColor];
-    self.proxyEnabled = YES;
 
-    [self setupSession];
+    // 设置HTTPDNS解析器（全局配置，只需设置一次）
+    [self setupDNSResolver];
+
+    // 设置代理日志级别
+    [EMASLocalHttpProxy setLogLevel:EMASLocalHttpProxyLogLevelInfo];
+
+    // 立即创建标准session以支持即时的网络请求
+    [self createStandardSession];
+
+    // 异步尝试升级到代理session
+    [self tryUpgradeToProxySession];
+
     [self setupUI];
 }
 
-- (void)setupSession {
-    NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
-    configuration.timeoutIntervalForRequest = 30;
-    configuration.timeoutIntervalForResource = 300;
+- (void)setupDNSResolver {
+    // 设置HTTPDNS解析器（类似于WkWebViewDemoController中的模式）
+    [EMASLocalHttpProxy setDNSResolverBlock:^NSArray<NSString *> *(NSString *hostname) {
+        HttpDnsService *httpdns = [HttpDnsService sharedInstance];
+        HttpdnsResult* result = [httpdns resolveHostSyncNonBlocking:hostname byIpType:HttpdnsQueryIPTypeBoth];
 
-    if (@available(iOS 17.0, *)) {
-        if ([EMASLocalHttpProxy isProxyReady]) {
-            // 设置HTTPDNS解析器（类似于WkWebViewDemoController中的模式）
-            [EMASLocalHttpProxy setDNSResolverBlock:^NSArray<NSString *> *(NSString *hostname) {
-                HttpDnsService *httpdns = [HttpDnsService sharedInstance];
-                HttpdnsResult* result = [httpdns resolveHostSyncNonBlocking:hostname byIpType:HttpdnsQueryIPTypeBoth];
-
-                if (result && (result.hasIpv4Address || result.hasIpv6Address)) {
-                    NSMutableArray<NSString *> *allIPs = [NSMutableArray array];
-                    if (result.hasIpv4Address) {
-                        [allIPs addObjectsFromArray:result.ips];
-                    }
-                    if (result.hasIpv6Address) {
-                        [allIPs addObjectsFromArray:result.ipv6s];
-                    }
-                    NSLog(@"HTTPDNS解析成功，域名: %@, IP: %@", hostname, allIPs);
-                    return allIPs;
-                }
-
-                NSLog(@"HTTPDNS解析失败，域名: %@", hostname);
-                return nil;
-            }];
-
-            // 设置代理日志级别
-            [EMASLocalHttpProxy setLogLevel:EMASLocalHttpProxyLogLevelInfo];
-
-            BOOL success = [EMASLocalHttpProxy installIntoUrlSessionConfiguration:configuration];
-            NSLog(@"Local proxy installation: %@", success ? @"SUCCESS" : @"FAILED");
+        if (result && (result.hasIpv4Address || result.hasIpv6Address)) {
+            NSMutableArray<NSString *> *allIPs = [NSMutableArray array];
+            if (result.hasIpv4Address) {
+                [allIPs addObjectsFromArray:result.ips];
+            }
+            if (result.hasIpv6Address) {
+                [allIPs addObjectsFromArray:result.ipv6s];
+            }
+            NSLog(@"HTTPDNS解析成功，域名: %@, IP: %@", hostname, allIPs);
+            return allIPs;
         }
-    }
 
-    self.session = [NSURLSession sessionWithConfiguration:configuration
-                                               delegate:self
-                                          delegateQueue:[NSOperationQueue mainQueue]];
+        NSLog(@"HTTPDNS解析失败，域名: %@", hostname);
+        return nil;
+    }];
+}
+
+- (void)createStandardSession {
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+    config.timeoutIntervalForRequest = 30;
+    config.timeoutIntervalForResource = 300;
+
+    self.session = [NSURLSession sessionWithConfiguration:config
+                                                 delegate:self
+                                            delegateQueue:[NSOperationQueue mainQueue]];
+    NSLog(@"创建标准URLSession");
+}
+
+- (void)tryUpgradeToProxySession {
+    // 延迟1s后检查代理服务状态
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if ([EMASLocalHttpProxy isProxyReady]) {
+            NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+            config.timeoutIntervalForRequest = 30;
+            config.timeoutIntervalForResource = 300;
+
+            BOOL success = [EMASLocalHttpProxy installIntoUrlSessionConfiguration:config];
+
+            if (success) {
+                @synchronized(self) {
+                    // 保存旧session的引用
+                    NSURLSession *oldSession = self.session;
+
+                    // 创建新的代理session
+                    self.session = [NSURLSession sessionWithConfiguration:config
+                                                                 delegate:self
+                                                            delegateQueue:[NSOperationQueue mainQueue]];
+                    NSLog(@"已升级到代理URLSession");
+
+                    // 优雅地关闭旧session：等待现有任务完成后再关闭
+                    // 注意：新的网络请求将使用新的代理session
+                    [oldSession finishTasksAndInvalidate];
+                }
+            } else {
+                NSLog(@"代理配置失败，继续使用标准URLSession");
+            }
+        } else {
+            NSLog(@"代理服务未就绪，继续使用标准URLSession");
+        }
+    });
 }
 
 - (void)setupUI {
-    // Proxy Toggle Button
-    self.proxyToggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self updateProxyToggleButtonTitle];
-    self.proxyToggleButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.proxyToggleButton addTarget:self action:@selector(proxyToggleButtonTapped) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:self.proxyToggleButton];
-
     // Get Button
     self.getButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.getButton setTitle:@"GET Request" forState:UIControlStateNormal];
@@ -114,14 +142,8 @@
 
     // Auto Layout Constraints
     [NSLayoutConstraint activateConstraints:@[
-        // Proxy Toggle Button
-        [self.proxyToggleButton.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:20],
-        [self.proxyToggleButton.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:20],
-        [self.proxyToggleButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
-        [self.proxyToggleButton.heightAnchor constraintEqualToConstant:44],
-
         // Get Button
-        [self.getButton.topAnchor constraintEqualToAnchor:self.proxyToggleButton.bottomAnchor constant:12],
+        [self.getButton.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:20],
         [self.getButton.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:20],
         [self.getButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
         [self.getButton.heightAnchor constraintEqualToConstant:44],
@@ -152,31 +174,12 @@
     ]];
 }
 
-- (void)updateProxyToggleButtonTitle {
-    NSString *title = [NSString stringWithFormat:@"Local Proxy: %@ (Tap to Toggle)",
-                      self.proxyEnabled ? @"ENABLED" : @"DISABLED"];
-    [self.proxyToggleButton setTitle:title forState:UIControlStateNormal];
-    self.proxyToggleButton.backgroundColor = self.proxyEnabled ? [UIColor systemGreenColor] : [UIColor systemRedColor];
-    [self.proxyToggleButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    self.proxyToggleButton.layer.cornerRadius = 8.0;
-}
-
-- (void)proxyToggleButtonTapped {
-    self.proxyEnabled = !self.proxyEnabled;
-    [self updateProxyToggleButtonTitle];
-    [self setupSession];
-
-    NSString *statusMessage = [NSString stringWithFormat:@"Local Proxy %@\n\n",
-                              self.proxyEnabled ? @"ENABLED" : @"DISABLED"];
-    self.resultTextView.text = statusMessage;
-}
 
 - (void)getButtonTapped {
     NSString *urlString = @"http://httpbin.org/get";
     NSURL *url = [NSURL URLWithString:urlString];
 
-    NSString *proxyStatus = self.proxyEnabled ? @"ENABLED" : @"DISABLED";
-    self.resultTextView.text = [NSString stringWithFormat:@"=== GET Request Demo ===\nProxy: %@\nURL: %@\n\n=== Response ===\n", proxyStatus, urlString];
+    self.resultTextView.text = [NSString stringWithFormat:@"=== GET Request Demo ===\nURL: %@\n\n=== Response ===\n", urlString];
     NSURLSessionDataTask *task = [self.session dataTaskWithURL:url];
     [task resume];
 }
@@ -191,8 +194,7 @@
     NSString *sampleText = @"Hello from Local Proxy Demo!";
     NSData *uploadData = [sampleText dataUsingEncoding:NSUTF8StringEncoding];
 
-    NSString *proxyStatus = self.proxyEnabled ? @"ENABLED" : @"DISABLED";
-    self.resultTextView.text = [NSString stringWithFormat:@"=== Upload Request Demo ===\nProxy: %@\nURL: %@\nMethod: POST\nData: %@\n\n=== Response ===\n", proxyStatus, urlString, sampleText];
+    self.resultTextView.text = [NSString stringWithFormat:@"=== Upload Request Demo ===\nURL: %@\nMethod: POST\nData: %@\n\n=== Response ===\n", urlString, sampleText];
     NSURLSessionUploadTask *uploadTask = [self.session uploadTaskWithRequest:request fromData:uploadData];
     [uploadTask resume];
 }
@@ -201,8 +203,7 @@
     NSString *urlString = @"https://httpbin.org/cache/300";
     NSURL *url = [NSURL URLWithString:urlString];
 
-    NSString *proxyStatus = self.proxyEnabled ? @"ENABLED" : @"DISABLED";
-    self.resultTextView.text = [NSString stringWithFormat:@"=== Testing Cache (Making same request twice) ===\nProxy: %@\n\n=== First Request ===\n", proxyStatus];
+    self.resultTextView.text = @"=== Testing Cache (Making same request twice) ===\n\n=== First Request ===\n";
 
     NSURLSessionDataTask *firstTask = [self.session dataTaskWithURL:url
                                                   completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
@@ -224,8 +225,7 @@
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
     request.timeoutInterval = 5;
 
-    NSString *proxyStatus = self.proxyEnabled ? @"ENABLED" : @"DISABLED";
-    self.resultTextView.text = [NSString stringWithFormat:@"=== Testing Timeout (10s delay vs 5s timeout) ===\nProxy: %@\n", proxyStatus];
+    self.resultTextView.text = @"=== Testing Timeout (10s delay vs 5s timeout) ===\n";
 
     NSURLSessionDataTask *task = [self.session dataTaskWithRequest:request];
     [task resume];
@@ -258,7 +258,7 @@
         if (error) {
             self.resultTextView.text = [self.resultTextView.text stringByAppendingFormat:@"\n=== Error ===\n%@", error.localizedDescription];
         } else {
-            self.resultTextView.text = [self.resultTextView.text stringByAppendingString:@"\n=== Request Completed Successfully ===\n(Check console for detailed proxy logs)"];
+            self.resultTextView.text = [self.resultTextView.text stringByAppendingString:@"\n=== Request Completed Successfully ===\n"];
         }
     });
 }

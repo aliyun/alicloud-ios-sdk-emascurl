@@ -49,4 +49,11 @@ static NSString *PATH_HALF_CLOSE_TEST = @"/half_close_test";
 
 static NSString *PATH_STREAM = @"/stream";
 
+// 连接复用测试相关路径
+static NSString *PATH_CONNECTION_ID = @"/connection_id";
+static NSString *PATH_KEEP_ALIVE_TEST = @"/keep_alive_test";
+static NSString *PATH_CONNECTION_CLOSE_TEST = @"/connection_close_test";
+static NSString *PATH_PIPELINE_TEST = @"/pipeline_test";
+static NSString *PATH_CONNECTION_STATS = @"/connection_stats";
+
 #endif /* EMASLocalProxyTestConstants_h */
