@@ -45,6 +45,7 @@
 		94E674102E5B7FB3005FE92E /* EMASLocalProxy.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 94F806862E52B6E300B6FE7A /* EMASLocalProxy.framework */; };
 		94E674122E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674112E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m */; };
 		94E674152E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674132E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m */; };
+		94E674A22E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674A12E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m */; };
 		94F806892E52B6E300B6FE7A /* EMASLocalProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = 94F806882E52B6E300B6FE7A /* EMASLocalProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		94F806A02E52C26100B6FE7A /* EMASLocalHttpProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = 94F8069F2E52C26100B6FE7A /* EMASLocalHttpProxy.m */; };
 		94F806A12E52C26100B6FE7A /* EMASLocalHttpProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = 94F8069E2E52C26100B6FE7A /* EMASLocalHttpProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -142,6 +143,7 @@
 		94E674112E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASLocalHttpProxyUploadTest.m; sourceTree = "<group>"; };
 		94E674132E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASLocalHttpProxyHalfCloseTest.m; sourceTree = "<group>"; };
 		94E674142E5C35E5005FE92E /* EMASLocalProxyTestConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalProxyTestConstants.h; sourceTree = "<group>"; };
+		94E674A12E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASLocalHttpProxyConnectionReuseTest.m; sourceTree = "<group>"; };
 		94F806862E52B6E300B6FE7A /* EMASLocalProxy.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EMASLocalProxy.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		94F806882E52B6E300B6FE7A /* EMASLocalProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalProxy.h; sourceTree = "<group>"; };
 		94F8069E2E52C26100B6FE7A /* EMASLocalHttpProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalHttpProxy.h; sourceTree = "<group>"; };
@@ -363,6 +365,7 @@
 				94E674142E5C35E5005FE92E /* EMASLocalProxyTestConstants.h */,
 				94E674132E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m */,
 				94E674112E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m */,
+				94E674A12E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m */,
 			);
 			path = EMASLocalProxyTests;
 			sourceTree = "<group>";
@@ -635,6 +638,7 @@
 			files = (
 				949539172D1020B7001FE850 /* EMASCurlUploadTest.m in Sources */,
 				94E674122E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m in Sources */,
+				94E674A22E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m in Sources */,
 				949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */,
 				949789052D4FE2DB0042BE44 /* EMASCurlCookieTest.m in Sources */,
 				942FF3822E16235C005C70B2 /* EMASCurlConcurrencyTest.m in Sources */,

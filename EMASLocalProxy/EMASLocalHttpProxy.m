@@ -16,11 +16,12 @@
 //
 
 #import "EMASLocalHttpProxy.h"
+#import <UIKit/UIKit.h>
 
 #pragma mark - 常量定义
 
 /// 代理服务端口范围最小值
-static const uint16_t kEMASLocalProxyPortMin = 31000;
+static const uint16_t kEMASLocalProxyPortMin = 22000;
 
 /// 代理服务端口范围最大值
 static const uint16_t kEMASLocalProxyPortMax = 32000;
@@ -82,7 +83,7 @@ static BOOL _shouldLog(EMASLocalHttpProxyLogLevel level) {
 
 #pragma mark - 私有方法
 
-/// 数据中继：保持单次接收在飞，发送完成后再继续接收
+/// 数据中继：保持单次接收在飞，传输完成后关闭双向连接
 - (void)scheduleNextReceiveFrom:(nw_connection_t)source to:(nw_connection_t)destination;
 
 /// NSURLSession代理配置相关私有方法
@@ -109,6 +110,12 @@ API_AVAILABLE(ios(17.0))
 
     /// 串行队列，用于IP失败追踪的线程安全操作
     dispatch_queue_t _ipTrackingQueue;
+
+    /// 防止并发恢复尝试
+    BOOL _isRecovering;
+
+    /// 记录最后一次恢复尝试的时间，防止频繁恢复
+    NSDate *_lastRecoveryAttemptTime;
 }
 
 #pragma mark - 初始化
@@ -155,23 +162,174 @@ API_AVAILABLE(ios(17.0))
         _proxyPort = 0;                    // 端口将在启动时动态分配
         _isProxyReady = NO;              // 初始状态为未运行
         _listener = NULL;                  // 监听器初始为空
+        _isRecovering = NO;              // 初始化恢复状态
+        _lastRecoveryAttemptTime = nil;  // 初始化恢复时间戳
 
         // 创建专用的串行队列用于同步start/stop操作
-        _operationQueue = dispatch_queue_create("com.alicloud.httpdns.proxy.operation", DISPATCH_QUEUE_SERIAL);
+        _operationQueue = dispatch_queue_create("com.alicloud.httpdns.proxy.operation",
+                                               dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INITIATED, 0));
 
         // 初始化IP失败追踪系统
         _failedIPsPerHost = [NSMutableDictionary dictionary];
         _ipTrackingQueue = dispatch_queue_create("com.alicloud.httpdns.iptracking", DISPATCH_QUEUE_SERIAL);
+
+        // 注册前台通知，用于检测应用从后台返回
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(applicationWillEnterForeground:)
+                                                     name:UIApplicationWillEnterForegroundNotification
+                                                   object:nil];
     }
     return self;
 }
 
 - (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     [self stop];
     EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Proxy service instance destroyed");
 }
 
 #pragma mark - 服务控制
+
+#pragma mark - 应用生命周期处理
+
+/**
+ *  应用即将进入前台通知处理
+ *  检查代理服务健康状态，必要时进行恢复
+ */
+- (void)applicationWillEnterForeground:(NSNotification *)notification {
+    EMAS_LOCAL_HTTP_PROXY_LOG_INFO("App entering foreground, checking proxy health");
+
+    dispatch_async(_operationQueue, ^{
+        [self performHealthCheckAndRecoverIfNeeded];
+    });
+}
+
+/**
+ *  执行健康检查，必要时恢复代理服务
+ *  通过创建测试连接来验证监听器是否响应
+ */
+- (void)performHealthCheckAndRecoverIfNeeded {
+    // 防止并发恢复尝试
+    if (_isRecovering) {
+        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Recovery already in progress");
+        return;
+    }
+
+    // 检查是否距离上次恢复尝试太近（防止频繁恢复）
+    if (_lastRecoveryAttemptTime) {
+        NSTimeInterval timeSinceLastAttempt = [[NSDate date] timeIntervalSinceDate:_lastRecoveryAttemptTime];
+        if (timeSinceLastAttempt < 2.0) {  // 至少间隔2秒
+            EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Too soon since last recovery attempt (%.1f seconds ago)", timeSinceLastAttempt);
+            return;
+        }
+    }
+
+    // 立即设置恢复标志，防止并发进入
+    _isRecovering = YES;
+    _lastRecoveryAttemptTime = [NSDate date];
+
+    // 如果代理未就绪，尝试恢复
+    if (!self.isProxyReady || !_listener) {
+        EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Proxy not ready, attempting recovery");
+        [self recoverProxy];
+        _isRecovering = NO;  // 恢复完成后重置标志
+        return;
+    }
+
+    // 执行健康检查
+
+    // 创建到监听器的测试连接
+    NSString *portString = [NSString stringWithFormat:@"%d", _proxyPort];
+    nw_endpoint_t testEndpoint = nw_endpoint_create_host("127.0.0.1", [portString UTF8String]);
+
+    nw_parameters_t params = nw_parameters_create_secure_tcp(
+        NW_PARAMETERS_DISABLE_PROTOCOL,
+        NW_PARAMETERS_DEFAULT_CONFIGURATION
+    );
+
+    nw_connection_t testConnection = nw_connection_create(testEndpoint, params);
+
+    // 设置健康检查超时
+    dispatch_semaphore_t healthCheckSemaphore = dispatch_semaphore_create(0);
+    __block BOOL isHealthy = NO;
+
+    nw_connection_set_state_changed_handler(testConnection, ^(nw_connection_state_t state, nw_error_t error) {
+        switch (state) {
+            case nw_connection_state_ready:
+                EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Health check successful - listener responsive");
+                isHealthy = YES;
+                nw_connection_cancel(testConnection);
+                dispatch_semaphore_signal(healthCheckSemaphore);
+                break;
+
+            case nw_connection_state_failed:
+            case nw_connection_state_cancelled:
+                if (state == nw_connection_state_failed) {
+                    EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Health check failed - listener unresponsive");
+                }
+                dispatch_semaphore_signal(healthCheckSemaphore);
+                break;
+
+            default:
+                break;
+        }
+    });
+
+    // 使用与当前队列相同的QoS级别，避免优先级反转
+    nw_connection_set_queue(testConnection, dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0));
+    nw_connection_start(testConnection);
+
+    // 等待健康检查结果（1秒超时）
+    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC));
+    dispatch_semaphore_wait(healthCheckSemaphore, timeout);
+
+    if (!isHealthy) {
+        EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Listener health check failed, initiating recovery");
+        [self recoverProxy];
+    }
+
+    _isRecovering = NO;
+}
+
+/**
+ *  恢复代理服务
+ *  尝试在原端口上重新启动代理，不会尝试新端口
+ */
+- (void)recoverProxy {
+    EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Starting proxy recovery");
+
+    // 使用已分配的代理端口
+    if (_proxyPort == 0) {
+        EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("No proxy port available for recovery");
+        // 注意：调用者负责重置_isRecovering标志
+        return;
+    }
+
+    // 清理现有监听器
+    [self cleanup];
+
+    // 在相同端口上尝试多次恢复
+    for (NSInteger attempt = 0; attempt < 3; attempt++) {
+        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Recovery attempt %ld/3 on port: %d", (long)(attempt + 1), _proxyPort);
+
+        if ([self tryStartOnPort:_proxyPort]) {
+            EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Recovery successful on port: %d", _proxyPort);
+            // 注意：调用者负责重置_isRecovering标志
+            return;
+        }
+
+        if (attempt < 2) {
+            // 重试前等待（100ms）
+            usleep(100000);
+            [self cleanup];  // 为下次尝试清理
+        }
+    }
+
+    // 所有恢复尝试失败
+    _isProxyReady = NO;
+    EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("Recovery failed after 3 attempts on port: %d", _proxyPort);
+    // 注意：调用者负责重置_isRecovering标志
+}
 
 #pragma mark - Helper Methods
 
@@ -264,7 +422,8 @@ API_AVAILABLE(ios(17.0))
     });
 
     // 启动监听器
-    nw_listener_set_queue(listener, dispatch_get_main_queue());
+    // 使用全局队列而不是主队列，避免后台挂起问题
+    nw_listener_set_queue(listener, dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0));
     nw_listener_start(listener);
 
     // 等待启动完成（超时保护）
@@ -415,8 +574,7 @@ API_AVAILABLE(ios(17.0))
     // 2. 网络请求完成
     // 3. 连接超时或出错
 
-    // 重置端口状态
-    _proxyPort = 0;
+    // 注意：不重置_proxyPort，保持端口信息以供后续恢复使用
 }
 
 #pragma mark - 连接处理
@@ -666,25 +824,24 @@ API_AVAILABLE(ios(17.0))
 
         size_t contentSize = content ? dispatch_data_get_size(content) : 0;
 
-        // 如果上游发送完成且没有剩余数据，需要半关闭下游写端
+        // 如果上游发送完成且没有剩余数据，完全关闭连接
         if (is_complete && contentSize == 0) {
-            // 发送零长度并标记完成，表示写端关闭
+            // 发送零长度并标记完成，表示传输结束
             nw_connection_send(destination, dispatch_data_empty, NW_CONNECTION_DEFAULT_MESSAGE_CONTEXT, true, ^(nw_error_t sendError) {
                 if (sendError) {
                     EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data relay finalization send failed");
-                    nw_connection_cancel(source);
-                    nw_connection_cancel(destination);
-                    return;
                 }
-                // 不再继续读取；另一方向的转发仍可继续
-                EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream transmission completed (half-close write)");
+                // 关闭双向连接，防止连接被错误复用
+                EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream completed, closing bidirectional connection");
+                nw_connection_cancel(source);
+                nw_connection_cancel(destination);
             });
             return;
         }
 
         // 正常转发数据（或最后一块数据）
         if (contentSize > 0) {
-            // 如果这是最后一块数据，将 is_complete=true 传递给下游以进行半关闭
+            // 如果这是最后一块数据，传输完成后关闭连接
             bool markComplete = is_complete ? true : false;
 
             nw_connection_send(destination, content, NW_CONNECTION_DEFAULT_MESSAGE_CONTEXT, markComplete, ^(nw_error_t sendError) {
@@ -699,8 +856,10 @@ API_AVAILABLE(ios(17.0))
                 if (!is_complete) {
                     [self scheduleNextReceiveFrom:source to:destination];
                 } else {
-                    // 已完成写半关闭，不再继续读取
-                    EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream transmission completed (sent last chunk)");
+                    // 传输完成，关闭双向连接
+                    EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Data stream completed (sent last chunk), closing bidirectional connection");
+                    nw_connection_cancel(source);
+                    nw_connection_cancel(destination);
                 }
             });
             return;

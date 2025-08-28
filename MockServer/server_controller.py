@@ -408,6 +408,112 @@ def create_app():
                 "message": "Default half-close handling completed"
             }
 
+    # 连接跟踪相关端点
+    import uuid
+    connection_map = {}
+
+    @app.get("/connection_id")
+    async def get_connection_id(request: Request):
+        """
+        返回当前连接的唯一标识符，用于验证连接复用
+        """
+        # 使用客户端地址和端口作为连接标识
+        client_info = f"{request.client.host}:{request.client.port}" if request.client else "unknown"
+        request_id = request.query_params.get("request", "unknown")
+
+        # 检查是否是新连接
+        if client_info not in connection_map:
+            connection_map[client_info] = str(uuid.uuid4())
+            logger.info(f"New connection established: {client_info} -> {connection_map[client_info]}")
+
+        connection_id = connection_map[client_info]
+        logger.info(f"Connection ID request #{request_id} from {client_info}: {connection_id}")
+
+        return {
+            "connection_id": connection_id,
+            "client_info": client_info,
+            "request_number": request_id,
+            "timestamp": time.time()
+        }
+
+    @app.get("/keep_alive_test")
+    async def keep_alive_test(request: Request):
+        """
+        测试Keep-Alive连接的端点
+        """
+        client_info = f"{request.client.host}:{request.client.port}" if request.client else "unknown"
+        request_id = request.query_params.get("request", "unknown")
+
+        # 跟踪连接
+        if client_info not in connection_map:
+            connection_map[client_info] = str(uuid.uuid4())
+
+        connection_id = connection_map[client_info]
+
+        logger.info(f"Keep-Alive request #{request_id} on connection {connection_id}")
+
+        response = JSONResponse({
+            "status": "keep_alive_active",
+            "connection_id": connection_id,
+            "request_number": request_id,
+            "message": "Keep-Alive connection test successful"
+        })
+
+        # 设置Keep-Alive响应头
+        response.headers["Connection"] = "keep-alive"
+        response.headers["Keep-Alive"] = "timeout=5, max=100"
+
+        return response
+
+    @app.get("/connection_close_test")
+    async def connection_close_test(request: Request):
+        """
+        强制关闭连接的测试端点
+        """
+        client_info = f"{request.client.host}:{request.client.port}" if request.client else "unknown"
+
+        # 清理连接映射
+        if client_info in connection_map:
+            old_id = connection_map[client_info]
+            del connection_map[client_info]
+            logger.info(f"Force closing connection {old_id} for {client_info}")
+
+        response = JSONResponse({
+            "status": "connection_closing",
+            "message": "Connection will be closed after this response"
+        })
+
+        # 设置Connection: close头部
+        response.headers["Connection"] = "close"
+
+        return response
+
+    @app.get("/pipeline_test")
+    async def pipeline_test(request: Request):
+        """
+        用于测试HTTP管道化的端点
+        """
+        request_id = request.query_params.get("request", "unknown")
+
+        # 模拟快速响应以支持管道化
+        return {
+            "status": "pipeline_response",
+            "request_number": request_id,
+            "timestamp": time.time(),
+            "message": "Pipeline test response"
+        }
+
+    @app.get("/connection_stats")
+    async def connection_stats():
+        """
+        返回当前连接统计信息
+        """
+        return {
+            "active_connections": len(connection_map),
+            "connections": {k: v for k, v in connection_map.items()},
+            "timestamp": time.time()
+        }
+
     return app
 
 app = create_app()

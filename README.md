@@ -9,49 +9,38 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
 
 目前EMAS提供两种网络架构方案，您可以根据应用需求选择合适的方案：
 
-### EMASLocalProxy - 统一代理方案 (推荐)
+### EMASCurl - 协议拦截方案（推荐）
 
-**适用场景**：
-本方案推荐在 iOS 17.0+ 系统使用，充分利用原生 proxyConfigurations 能力；在低版本系统下，WKWebView 不支持；NSURLSession 仅对 HTTPS 请求生效（明文 HTTP 不经代理，直连系统网络）。
+**适用场景**：在 NSURLSession 接入 HTTPDNS，且需要兼容 iOS 10.0+ 全量系统版本、获得更精细的请求控制与统一的性能指标采集时，优先使用 EMASCurl。
 
-根据Apple官方统计数据（截至2025年6月4日），在系统版本分布上，iOS 17+已经占全部iPhone设备的85%以上，且在持续增长中。因此，考虑到HTTPDNS为WkWebView场景带来的是防劫持、调度精准、解析及时生效等非功能性提升，建议只需要在iOS 17+的系统版本上接入HTTPDNS，通过一个比较终态的接入方案，覆盖大部分客户，且旧版本系统用户，也会在后续的陆续版本升级中，逐渐享受这个能力。
+### EMASLocalProxy - 统一代理方案（WKWebView）
 
-### EMASCurl - 协议拦截方案
+**适用场景**：在 iOS 17.0+ 系统为 WKWebView 配置代理与 HTTPDNS 能力。低于 iOS 17 的系统不支持 WKWebView 代理。
 
-**适用场景**：
-只考虑在NSURLSession接入HTTPDNS，且追求全部系统版本都能使用HTTPDNS的场景。
+根据 Apple 官方统计（截至 2025 年 6 月 4 日），iOS 17+ 已占较高比例。考虑到 HTTPDNS 为 WKWebView 场景带来防劫持、调度精准、解析及时生效等非功能性提升，建议在使用本方案，在 iOS 17+ 的系统上支持HTTPDNS，iOS 16 及以下的版本也不会带来副作用。随着长尾用户逐渐升级到更新的系统，最终所有用户都可以享受到 HTTPDNS 带来的收益。
 
 ### 方案对比
 
-| 特性 | EMASLocalProxy | EMASCurl |
+| 特性 | EMASCurl | EMASLocalProxy |
 |:---|:---:|:---:|
-| **iOS版本要求** | iOS 17.0+（<17 有兼容差异） | iOS 10.0+ |
-| **NSURLSession支持** | ✅ iOS17+ 原生代理；<17 仅HTTPS | ✅ 协议拦截 |
-| **WKWebView支持** | ✅ iOS17+ 原生代理；<17 ❌ | ❌ |
-| **配置复杂度** | 简单 | 中等 |
+| **iOS版本要求** | iOS 10.0+ | iOS 17.0+（<17 有兼容差异） |
+| **NSURLSession支持** | ✅ 协议拦截 | ✅ iOS17+ 原生代理；<17 仅HTTPS |
+| **WKWebView支持** | ❌ | ✅ iOS17+ 原生代理；<17 ❌ |
+| **配置复杂度** | 中等 | 简单 |
 | **HTTPDNS集成** | ✅ | ✅ |
-| **维护成本** | 低 | 中等 |
-
+| **维护成本** | 中等 | 低 |
 
 ## 目录
 - [EMAS iOS网络解决方案](#emas-ios网络解决方案)
   - [方案选择指南](#方案选择指南)
-    - [EMASLocalProxy - 统一代理方案 (推荐)](#emaslocalproxy---统一代理方案-推荐)
-    - [EMASCurl - 协议拦截方案](#emascurl---协议拦截方案)
+    - [EMASCurl - 协议拦截方案（推荐）](#emascurl---协议拦截方案推荐)
+    - [EMASLocalProxy - 统一代理方案（WKWebView）](#emaslocalproxy---统一代理方案wkwebview)
     - [方案对比](#方案对比)
   - [目录](#目录)
-  - [EMASLocalProxy - 统一代理方案](#emaslocalproxy---统一代理方案)
+  - [EMASCurl - 协议拦截方案](#emascurl---协议拦截方案)
     - [简介](#简介)
-    - [从CocoaPods引入依赖](#从cocoapods引入依赖)
-    - [NSURLSession集成](#nsurlsession集成)
-      - [推荐的初始化策略](#推荐的初始化策略)
-    - [WKWebView集成](#wkwebview集成)
-    - [与HTTPDNS配合使用](#与httpdns配合使用)
-    - [调试和日志](#调试和日志)
-  - [EMASCurl - 协议拦截方案](#emascurl---协议拦截方案-1)
-    - [简介](#简介-1)
     - [快速入门](#快速入门)
-      - [从CocoaPods引入依赖](#从cocoapods引入依赖-1)
+      - [从CocoaPods引入依赖](#从cocoapods引入依赖)
       - [使用EMASCurl发送网络请求](#使用emascurl发送网络请求)
     - [构建EMASCurl](#构建emascurl)
       - [构建工具安装](#构建工具安装)
@@ -71,7 +60,7 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
       - [开启EMASCurl拦截](#开启emascurl拦截)
         - [拦截`NSURLSessionConfiguration`](#拦截nsurlsessionconfiguration)
         - [拦截`sharedSession`](#拦截sharedsession)
-      - [与HTTPDNS配合使用](#与httpdns配合使用-1)
+      - [与HTTPDNS配合使用](#与httpdns配合使用)
       - [选择HTTP版本](#选择http版本)
       - [设置CA证书文件路径](#设置ca证书文件路径)
       - [设置Cookie存储](#设置cookie存储)
@@ -91,241 +80,16 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
       - [设置域名校验](#设置域名校验)
       - [设置手动代理服务器](#设置手动代理服务器)
       - [设置HTTP缓存](#设置http缓存)
+  - [EMASLocalProxy - 统一代理方案](#emaslocalproxy---统一代理方案)
+    - [已知限制](#已知限制)
+    - [简介](#简介-1)
+    - [从CocoaPods引入依赖](#从cocoapods引入依赖-1)
+    - [WKWebView集成](#wkwebview集成)
+    - [与HTTPDNS配合使用](#与httpdns配合使用-1)
+    - [调试和日志](#调试和日志)
   - [License](#license)
   - [联系我们](#联系我们)
 
-
-## EMASLocalProxy - 统一代理方案
-
-### 已知限制
-
-- iOS 17 以下：WKWebView 不支持代理
-- iOS 17 以下：NSURLSession 仅 HTTPS 走代理，HTTP 明文请求不走代理
-
-### 简介
-
-EMASLocalProxy是阿里云EMAS团队提供的本地HTTPS代理服务，为iOS应用提供统一的网络代理解决方案。通过在本地启动HTTPS代理服务，EMASLocalProxy能够同时为NSURLSession和WKWebView提供网络代理能力，使所有网络请求都能享受以下好处：
-
-- **统一代理架构**：同时支持NSURLSession和WKWebView
-- **HTTPDNS域名解析**：无缝集成阿里云HTTPDNS服务
-- **现代API支持**：使用iOS 17.0+ proxyConfigurations API
-- **简化配置**：无需复杂的接入配置
-- **生产级稳定性**：基于Network framework的可靠实现
-
-### 从CocoaPods引入依赖
-
-在您的`Podfile`文件中添加EMASLocalProxy依赖：
-
-```ruby
-source 'https://github.com/aliyun/aliyun-specs.git'
-
-target 'yourAppTarget' do
-    use_framework!
-
-    pod 'EMASLocalProxy', 'x.x.x'
-end
-```
-
-当前版本: 1.3.6
-
-### NSURLSession集成
-
-EMASLocalProxy为NSURLSession提供了简单的集成方式，只需要一行代码即可启用代理。
-
-> 兼容性说明：iOS 17 以下系统仅 HTTPS 请求会通过本地代理，明文 HTTP 请求不会走代理（直连系统网络）。
-
-**重要提示**：EMASLocalProxy代理服务启动需要数百毫秒时间，建议您根据应用场景选择合适的初始化策略。
-
-#### 推荐的初始化策略
-
-**策略一：延迟初始化（推荐）**
-如果应用启动后不需要立即发送网络请求，推荐等待代理服务准备就绪后再创建NSURLSession：
-
-```objc
-#import <EMASLocalProxy/EMASLocalHttpProxy.h>
-
-- (void)setupNetworkingWhenReady {
-    if (@available(iOS 17.0, *)) {
-        // 检查代理服务是否已准备就绪
-        if ([EMASLocalHttpProxy isProxyReady]) {
-            [self createSessionWithProxy];
-        } else {
-            // 延迟检查代理状态
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [self setupNetworkingWhenReady];
-            });
-        }
-    } else {
-        [self createSessionWithoutProxy];
-    }
-}
-
-- (void)createSessionWithProxy {
-    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-    BOOL success = [EMASLocalHttpProxy installIntoUrlSessionConfiguration:config];
-
-    if (success) {
-        self.session = [NSURLSession sessionWithConfiguration:config];
-        NSLog(@"已启用本地代理的URLSession");
-    } else {
-        [self createSessionWithoutProxy];
-    }
-}
-
-- (void)createSessionWithoutProxy {
-    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-    self.session = [NSURLSession sessionWithConfiguration:config];
-    NSLog(@"使用标准URLSession");
-}
-```
-
-**策略二：渐进式升级（适用于需要立即发送请求的场景）**
-如果应用启动后需要立即发送网络请求，可以先使用标准NSURLSession，待代理就绪后再升级：
-
-```objc
-@interface NetworkManager : NSObject
-@property (nonatomic, strong) NSURLSession *session;
-@property (nonatomic, assign) BOOL isUsingProxy;
-@end
-
-@implementation NetworkManager
-
-- (instancetype)init {
-    self = [super init];
-    if (self) {
-        // 立即创建标准session以支持紧急网络请求
-        [self createStandardSession];
-
-        // 异步尝试升级到代理session
-        [self tryUpgradeToProxySession];
-    }
-    return self;
-}
-
-- (void)createStandardSession {
-    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-    self.session = [NSURLSession sessionWithConfiguration:config];
-    self.isUsingProxy = NO;
-    NSLog(@"创建标准URLSession");
-}
-
-- (void)tryUpgradeToProxySession {
-    if (@available(iOS 17.0, *)) {
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            // 等待代理服务启动（最多等待3秒）
-            int attempts = 0;
-            while (attempts < 3 && ![EMASLocalHttpProxy isProxyReady]) {
-                usleep(500000); // 等待500ms
-                attempts++;
-            }
-
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if ([EMASLocalHttpProxy isProxyReady]) {
-                    [self upgradeToProxySession];
-                } else {
-                    NSLog(@"代理服务启动超时，继续使用标准URLSession");
-                }
-            });
-        });
-    }
-}
-
-- (void)upgradeToProxySession {
-    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-    BOOL success = [EMASLocalHttpProxy installIntoUrlSessionConfiguration:config];
-
-    if (success) {
-        // 保存旧session的引用
-        NSURLSession *oldSession = self.session;
-
-        // 创建新的代理session
-        self.session = [NSURLSession sessionWithConfiguration:config];
-        self.isUsingProxy = YES;
-        NSLog(@"已升级到代理URLSession");
-
-        // 优雅地关闭旧session：等待现有任务完成后再关闭
-        // 注意：新的网络请求将使用新的代理session
-        [oldSession finishTasksAndInvalidate];
-    }
-}
-
-@end
-```
-
-### WKWebView集成
-
-仅在 iOS 17.0+ 支持通过 proxyConfigurations 配置代理；低于 iOS 17 不支持 WKWebView 代理。
-
-WKWebView的代理配置相对简单，因为WebView通常不会在应用启动时立即加载：
-
-```objc
-#import <EMASLocalProxy/EMASLocalHttpProxy.h>
-#import <WebKit/WebKit.h>
-
-- (void)setupWebViewWithProxy {
-    WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
-
-    if (@available(iOS 17.0, *)) {
-        // 检查代理是否就绪，如果没有就绪会自动使用系统网络
-        BOOL success = [EMASLocalHttpProxy installIntoWkWebViewConfiguration:config];
-        NSLog(@"WebView代理配置: %@", success ? @"成功" : @"失败，使用系统网络");
-    }
-
-    self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:config];
-    [self.view addSubview:self.webView];
-
-    // 加载网页
-    NSURL *url = [NSURL URLWithString:@"https://example.com"];
-    NSURLRequest *request = [NSURLRequest requestWithURL:url];
-    [self.webView loadRequest:request];
-}
-```
-
-### 与HTTPDNS配合使用
-
-EMASLocalProxy可以与阿里云HTTPDNS服务无缝集成，提供自定义域名解析能力：
-
-```objc
-#import <AlicloudHttpDNS/AlicloudHttpDNS.h>
-
-// 配置DNS解析器
-[EMASLocalHttpProxy setDNSResolverBlock:^NSArray<NSString *> * _Nullable(NSString * _Nonnull hostname) {
-    HttpDnsService *httpdns = [HttpDnsService sharedInstance];
-    HttpdnsResult *result = [httpdns resolveHostSyncNonBlocking:hostname byIpType:HttpdnsQueryIPTypeBoth];
-
-    if (result && (result.hasIpv4Address || result.hasIpv6Address)) {
-        NSMutableArray<NSString *> *allIPs = [NSMutableArray array];
-        if (result.hasIpv4Address) {
-            [allIPs addObjectsFromArray:result.ips];
-        }
-        if (result.hasIpv6Address) {
-            [allIPs addObjectsFromArray:result.ipv6s];
-        }
-        NSLog(@"HTTPDNS解析成功，域名: %@, IP: %@", hostname, allIPs);
-        return allIPs;
-    }
-
-    NSLog(@"HTTPDNS解析失败，域名: %@", hostname);
-    return nil;
-}];
-```
-
-### 调试和日志
-
-EMASLocalProxy提供了完善的日志系统，便于开发和调试：
-
-```objc
-// 设置日志级别
-typedef NS_ENUM(NSInteger, EMASLocalHttpProxyLogLevel) {
-    EMASLocalHttpProxyLogLevelOff = 0,    // 关闭日志
-    EMASLocalHttpProxyLogLevelError = 1,  // 仅错误日志
-    EMASLocalHttpProxyLogLevelInfo = 2,   // 信息和错误日志
-    EMASLocalHttpProxyLogLevelDebug = 3   // 所有日志（包括详细调试信息）
-};
-
-// 开启调试日志
-[EMASLocalHttpProxy setLogLevel:EMASLocalHttpProxyLogLevelDebug];
-```
 
 ## EMASCurl - 协议拦截方案
 
@@ -1021,6 +785,112 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 ```objc
 // 启用HTTP缓存
 [EMASCurlProtocol setCacheEnabled:YES];
+```
+
+## EMASLocalProxy - 统一代理方案
+
+### 已知限制
+
+- iOS 17 以下：WKWebView 不支持代理
+- iOS 17 以下：NSURLSession 仅 HTTPS 走代理，HTTP 明文请求不走代理
+
+### 简介
+
+EMASLocalProxy 是阿里云 EMAS 团队提供的本地 HTTPS 代理服务，为 iOS 17+ 的 WKWebView 提供统一代理与 HTTPDNS 能力。本 README 仅保留 WKWebView 相关指引；NSURLSession 场景推荐使用 EMASCurl。
+
+- **WKWebView 代理**：在 iOS 17.0+ 通过 proxyConfigurations 支持 WKWebView
+- **HTTPDNS域名解析**：无缝集成阿里云 HTTPDNS 服务
+- **现代API支持**：使用 iOS 17.0+ proxyConfigurations API
+- **简化配置**：无需复杂的接入配置
+- **生产级稳定性**：基于 Network framework 的可靠实现
+
+### 从CocoaPods引入依赖
+
+在您的 `Podfile` 文件中添加 EMASLocalProxy 依赖：
+
+```ruby
+source 'https://github.com/aliyun/aliyun-specs.git'
+
+target 'yourAppTarget' do
+    use_framework!
+
+    pod 'EMASLocalProxy', 'x.x.x'
+end
+```
+
+当前版本: 1.3.6
+
+### WKWebView集成
+
+仅在 iOS 17.0+ 支持通过 proxyConfigurations 配置代理；低于 iOS 17 不支持 WKWebView 代理。
+
+WKWebView 的代理配置相对简单，因为 WebView 通常不会在应用启动时立即加载：
+
+```objc
+#import <EMASLocalProxy/EMASLocalHttpProxy.h>
+#import <WebKit/WebKit.h>
+
+- (void)setupWebViewWithProxy {
+    WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
+
+    // EMASLocalProxy 会内部检查系统版本，iOS 17 以下会返回 NO
+    BOOL success = [EMASLocalHttpProxy installIntoWkWebViewConfiguration:config];
+    NSLog(@"WebView代理配置: %@", success ? @"成功" : @"失败，使用系统网络");
+
+    self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:config];
+    [self.view addSubview:self.webView];
+
+    // 加载网页
+    NSURL *url = [NSURL URLWithString:@"https://example.com"];
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    [self.webView loadRequest:request];
+}
+```
+
+### 与HTTPDNS配合使用
+
+EMASLocalProxy 可以与阿里云 HTTPDNS 服务无缝集成，提供自定义域名解析能力：
+
+```objc
+#import <AlicloudHttpDNS/AlicloudHttpDNS.h>
+
+// 配置DNS解析器
+[EMASLocalHttpProxy setDNSResolverBlock:^NSArray<NSString *> * _Nullable(NSString * _Nonnull hostname) {
+    HttpDnsService *httpdns = [HttpDnsService sharedInstance];
+    HttpdnsResult *result = [httpdns resolveHostSyncNonBlocking:hostname byIpType:HttpdnsQueryIPTypeBoth];
+
+    if (result && (result.hasIpv4Address || result.hasIpv6Address)) {
+        NSMutableArray<NSString *> *allIPs = [NSMutableArray array];
+        if (result.hasIpv4Address) {
+            [allIPs addObjectsFromArray:result.ips];
+        }
+        if (result.hasIpv6Address) {
+            [allIPs addObjectsFromArray:result.ipv6s];
+        }
+        NSLog(@"HTTPDNS解析成功，域名: %@, IP: %@", hostname, allIPs);
+        return allIPs;
+    }
+
+    NSLog(@"HTTPDNS解析失败，域名: %@", hostname);
+    return nil;
+}];
+```
+
+### 调试和日志
+
+EMASLocalProxy 提供了完善的日志系统，便于开发和调试：
+
+```objc
+// 设置日志级别
+typedef NS_ENUM(NSInteger, EMASLocalHttpProxyLogLevel) {
+    EMASLocalHttpProxyLogLevelOff = 0,    // 关闭日志
+    EMASLocalHttpProxyLogLevelError = 1,  // 仅错误日志
+    EMASLocalHttpProxyLogLevelInfo = 2,   // 信息和错误日志
+    EMASLocalHttpProxyLogLevelDebug = 3   // 所有日志（包括详细调试信息）
+};
+
+// 开启调试日志
+[EMASLocalHttpProxy setLogLevel:EMASLocalHttpProxyLogLevelDebug];
 ```
 
 ## License
