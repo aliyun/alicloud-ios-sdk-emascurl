@@ -21,7 +21,7 @@
 #pragma mark - 常量定义
 
 /// 代理服务端口范围最小值
-static const uint16_t kEMASLocalProxyPortMin = 31000;
+static const uint16_t kEMASLocalProxyPortMin = 22000;
 
 /// 代理服务端口范围最大值
 static const uint16_t kEMASLocalProxyPortMax = 32000;
@@ -166,7 +166,8 @@ API_AVAILABLE(ios(17.0))
         _lastRecoveryAttemptTime = nil;  // 初始化恢复时间戳
 
         // 创建专用的串行队列用于同步start/stop操作
-        _operationQueue = dispatch_queue_create("com.alicloud.httpdns.proxy.operation", DISPATCH_QUEUE_SERIAL);
+        _operationQueue = dispatch_queue_create("com.alicloud.httpdns.proxy.operation",
+                                               dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INITIATED, 0));
 
         // 初始化IP失败追踪系统
         _failedIPsPerHost = [NSMutableDictionary dictionary];
@@ -274,7 +275,8 @@ API_AVAILABLE(ios(17.0))
         }
     });
 
-    nw_connection_set_queue(testConnection, dispatch_get_global_queue(QOS_CLASS_UTILITY, 0));
+    // 使用与当前队列相同的QoS级别，避免优先级反转
+    nw_connection_set_queue(testConnection, dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0));
     nw_connection_start(testConnection);
 
     // 等待健康检查结果（1秒超时）
