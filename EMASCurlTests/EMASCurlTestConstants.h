@@ -34,6 +34,10 @@ static NSString *PATH_UPLOAD_POST_SLOW = @"/upload/post/slow";
 
 static NSString *PATH_UPLOAD_PUT_SLOW = @"/upload/put/slow";
 
+static NSString *PATH_UPLOAD_PATCH_SLOW = @"/upload/patch/slow";
+
+static NSString *PATH_UPLOAD_DELETE_SLOW = @"/upload/delete/slow";
+
 static NSString *PATH_TIMEOUT_REQUEST = @"/timeout/request";
 
 #endif /* EMASCurlTestConstants_h */

@@ -239,6 +239,100 @@ static NSURLSession *session;
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
+- (void)patchUploadUsingHttpBody:(NSString *)endpoint {
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_UPLOAD_PATCH_SLOW]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    request.HTTPMethod = @"PATCH";
+
+    // Create PATCH request body - simulate partial update data
+    NSDictionary *patchData = @{
+        @"operation": @"update",
+        @"updates": @{
+            @"status": @"active",
+            @"lastModified": [NSDate date].description
+        }
+    };
+
+    NSError *jsonError;
+    NSData *testData = [NSJSONSerialization dataWithJSONObject:patchData options:0 error:&jsonError];
+    XCTAssertNil(jsonError, @"Failed to create PATCH JSON data: %@", jsonError);
+
+    [request setHTTPBody:testData];
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+                                                completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        XCTAssertNil(error, @"PATCH upload failed with error: %@", error);
+        XCTAssertNotNil(response, @"No response received");
+
+        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected 200 status code for PATCH");
+
+        // Verify response contains upload information
+        if (data) {
+            NSString *responseString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+            XCTAssertTrue([responseString containsString:@"size"], @"PATCH response should contain size information");
+            XCTAssertTrue([responseString containsString:@"PATCH"], @"PATCH response should contain method information");
+        }
+
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    [dataTask resume];
+
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+}
+
+- (void)deleteUploadUsingHttpBody:(NSString *)endpoint {
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", endpoint, PATH_UPLOAD_DELETE_SLOW]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    request.HTTPMethod = @"DELETE";
+
+    // Create DELETE request body - simulate deletion with metadata
+    NSDictionary *deleteData = @{
+        @"deletion_reason": @"user_requested",
+        @"items_to_delete": @[@123, @456, @789],
+        @"options": @{
+            @"create_backup": @YES,
+            @"notify_admin": @YES,
+            @"soft_delete": @NO
+        }
+    };
+
+    NSError *jsonError;
+    NSData *testData = [NSJSONSerialization dataWithJSONObject:deleteData options:0 error:&jsonError];
+    XCTAssertNil(jsonError, @"Failed to create DELETE JSON data: %@", jsonError);
+
+    [request setHTTPBody:testData];
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+                                                completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        XCTAssertNil(error, @"DELETE upload failed with error: %@", error);
+        XCTAssertNotNil(response, @"No response received");
+
+        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+        XCTAssertEqual(httpResponse.statusCode, 200, @"Expected 200 status code for DELETE");
+
+        // Verify response contains upload information
+        if (data) {
+            NSString *responseString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+            XCTAssertTrue([responseString containsString:@"size"], @"DELETE response should contain size information");
+            XCTAssertTrue([responseString containsString:@"DELETE"], @"DELETE response should contain method information");
+        }
+
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    [dataTask resume];
+
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+}
+
 @end
 
 @interface EMASCurlUploadTestHttp11 : EMASCurlUploadTestBase
@@ -273,6 +367,14 @@ static NSURLSession *session;
 
 - (void)testUploadDataUsingHttpBody {
     [self uploadDataUsingHttpBody:HTTP11_ENDPOINT];
+}
+
+- (void)testPatchUploadUsingHttpBody {
+    [self patchUploadUsingHttpBody:HTTP11_ENDPOINT];
+}
+
+- (void)testDeleteUploadUsingHttpBody {
+    [self deleteUploadUsingHttpBody:HTTP11_ENDPOINT];
 }
 
 @end
@@ -313,6 +415,18 @@ static NSURLSession *session;
 - (void)testCancelUploadAndUploadAgain {
     [self uploadDataAndCancel:HTTP2_ENDPOINT];
     [self uploadData:HTTP2_ENDPOINT];
+}
+
+- (void)testUploadDataUsingHttpBody {
+    [self uploadDataUsingHttpBody:HTTP2_ENDPOINT];
+}
+
+- (void)testPatchUploadUsingHttpBody {
+    [self patchUploadUsingHttpBody:HTTP2_ENDPOINT];
+}
+
+- (void)testDeleteUploadUsingHttpBody {
+    [self deleteUploadUsingHttpBody:HTTP2_ENDPOINT];
 }
 
 @end

@@ -746,8 +746,11 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         curl_easy_setopt(easyHandle, CURLOPT_HTTPGET, 1);
     } else if ([HTTP_METHOD_POST isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_POST, 1);
-    } else if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
+    } else if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod] ||
+               [HTTP_METHOD_PATCH isEqualToString:request.HTTPMethod] ||
+               [HTTP_METHOD_DELETE isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_UPLOAD, 1);
+        curl_easy_setopt(easyHandle, CURLOPT_CUSTOMREQUEST, [request.HTTPMethod UTF8String]);
     } else if ([HTTP_METHOD_HEAD isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_NOBODY, 1);
     } else {
@@ -856,7 +859,7 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     NSURLRequest *request = self.request;
 
     if (!request.HTTPBodyStream) {
-        if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
+        if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod] || [HTTP_METHOD_PATCH isEqualToString:request.HTTPMethod] || [HTTP_METHOD_DELETE isEqualToString:request.HTTPMethod]) {
             curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, 0L);
         } else if ([HTTP_METHOD_POST isEqualToString:request.HTTPMethod]) {
             curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, 0L);
@@ -884,7 +887,7 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     int64_t length = [contentLength longLongValue];
     self.totalBytesExpected = length;
 
-    if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
+    if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod] || [HTTP_METHOD_PATCH isEqualToString:request.HTTPMethod] || [HTTP_METHOD_DELETE isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, length);
         return;
     }
