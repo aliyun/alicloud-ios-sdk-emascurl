@@ -111,9 +111,6 @@ API_AVAILABLE(ios(17.0))
     /// 串行队列，用于IP失败追踪的线程安全操作
     dispatch_queue_t _ipTrackingQueue;
 
-    /// 记录最后成功使用的端口，用于后台恢复
-    uint16_t _lastWorkingPort;
-
     /// 防止并发恢复尝试
     BOOL _isRecovering;
 
@@ -165,7 +162,6 @@ API_AVAILABLE(ios(17.0))
         _proxyPort = 0;                    // 端口将在启动时动态分配
         _isProxyReady = NO;              // 初始状态为未运行
         _listener = NULL;                  // 监听器初始为空
-        _lastWorkingPort = 0;            // 初始化最后工作端口
         _isRecovering = NO;              // 初始化恢复状态
         _lastRecoveryAttemptTime = nil;  // 初始化恢复时间戳
 
@@ -285,12 +281,12 @@ API_AVAILABLE(ios(17.0))
     dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC));
     dispatch_semaphore_wait(healthCheckSemaphore, timeout);
 
-    _isRecovering = NO;
-
     if (!isHealthy) {
         EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Listener health check failed, initiating recovery");
         [self recoverProxy];
     }
+
+    _isRecovering = NO;
 }
 
 /**
@@ -300,11 +296,9 @@ API_AVAILABLE(ios(17.0))
 - (void)recoverProxy {
     EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Starting proxy recovery");
 
-    // 确定要使用的端口 - 优先使用最后工作的端口，否则使用当前端口
-    uint16_t portToReuse = (_lastWorkingPort > 0) ? _lastWorkingPort : _proxyPort;
-
-    if (portToReuse == 0) {
-        EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("No previous port available for recovery");
+    // 使用已分配的代理端口
+    if (_proxyPort == 0) {
+        EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("No proxy port available for recovery");
         // 注意：调用者负责重置_isRecovering标志
         return;
     }
@@ -314,12 +308,10 @@ API_AVAILABLE(ios(17.0))
 
     // 在相同端口上尝试多次恢复
     for (NSInteger attempt = 0; attempt < 3; attempt++) {
-        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Recovery attempt %ld/3 on port: %d", (long)(attempt + 1), portToReuse);
+        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Recovery attempt %ld/3 on port: %d", (long)(attempt + 1), _proxyPort);
 
-        if ([self tryStartOnPort:portToReuse]) {
-            _proxyPort = portToReuse;
-            _lastWorkingPort = portToReuse;
-            EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Recovery successful on port: %d", portToReuse);
+        if ([self tryStartOnPort:_proxyPort]) {
+            EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Recovery successful on port: %d", _proxyPort);
             // 注意：调用者负责重置_isRecovering标志
             return;
         }
@@ -332,9 +324,8 @@ API_AVAILABLE(ios(17.0))
     }
 
     // 所有恢复尝试失败
-    _proxyPort = portToReuse;  // 保留端口号以供参考
     _isProxyReady = NO;
-    EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("Recovery failed after 3 attempts on port: %d", portToReuse);
+    EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("Recovery failed after 3 attempts on port: %d", _proxyPort);
     // 注意：调用者负责重置_isRecovering标志
 }
 
@@ -519,7 +510,6 @@ API_AVAILABLE(ios(17.0))
             // 尝试在指定端口启动服务
             if ([self tryStartOnPort:port]) {
                 _proxyPort = port;
-                _lastWorkingPort = port;  // 记住成功的端口
                 result = YES;
                 return;
             }
@@ -582,8 +572,7 @@ API_AVAILABLE(ios(17.0))
     // 2. 网络请求完成
     // 3. 连接超时或出错
 
-    // 重置端口状态
-    _proxyPort = 0;
+    // 注意：不重置_proxyPort，保持端口信息以供后续恢复使用
 }
 
 #pragma mark - 连接处理
