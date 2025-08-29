@@ -151,6 +151,64 @@ static NSURLSession *session;
     }];
 }
 
+- (void)patchRequest:(NSString *)endpoint {
+    NSDictionary *requestBody = @{
+        @"operation": @"update",
+        @"data": @{
+            @"field": @"value",
+            @"status": @"modified"
+        }
+    };
+
+    [self executeRequest:endpoint
+                    path:PATH_ECHO
+                  method:@"PATCH"
+                    body:requestBody
+                 headers:nil
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        [self validateEchoResponse:data expectedMethod:@"PATCH"];
+
+        NSError *jsonError;
+        NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+        XCTAssertNil(jsonError);
+
+        NSString *bodyContent = responseData[@"body"];
+        XCTAssertNotNil(bodyContent, @"Expected body content in PATCH response");
+        XCTAssertTrue([bodyContent containsString:@"operation"], @"Expected operation in echoed body");
+        XCTAssertTrue([bodyContent containsString:@"modified"], @"Expected status in echoed body");
+    }];
+}
+
+- (void)deleteRequestWithBody:(NSString *)endpoint {
+    NSDictionary *requestBody = @{
+        @"reason": @"user_requested_deletion",
+        @"admin_approval": @"approved_by_admin_456",
+        @"metadata": @{
+            @"deletion_date": [NSDate date].description,
+            @"backup_created": @YES
+        }
+    };
+
+    [self executeRequest:endpoint
+                    path:PATH_ECHO
+                  method:@"DELETE"
+                    body:requestBody
+                 headers:nil
+         validationBlock:^(NSData *data, NSHTTPURLResponse *response) {
+        [self validateEchoResponse:data expectedMethod:@"DELETE"];
+
+        NSError *jsonError;
+        NSDictionary *responseData = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+        XCTAssertNil(jsonError);
+
+        NSString *bodyContent = responseData[@"body"];
+        XCTAssertNotNil(bodyContent, @"Expected body content in DELETE response");
+        XCTAssertTrue([bodyContent containsString:@"reason"], @"Expected reason in echoed body");
+        XCTAssertTrue([bodyContent containsString:@"admin_approval"], @"Expected admin_approval in echoed body");
+        XCTAssertTrue([bodyContent containsString:@"backup_created"], @"Expected backup_created in echoed body");
+    }];
+}
+
 - (void)optionsRequest:(NSString *)endpoint {
     NSDictionary *headers = @{
         @"Access-Control-Request-Headers": @"*",
@@ -248,12 +306,20 @@ static NSURLSession *session;
     [self deleteRequest:HTTP11_ENDPOINT];
 }
 
+- (void)testDeleteRequestWithBody {
+    [self deleteRequestWithBody:HTTP11_ENDPOINT];
+}
+
 - (void)testPutRequest {
     [self putRequest:HTTP11_ENDPOINT];
 }
 
 - (void)testPostRequest {
     [self postRequest:HTTP11_ENDPOINT];
+}
+
+- (void)testPatchRequest {
+    [self patchRequest:HTTP11_ENDPOINT];
 }
 
 - (void)testOptionsRequest {
@@ -308,12 +374,20 @@ static NSURLSession *session;
     [self deleteRequest:HTTP2_ENDPOINT];
 }
 
+- (void)testDeleteRequestWithBody {
+    [self deleteRequestWithBody:HTTP2_ENDPOINT];
+}
+
 - (void)testPutRequest {
     [self putRequest:HTTP2_ENDPOINT];
 }
 
 - (void)testPostRequest {
     [self postRequest:HTTP2_ENDPOINT];
+}
+
+- (void)testPatchRequest {
+    [self patchRequest:HTTP2_ENDPOINT];
 }
 
 - (void)testOptionsRequest {

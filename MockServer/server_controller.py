@@ -9,6 +9,7 @@ import asyncio
 from typing import Optional, Any
 import gzip
 import logging
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -166,6 +167,106 @@ def create_app():
             "content_type": content_type,
             "size": total_size
         }
+
+    @app.patch("/upload/patch/slow")
+    async def upload_patch_slow(request: Request):
+        """Handle PATCH upload with simulated slow processing"""
+        chunk_size = 200 * 1024
+        total_size = 0
+
+        content_type = request.headers.get("Content-Type", "application/octet-stream")
+        logger.info(f"Starting slow PATCH upload, Content-Type: {content_type}")
+
+        # Read the body data in chunks
+        chunk_count = 0
+        async for chunk in request.stream():
+            chunk_count += 1
+            chunk_len = len(chunk)
+            total_size += chunk_len
+            logger.info(f"Received chunk {chunk_count}: {chunk_len} bytes, total so far: {total_size}")
+            await asyncio.sleep(1)  # Simulate slow processing
+
+        logger.info(f"PATCH upload complete: {total_size} bytes in {chunk_count} chunks")
+        return {
+            "content_type": content_type,
+            "size": total_size,
+            "method": "PATCH"
+        }
+
+    @app.delete("/upload/delete/slow")
+    async def upload_delete_slow(request: Request):
+        """Handle DELETE upload with simulated slow processing"""
+        chunk_size = 200 * 1024
+        total_size = 0
+
+        content_type = request.headers.get("Content-Type", "application/octet-stream")
+        logger.info(f"Starting slow DELETE upload, Content-Type: {content_type}")
+
+        # Read the body data in chunks
+        chunk_count = 0
+        async for chunk in request.stream():
+            chunk_count += 1
+            chunk_len = len(chunk)
+            total_size += chunk_len
+            logger.info(f"Received chunk {chunk_count}: {chunk_len} bytes, total so far: {total_size}")
+            await asyncio.sleep(1)  # Simulate slow processing
+
+        logger.info(f"DELETE upload complete: {total_size} bytes in {chunk_count} chunks")
+        return {
+            "content_type": content_type,
+            "size": total_size,
+            "method": "DELETE"
+        }
+
+    @app.post("/upload/post/chunked")
+    async def upload_file_chunked(request: Request):
+        """Handle chunked transfer encoding upload"""
+        logger.info("Starting chunked upload endpoint")
+
+        # Check for Transfer-Encoding header
+        transfer_encoding = request.headers.get("Transfer-Encoding", "")
+        content_length = request.headers.get("Content-Length")
+
+        logger.info(f"Transfer-Encoding: {transfer_encoding}")
+        logger.info(f"Content-Length: {content_length}")
+
+        # Verify chunked encoding is used
+        is_chunked = "chunked" in transfer_encoding.lower()
+
+        # Read the body data in chunks
+        total_size = 0
+        chunk_count = 0
+        chunks_data = []
+
+        async for chunk in request.stream():
+            chunk_count += 1
+            chunk_len = len(chunk)
+            total_size += chunk_len
+            chunks_data.append(chunk)
+            logger.info(f"Received chunk {chunk_count}: {chunk_len} bytes, total so far: {total_size}")
+            # Small delay to simulate processing
+            await asyncio.sleep(0.1)
+
+        logger.info(f"Chunked upload complete: {total_size} bytes in {chunk_count} chunks")
+
+        # Combine all chunks for verification
+        complete_data = b''.join(chunks_data)
+
+        # 构建返回字典，只包含存在的请求头
+        result = {
+            "is_chunked": is_chunked,
+            "actual_size": total_size,
+            "chunk_count": chunk_count,
+            "method": "POST"
+        }
+
+        # 只有当相应的请求头存在时才添加到结果中
+        if request.headers.get("Transfer-Encoding"):
+            result["transfer_encoding"] = transfer_encoding
+        if request.headers.get("Content-Length"):
+            result["content_length_header"] = content_length
+
+        return result
 
     @app.post("/upload/post/slow_403")
     async def upload_file_slow_403(request: Request):

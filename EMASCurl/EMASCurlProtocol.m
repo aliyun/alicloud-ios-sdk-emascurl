@@ -867,6 +867,7 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         return;
     }
 
+    // NSURLSession内部会把HTTPBody统一转换到HTTPBodyStream，因此不用单独处理HTTPBody字段
     self.inputStream = request.HTTPBodyStream;
 
     // 用read_cb回调函数来读取需要传输的数据
@@ -874,8 +875,15 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     // self传给read_cb函数的void *userp参数
     curl_easy_setopt(easyHandle, CURLOPT_READDATA, (__bridge void *)self);
 
+    if ([HTTP_METHOD_PATCH isEqualToString:request.HTTPMethod]
+        || [HTTP_METHOD_DELETE isEqualToString:request.HTTPMethod]) {
+        curl_easy_setopt(easyHandle, CURLOPT_UPLOAD, 1);
+    }
+
     NSString *contentLength = [request valueForHTTPHeaderField:@"Content-Length"];
     if (!contentLength) {
+        // chunked模式不发送Expect，保持和NSURLSession的行为一致
+        self.requestHeaderFields = curl_slist_append(self.requestHeaderFields, "Expect:");
         // 未设置Content-Length的情况，即使是使用Transfer-Encoding: chunked，也把totalBytesExpected设置为-1
         self.totalBytesExpected = -1;
         return;
@@ -897,7 +905,6 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
 
     // 其他情况，都以POST的方式指定Content-Length
     curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, length);
-    curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE, length);
 }
 
 - (void)configEasyHandle:(CURL *)easyHandle error:(NSError **)error {
