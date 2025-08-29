@@ -748,9 +748,6 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         curl_easy_setopt(easyHandle, CURLOPT_POST, 1);
     } else if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_UPLOAD, 1);
-    } else if ([HTTP_METHOD_PATCH isEqualToString:request.HTTPMethod] ||
-               [HTTP_METHOD_DELETE isEqualToString:request.HTTPMethod]) {
-        curl_easy_setopt(easyHandle, CURLOPT_CUSTOMREQUEST, [request.HTTPMethod UTF8String]);
     } else if ([HTTP_METHOD_HEAD isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_NOBODY, 1);
     } else {
@@ -858,51 +855,45 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
 - (void)populateRequestBody:(CURL *)easyHandle {
     NSURLRequest *request = self.request;
 
-    // Handle both HTTPBody and HTTPBodyStream
-    NSData *bodyData = request.HTTPBody;
-    NSInputStream *bodyStream = request.HTTPBodyStream;
-
-    // If neither is set, just set size to 0 for methods that support bodies
-    if (!bodyData && !bodyStream) {
+    if (!request.HTTPBodyStream) {
         if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
             curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, 0L);
         } else if ([HTTP_METHOD_POST isEqualToString:request.HTTPMethod]) {
             curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, 0L);
-        } else if ([HTTP_METHOD_PATCH isEqualToString:request.HTTPMethod] || [HTTP_METHOD_DELETE isEqualToString:request.HTTPMethod]) {
-            curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, 0L);
         } else {
             // 其他情况无需处理
         }
+
         return;
     }
 
-    // If we have HTTPBody (NSData), create a stream from it
-    if (bodyData && !bodyStream) {
-        bodyStream = [NSInputStream inputStreamWithData:bodyData];
-        // Set Content-Length header if not already set
-        if (![request valueForHTTPHeaderField:@"Content-Length"]) {
-            NSString *contentLength = [NSString stringWithFormat:@"%lu", (unsigned long)bodyData.length];
-            self.requestHeaderFields = curl_slist_append(self.requestHeaderFields, [[NSString stringWithFormat:@"Content-Length: %@", contentLength] UTF8String]);
-        }
-    }
-
-    self.inputStream = bodyStream;
+    // NSURLSession内部会把HTTPBody统一转换到HTTPBodyStream，因此不用单独处理HTTPBody字段
+    self.inputStream = request.HTTPBodyStream;
 
     // 用read_cb回调函数来读取需要传输的数据
     curl_easy_setopt(easyHandle, CURLOPT_READFUNCTION, read_cb);
     // self传给read_cb函数的void *userp参数
     curl_easy_setopt(easyHandle, CURLOPT_READDATA, (__bridge void *)self);
 
+    if ([HTTP_METHOD_PATCH isEqualToString:request.HTTPMethod]
+        || [HTTP_METHOD_DELETE isEqualToString:request.HTTPMethod]) {
+        curl_easy_setopt(easyHandle, CURLOPT_UPLOAD, 1);
+    }
+
     NSString *contentLength = [request valueForHTTPHeaderField:@"Content-Length"];
-    int64_t length = contentLength ? [contentLength longLongValue] : (bodyData ? bodyData.length : -1);
+    if (!contentLength) {
+        // chunked模式不发送Expect，保持和NSURLSession的行为一致
+        self.requestHeaderFields = curl_slist_append(self.requestHeaderFields, "Expect:");
+        // 未设置Content-Length的情况，即使是使用Transfer-Encoding: chunked，也把totalBytesExpected设置为-1
+        self.totalBytesExpected = -1;
+        return;
+    }
+
+    int64_t length = [contentLength longLongValue];
     self.totalBytesExpected = length;
 
     if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
         curl_easy_setopt(easyHandle, CURLOPT_INFILESIZE_LARGE, length);
-        return;
-    } else if ([HTTP_METHOD_PATCH isEqualToString:request.HTTPMethod] || [HTTP_METHOD_DELETE isEqualToString:request.HTTPMethod]) {
-        curl_easy_setopt(easyHandle, CURLOPT_UPLOAD, 1L);
-        curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, length);
         return;
     }
 
@@ -914,7 +905,6 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
 
     // 其他情况，都以POST的方式指定Content-Length
     curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, length);
-    curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE, length);
 }
 
 - (void)configEasyHandle:(CURL *)easyHandle error:(NSError **)error {
