@@ -127,17 +127,37 @@ pod install --repo-update
 
 #### 使用EMASCurl发送网络请求
 
-首先，为您的`NSURLSessionConfiguration`注册EMASCurl实现。
+首先，创建EMASCurl配置并安装到您的`NSURLSessionConfiguration`。
 
 ```objc
-NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-[EMASCurlProtocol installIntoSessionConfiguration:config];
+// 实现自定义DNS解析器（例如使用HTTPDNS）
+@interface MyDNSResolver : NSObject <EMASCurlProtocolDNSResolver>
+@end
+
+@implementation MyDNSResolver
++ (NSString *)resolveDomain:(NSString *)domain {
+    // 这里可以接入HTTPDNS或其他DNS服务
+    // 返回解析后的IP地址，多个IP用逗号分隔
+    return @"192.168.1.100,192.168.1.101";
+}
+@end
+
+// 创建EMASCurl配置
+EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
+curlConfig.dnsResolver = [MyDNSResolver class];  // 设置DNS解析器
+curlConfig.connectTimeoutInterval = 3.0;  // 3秒连接超时
+
+// 创建并配置NSURLSession
+NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
+[EMASCurlProtocol installIntoSessionConfiguration:sessionConfig withConfiguration:curlConfig];
 ```
 
-之后，EMASCurl可以拦截此`NSURLSessionConfiguration`创建的`NSURLSession`发起的请求。
+之后，EMASCurl可以拦截此`NSURLSessionConfiguration`创建的`NSURLSession`发起的请求，并使用自定义的DNS解析器。
 
 ```objc
-NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:[NSOperationQueue mainQueue]];
+NSURLSession *session = [NSURLSession sessionWithConfiguration:sessionConfig
+                                                     delegate:nil
+                                                delegateQueue:[NSOperationQueue mainQueue]];
 
 NSURL *url = [NSURL URLWithString:@"https://httpbin.org/anything"];
 NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
@@ -258,20 +278,31 @@ EMASCurl会使用`zlib`进行HTTP压缩与解压，因此您需要为应用的TA
 ##### 拦截`NSURLSessionConfiguration`
 
 ```objc
-+ (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration *)sessionConfiguration;
++ (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration *)sessionConfiguration
+                       withConfiguration:(nonnull EMASCurlConfiguration *)configuration;
 ```
 
-首先，为您的`NSURLSessionConfiguration`安装EMASCurl。
+首先，创建EMASCurl配置并安装到您的`NSURLSessionConfiguration`。
 
 ```objc
-NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-[EMASCurlProtocol installIntoSessionConfiguration:config];
+// 创建自定义配置
+EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
+curlConfig.connectTimeoutInterval = 3.0;
+curlConfig.enableBuiltInGzip = YES;
+curlConfig.enableBuiltInRedirection = YES;
+curlConfig.cacheEnabled = YES;
+
+// 安装到session配置
+NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
+[EMASCurlProtocol installIntoSessionConfiguration:sessionConfig withConfiguration:curlConfig];
 ```
 
 之后，EMASCurl可以拦截此`NSURLSessionConfiguration`创建的`NSURLSession`发起的请求。
 
 ```objc
-NSURLSession *session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:[NSOperationQueue mainQueue]];
+NSURLSession *session = [NSURLSession sessionWithConfiguration:sessionConfig
+                                                     delegate:nil
+                                                delegateQueue:[NSOperationQueue mainQueue]];
 
 NSURL *url = [NSURL URLWithString:@"https://httpbin.org/anything"];
 NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
@@ -374,68 +405,75 @@ EMASCurl开放了便捷的DNS hook接口，便于与HTTPDNS配合使用。只需
 @end
 ```
 
-然后调用以下方法为EMASCurl设置DNS解析器：
+然后在EMASCurl配置中设置DNS解析器：
 
 ```objc
-+ (void)setDNSResolver:(nonnull Class<EMASCurlProtocolDNSResolver>)dnsResolver;
-```
+// 创建配置并设置DNS解析器
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+config.dnsResolver = [MyDNSResolver class];
 
-例如：
-
-```objc
-[EMASCurlProtocol setDNSResolver:[MyDNSResolver class]];
+// 应用配置到session
+NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
+[EMASCurlProtocol installIntoSessionConfiguration:sessionConfig withConfiguration:config];
 ```
 
 #### 选择HTTP版本
 
-```objc
-+ (void)setHTTPVersion:(HTTPVersion)version;
-```
+EMASCurl默认使用HTTP2版本。您可以在配置中指定HTTP版本：
 
-EMASCurl默认使用HTTP2版本，更高版本会包含低版本的能力。需要注意的是，HTTP3需要特殊的编译方式支持，且会引入更大的包体积，具体请参考完整的文档。
+```objc
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+// 默认已经是HTTP2，无需设置
+// 如需使用HTTP/1.1：
+config.httpVersion = HTTP1;  // 使用HTTP/1.1
+```
 
 **HTTP1**: 使用HTTP1.1
 **HTTP2**: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
 
 #### 设置CA证书文件路径
 
-```objc
-+ (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath;
-```
-
-如果您的服务器使用自签名证书，您需要设置CA证书文件的路径，以确保EMASCurl能够正确验证SSL/TLS连接。
+如果您的服务器使用自签名证书，您需要在配置中设置CA证书文件的路径，以确保EMASCurl能够正确验证SSL/TLS连接。
 
 例如：
 
 ```objc
 NSString *caFilePath = [[NSBundle mainBundle] pathForResource:@"my_ca" ofType:@"pem"];
-[EMASCurlProtocol setSelfSignedCAFilePath:caFilePath];
+
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+config.caFilePath = caFilePath;
 ```
 
 #### 设置Cookie存储
 
+EMASCurl默认开启内部Cookie存储功能，但只支持到[RFC 6265]标准。Cookie存储目前仍然是全局设置：
+
 ```objc
-+ (void)setBuiltInCookieStorageEnabled:(BOOL)enabled;
+// 全局启用或禁用Cookie存储
+[EMASCurlProtocol setBuiltInCookieStorageEnabled:NO];  // 禁用
+[EMASCurlProtocol setBuiltInCookieStorageEnabled:YES]; // 启用（默认）
 ```
 
-EMASCurl默认开启内部Cookie存储功能，但只支持到[RFC 6265]标准。如果您选择关闭内置Cookie存储，在依赖cookie能力时，需要自行处理请求/响应中的cookie字段。
+如果您选择关闭内置Cookie存储，在依赖cookie能力时，需要自行处理请求/响应中的cookie字段。
 
 #### 设置连接超时
 
+`NSURLSession`未提供设置连接超时的方式，因此EMASCurl单独提供了此功能。您可以在配置中设置连接超时时间：
+
 ```objc
-+ (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)connectTimeoutInSeconds;
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+config.connectTimeoutInterval = 3.0;  // 设置连接超时为3秒（默认为2.5秒）
+
+// 应用配置
+NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
+[EMASCurlProtocol installIntoSessionConfiguration:sessionConfig withConfiguration:config];
 ```
 
-`NSURLSession`未提供设置连接超时的方式，因此EMASCurl单独提供了此功能。对于请求的整体超时时间，请直接配置`NSURLRequest`中的`timeoutInterval`进行设置，默认是60s。
-
-例如：
+对于请求的整体超时时间，请直接配置`NSURLRequest`中的`timeoutInterval`进行设置，默认是60s。
 
 ```objc
 NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-//设置整体超时时间为20s
-request.timeoutInterval = 20;
-//设置连接超时时间为10s
-[EMASCurlProtocol setConnectTimeoutIntervalForRequest:request connectTimeoutInterval:10.0];
+request.timeoutInterval = 20;  // 设置整体超时时间为20秒
 ```
 
 #### 设置上传进度回调
@@ -462,7 +500,7 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 
 #### 设置性能指标回调
 
-##### 全局综合性能指标回调（强烈推荐）
+##### 综合性能指标回调
 
 EMASCurl提供基本等价于`URLSessionTaskTransactionMetrics`的完整性能指标：
 
@@ -498,16 +536,14 @@ EMASCurl提供基本等价于`URLSessionTaskTransactionMetrics`的完整性能�
 @property (nonatomic, copy, nullable) NSString *tlsCipherSuite;
 
 @end
-
-/// 全局综合性能指标回调
-+ (void)setGlobalTransactionMetricsObserverBlock:(nullable EMASCurlTransactionMetricsObserverBlock)transactionMetricsObserverBlock;
 ```
 
 **使用综合性能指标回调示例：**
 
 ```objc
-// 在应用启动时设置一次，所有请求都会自动使用此回调（推荐使用）
-[EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
+// 创建配置并设置性能指标回调
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+config.transactionMetricsObserver = ^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
     if (!success) {
         NSLog(@"请求失败，URL: %@, 错误: %@", request.URL.absoluteString, error.localizedDescription);
         return;
@@ -525,26 +561,13 @@ EMASCurl提供基本等价于`URLSessionTaskTransactionMetrics`的完整性能�
     NSLog(@"请求头字节: %ld, 响应头字节: %ld", (long)metrics.requestHeaderBytesSent, (long)metrics.responseHeaderBytesReceived);
     NSLog(@"地址: %@:%ld -> %@:%ld", metrics.localAddress, (long)metrics.localPort, metrics.remoteAddress, (long)metrics.remotePort);
     NSLog(@"TLS: %@ (%@)", metrics.tlsProtocolVersion, metrics.tlsCipherSuite);
-    NSLog(@"网络类型: %@", metrics.cellular ? @"蜂窝网络" : @"WiFi/以太网");
-}];
+};
 
-// 清除全局综合回调
-// [EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:nil];
+// 应用配置到session
+NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
+[EMASCurlProtocol installIntoSessionConfiguration:sessionConfig withConfiguration:config];
 ```
 
-##### 单个请求性能指标回调（已废弃）
-
-为了向下兼容，仍支持为单个请求设置性能指标回调，但建议使用全局回调：
-
-```objc
-// 不推荐：需要为每个请求单独设置
-NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-[EMASCurlProtocol setMetricsObserverBlockForRequest:request metricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, double nameLookUpTimeMS, double connectTimeMs, double appConnectTimeMs, double preTransferTimeMs, double startTransferTimeMs, double totalTimeMs) {
-    // 处理性能指标...
-}];
-```
-
-**注意：** 单个请求回调的优先级高于全局回调。如果某个请求设置了单独的回调，将使用该回调而不是全局回调。
 
 #### 开启调试日志
 
@@ -608,67 +631,56 @@ EMASCurl使用组件化的日志记录，每个日志消息都会标明来源组
 
 #### 设置请求拦截域名白名单和黑名单
 
-```objc
-+ (void)setHijackDomainWhiteList:(nullable NSArray<NSString *> *)domainWhiteList;
-+ (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList;
-```
-
 EMASCurl允许您设置域名白名单和黑名单来控制哪些请求会被拦截处理：
 - 处理请求时，EMASCurl会先检查黑名单，再检查白名单
 - 白名单：只拦截白名单中的域名请求
 - 黑名单：不拦截黑名单中的域名请求
-- 传入nil时，会清除相应的名单
 
 例如：
 
 ```objc
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+
 // 只拦截这些域名的请求
-[EMASCurlProtocol setHijackDomainWhiteList:@[@"example.com", @"api.example.com"]];
+config.domainWhiteList = @[@"example.com", @"api.example.com"];
 
 // 不拦截这些域名的请求
-[EMASCurlProtocol setHijackDomainBlackList:@[@"analytics.example.com"]];
+config.domainBlackList = @[@"analytics.example.com"];
 
-// 清除白名单
-[EMASCurlProtocol setHijackDomainWhiteList:nil];
+// 应用配置
+NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
+[EMASCurlProtocol installIntoSessionConfiguration:sessionConfig withConfiguration:config];
 ```
 
 #### 设置Gzip压缩
-
-```objc
-+ (void)setBuiltInGzipEnabled:(BOOL)enabled;
-```
 
 EMASCurl默认开启内部Gzip压缩。开启后，请求的header中会自动添加`Accept-Encoding: deflate, gzip`，并自动解压响应内容。若关闭，则需要自行处理请求/响应中的gzip字段。
 
 例如：
 
 ```objc
-// 关闭内置Gzip支持
-[EMASCurlProtocol setBuiltInGzipEnabled:NO];
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+config.enableBuiltInGzip = NO;  // 关闭内置Gzip支持
+// 或
+config.enableBuiltInGzip = YES; // 启用（默认）
 ```
 
 #### 设置内部重定向支持
-
-```objc
-+ (void)setBuiltInRedirectionEnabled:(BOOL)enabled;
-```
 
 EMASCurl可以配置是否自动处理HTTP重定向（如301、302等状态码）。
 
 例如：
 
 ```objc
-// 开启内部重定向支持
-[EMASCurlProtocol setBuiltInRedirectionEnabled:YES];
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+config.enableBuiltInRedirection = YES;  // 开启内部重定向支持（默认）
+// 或
+config.enableBuiltInRedirection = NO;   // 关闭
 ```
 
 #### 设置公钥固定 (Public Key Pinning)
 
-```objc
-+ (void)setPublicKeyPinningKeyPath:(nullable NSString *)publicKeyPath;
-```
-
-设置用于公钥固定(Public Key Pinning)的公钥文件路径。libcurl 会使用此文件中的公钥信息来验证服务器证书链中的公钥。传入`nil`时，清除公钥固定设置。
+设置用于公钥固定(Public Key Pinning)的公钥文件路径。libcurl 会使用此文件中的公钥信息来验证服务器证书链中的公钥。
 
 **要求公钥 PEM 文件的结构：**
 1.  公钥 PEM 文件必须包含一个有效的公钥信息，格式为 PEM 格式，即包含 `-----BEGIN PUBLIC KEY-----` 和 `-----END PUBLIC KEY-----` 区块，内容为公钥的 base64 编码。
@@ -692,17 +704,12 @@ openssl x509 -in your-cert.pem -pubkey -noout -out publickey.pem
 
 ```objc
 NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key" ofType:@"pem"];
-[EMASCurlProtocol setPublicKeyPinningKeyPath:publicKeyPath];
 
-// 清除公钥固定设置
-// [EMASCurlProtocol setPublicKeyPinningKeyPath:nil];
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+config.publicKeyPinningKeyPath = publicKeyPath;
 ```
 
 #### 设置证书校验
-
-```objc
-+ (void)setCertificateValidationEnabled:(BOOL)enabled;
-```
 
 设置是否开启 SSL 证书校验。默认情况下，证书校验是开启的 (`YES`)。
 
@@ -712,18 +719,13 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 例如：
 
 ```objc
-// 关闭证书校验
-[EMASCurlProtocol setCertificateValidationEnabled:NO];
-
-// 开启证书校验 (默认行为)
-// [EMASCurlProtocol setCertificateValidationEnabled:YES];
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+config.certificateValidationEnabled = NO;  // 关闭证书校验
+// 或
+config.certificateValidationEnabled = YES; // 开启证书校验 (默认行为)
 ```
 
 #### 设置域名校验
-
-```objc
-+ (void)setDomainNameVerificationEnabled:(BOOL)enabled;
-```
 
 设置是否开启 SSL 证书中的域名校验。默认情况下，域名校验是开启的 (`YES`)。
 
@@ -733,20 +735,15 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 例如：
 
 ```objc
-// 关闭域名校验
-[EMASCurlProtocol setDomainNameVerificationEnabled:NO];
-
-// 开启域名校验 (默认行为)
-// [EMASCurlProtocol setDomainNameVerificationEnabled:YES];
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+config.domainNameVerificationEnabled = NO;  // 关闭域名校验
+// 或
+config.domainNameVerificationEnabled = YES; // 开启域名校验 (默认行为)
 ```
 
 #### 设置手动代理服务器
 
-```objc
-+ (void)setManualProxyServer:(nullable NSString *)proxyServerURL;
-```
-
-设置手动代理服务器。设置后会覆盖系统代理设置。传入`nil`时，恢复使用系统代理设置。
+设置手动代理服务器。设置后会覆盖系统代理设置。
 
 代理字符串格式：`[protocol://]user:password@host[:port]`
 
@@ -755,23 +752,22 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 例如：
 
 ```objc
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+
 // 设置HTTP代理
-[EMASCurlProtocol setManualProxyServer:@"http://user:pass@proxy.example.com:8080"];
+config.manualProxyEnabled = YES;
+config.proxyServer = @"http://user:pass@proxy.example.com:8080";
 
-// 设置SOCKS5代理
-// [EMASCurlProtocol setManualProxyServer:@"socks5://192.168.1.100:1080"];
+// 或设置SOCKS5代理
+// config.proxyServer = @"socks5://192.168.1.100:1080";
 
-// 清除手动代理设置，恢复使用系统代理
-// [EMASCurlProtocol setManualProxyServer:nil];
+// 禁用手动代理，使用系统代理
+// config.manualProxyEnabled = NO;
 ```
 
 #### 设置HTTP缓存
 
-```objc
-+ (void)setCacheEnabled:(BOOL)enabled;
-```
-
-设置是否启用HTTP缓存。EMASCurl默认不启用HTTP缓存，所有请求都不会使用本地缓存，并且响应也不会被缓存。
+设置是否启用HTTP缓存。EMASCurl默认启用HTTP缓存。
 
 缓存功能特性包括：
 1. 自动缓存可缓存的HTTP响应
@@ -783,14 +779,81 @@ NSString *publicKeyPath = [[NSBundle mainBundle] pathForResource:@"my_public_key
 例如：
 
 ```objc
-// 启用HTTP缓存
-[EMASCurlProtocol setCacheEnabled:YES];
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+config.cacheEnabled = YES;  // 启用HTTP缓存（默认）
+// 或
+config.cacheEnabled = NO;   // 禁用HTTP缓存
+```
+
+### EMASCurlConfiguration 完整属性参考
+
+EMASCurlConfiguration 提供了所有网络配置选项的集中管理。以下是完整的属性列表：
+
+| 属性 | 类型 | 默认值 | 说明 |
+|:---|:---|:---|:---|
+| **核心网络设置** | | | |
+| `httpVersion` | HTTPVersion | HTTP2 | HTTP协议版本（HTTP1/HTTP2） |
+| `connectTimeoutInterval` | NSTimeInterval | 2.5 | 连接超时时间（秒） |
+| `enableBuiltInGzip` | BOOL | YES | 是否启用内置gzip压缩 |
+| `enableBuiltInRedirection` | BOOL | YES | 是否启用内置重定向处理 |
+| **DNS和代理** | | | |
+| `dnsResolver` | Class | nil | 自定义DNS解析器类 |
+| `proxyServer` | NSString | nil | 代理服务器URL |
+| `manualProxyEnabled` | BOOL | NO | 是否启用手动代理 |
+| **安全设置** | | | |
+| `caFilePath` | NSString | nil | CA证书文件路径 |
+| `publicKeyPinningKeyPath` | NSString | nil | 公钥固定文件路径 |
+| `certificateValidationEnabled` | BOOL | YES | 是否启用证书验证 |
+| `domainNameVerificationEnabled` | BOOL | YES | 是否启用域名验证 |
+| **域名过滤** | | | |
+| `domainWhiteList` | NSArray | nil | 域名白名单 |
+| `domainBlackList` | NSArray | nil | 域名黑名单 |
+| **缓存** | | | |
+| `cacheEnabled` | BOOL | YES | 是否启用HTTP缓存 |
+| **性能监控** | | | |
+| `transactionMetricsObserver` | Block | nil | 性能指标回调块 |
+
+**使用示例：**
+
+```objc
+// 创建完整配置
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+
+// 网络设置
+config.connectTimeoutInterval = 5.0;
+config.enableBuiltInGzip = YES;
+config.enableBuiltInRedirection = YES;
+
+// DNS解析
+config.dnsResolver = [MyDNSResolver class];
+
+// 安全设置
+config.certificateValidationEnabled = YES;
+config.domainNameVerificationEnabled = YES;
+
+// 域名过滤
+config.domainWhiteList = @[@"api.example.com"];
+config.domainBlackList = @[@"tracking.example.com"];
+
+// 缓存
+config.cacheEnabled = YES;
+
+// 性能监控
+config.transactionMetricsObserver = ^(NSURLRequest *request, BOOL success,
+                                     NSError *error, EMASCurlTransactionMetrics *metrics) {
+    // 处理性能指标
+};
+
+// 应用配置
+NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
+[EMASCurlProtocol installIntoSessionConfiguration:sessionConfig withConfiguration:config];
 ```
 
 ## EMASLocalProxy - 统一代理方案
 
 ### 已知限制
 
+- iOS 17 及以上：全场景支持
 - iOS 17 以下：WKWebView 不支持代理
 - iOS 17 以下：NSURLSession 仅 HTTPS 走代理，HTTP 明文请求不走代理
 
