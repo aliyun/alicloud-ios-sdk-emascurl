@@ -63,26 +63,6 @@
     return config;
 }
 
-+ (instancetype)apiConfiguration {
-    EMASCurlConfiguration *config = [[EMASCurlConfiguration alloc] init];
-    config.httpVersion = HTTP2;
-    config.connectTimeoutInterval = 2.0;
-    config.cacheEnabled = NO;
-    config.enableBuiltInGzip = YES;
-    config.enableBuiltInRedirection = NO; // API通常显式处理重定向
-    return config;
-}
-
-+ (instancetype)downloadConfiguration {
-    EMASCurlConfiguration *config = [[EMASCurlConfiguration alloc] init];
-    config.httpVersion = HTTP2;
-    config.connectTimeoutInterval = 10.0;
-    config.cacheEnabled = YES;
-    config.enableBuiltInGzip = YES;
-    config.enableBuiltInRedirection = YES;
-    return config;
-}
-
 #pragma mark - NSCopying协议
 
 - (id)copyWithZone:(NSZone *)zone {

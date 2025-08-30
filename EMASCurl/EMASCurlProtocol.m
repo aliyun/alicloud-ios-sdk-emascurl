@@ -602,12 +602,15 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
                   totalTime * 1000, nameLookupTime * 1000, connectTime * 1000, startTransferTime * 1000);
 
     // 检查是否有全局综合性能指标回调
-    EMASCurlTransactionMetricsObserverBlock transactionCallback = nil;
+    EMASCurlTransactionMetricsObserverBlock globalTransactionCallback = nil;
     @synchronized ([EMASCurlProtocol class]) {
-        transactionCallback = globalTransactionMetricsObserverBlock;
+        globalTransactionCallback = globalTransactionMetricsObserverBlock;
     }
 
-    if (transactionCallback) {
+    // 检查是否有实例级别性能指标回调
+    EMASCurlTransactionMetricsObserverBlock instanceTransactionCallback = self.resolvedConfiguration.transactionMetricsObserver;
+
+    if (globalTransactionCallback || instanceTransactionCallback) {
         // 创建综合性能指标对象
         EMASCurlTransactionMetrics *metrics = [self createTransactionMetricsWithTotalTime:totalTime
                                                                           nameLookupTime:nameLookupTime
@@ -616,7 +619,12 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
                                                                          preTransferTime:preTransferTime
                                                                         startTransferTime:startTransferTime];
 
-        transactionCallback(self.request, success, error, metrics);
+        if (globalTransactionCallback) {
+            globalTransactionCallback(self.request, success, error, metrics);
+        }
+        if (instanceTransactionCallback) {
+            instanceTransactionCallback(self.request, success, error, metrics);
+        }
     }
 
     // 检查简单性能指标回调（向下兼容）

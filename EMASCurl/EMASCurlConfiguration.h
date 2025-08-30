@@ -231,24 +231,6 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
  */
 + (instancetype)defaultConfiguration;
 
-/**
- * 创建针对API调用优化的配置
- * - 无缓存
- * - 较短超时
- * - 启用HTTP/2
- * @return 用于API的新配置
- */
-+ (instancetype)apiConfiguration;
-
-/**
- * 创建针对下载优化的配置
- * - 启用缓存
- * - 较长超时
- * - 进度跟踪
- * @return 用于下载的新配置
- */
-+ (instancetype)downloadConfiguration;
-
 #pragma mark - 配置管理
 
 /**
