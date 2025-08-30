@@ -9,103 +9,9 @@
 #define EMASCurlProtocol_h
 
 #import <Foundation/Foundation.h>
+#import <EMASCurl/EMASCurlConfiguration.h>
 
 #define EMASCURL_SDK_VERSION @"1.3.6"
-
-/// 提供一个便捷易用的DNS Hook机制，类似OKHTTP中的DNS配置
-@protocol EMASCurlProtocolDNSResolver <NSObject>
-
-/// 实现这个方法时，解析域名得到的多个IP通过','拼接，如 10.10.10.10,11.11.11.11,12.12.12.12。
-/// 如果涉及IPv4和IPv6协议，无需特别区分，直接将IPv6的IP和IPv4的IP拼接到一起返回，EMASCurl会自行决策如何请求
-///
-/// param @domain 请求域名
-/// return 解析后的IP地址，多个IP通过','拼接，如
-///        10.10.10.10,11.11.11.11,12.12.12.12
-///        10.10.10.10,5be8:dde9:7f0b:d5a7:bd01:b3be:9c69:573b,12.12.12.12,5be8:dde9:7f0b:d5a7:bd01:b3be:9c69:573b
-///        返回nil时，EMASCurl会使用默认的DNS解析
-+ (nullable NSString *)resolveDomain:(nonnull NSString *)domain;
-
-@end
-
-
-/// 由于`NSURLProtocol`并未提供合适的机制来提供上传进度的跟踪，我们提供一个额外的上传进度处理方式
-///
-/// param @request 发起请求使用的请求实例
-/// param @bytesSent: 已发送的字节数
-/// param @totalBytesSent: 已发送的总字节数
-/// param @totalBytesExpectedToSend: 总字节数
-typedef void(^EMASCurlUploadProgressUpdateBlock)(NSURLRequest * _Nonnull request,
-                                         int64_t bytesSent,
-                                         int64_t totalBytesSent,
-                                         int64_t totalBytesExpectedToSend);
-
-/// 网络请求性能指标回调
-///
-/// param @request 发起请求使用的请求实例
-/// param @nameLookUpTimeMS DNS解析耗时，单位毫秒
-/// param @connectTimeMs TCP连接耗时，单位毫秒
-/// param @appConnectTimeMs SSL/TLS握手耗时，单位毫秒
-/// param @preTransferTimeMs 从开始到传输前准备完成的耗时，单位毫秒
-/// param @startTransferTimeMs 从开始到收到第一个字节的耗时，单位毫秒
-/// param @totalTimeMs 整个请求的总耗时，单位毫秒
-typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
-                                   BOOL success,
-                                   NSError * _Nullable error,
-                                   double nameLookUpTimeMS,
-                                   double connectTimeMs,
-                                   double appConnectTimeMs,
-                                   double preTransferTimeMs,
-                                   double startTransferTimeMs,
-                                   double totalTimeMs);
-
-/// 综合性能指标数据结构（类似于URLSessionTaskTransactionMetrics）
-@interface EMASCurlTransactionMetrics : NSObject
-
-// 时间戳信息
-@property (nonatomic, strong, nullable) NSDate *fetchStartDate;
-@property (nonatomic, strong, nullable) NSDate *domainLookupStartDate;
-@property (nonatomic, strong, nullable) NSDate *domainLookupEndDate;
-@property (nonatomic, strong, nullable) NSDate *connectStartDate;
-@property (nonatomic, strong, nullable) NSDate *secureConnectionStartDate;
-@property (nonatomic, strong, nullable) NSDate *secureConnectionEndDate;
-@property (nonatomic, strong, nullable) NSDate *connectEndDate;
-@property (nonatomic, strong, nullable) NSDate *requestStartDate;
-@property (nonatomic, strong, nullable) NSDate *requestEndDate;
-@property (nonatomic, strong, nullable) NSDate *responseStartDate;
-@property (nonatomic, strong, nullable) NSDate *responseEndDate;
-
-// 网络信息
-@property (nonatomic, copy, nullable) NSString *networkProtocolName;
-@property (nonatomic, assign) BOOL proxyConnection;
-@property (nonatomic, assign) BOOL reusedConnection;
-@property (nonatomic, assign) NSInteger requestHeaderBytesSent;
-@property (nonatomic, assign) NSInteger requestBodyBytesSent;
-@property (nonatomic, assign) NSInteger responseHeaderBytesReceived;
-@property (nonatomic, assign) NSInteger responseBodyBytesReceived;
-@property (nonatomic, copy, nullable) NSString *localAddress;
-@property (nonatomic, assign) NSInteger localPort;
-@property (nonatomic, copy, nullable) NSString *remoteAddress;
-@property (nonatomic, assign) NSInteger remotePort;
-
-// SSL/TLS信息 (暂不支持，留空)
-@property (nonatomic, copy, nullable) NSString *tlsProtocolVersion;
-@property (nonatomic, copy, nullable) NSString *tlsCipherSuite;
-
-@end
-
-/// 综合性能指标回调（等价于URLSessionTaskTransactionMetrics）
-typedef void(^EMASCurlTransactionMetricsObserverBlock)(NSURLRequest * _Nonnull request,
-                                                      BOOL success,
-                                                      NSError * _Nullable error,
-                                                      EMASCurlTransactionMetrics * _Nonnull metrics);
-
-
-// HTTP版本，高版本一定包含支持低版本
-typedef NS_ENUM(NSInteger, HTTPVersion) {
-    HTTP1,
-    HTTP2,
-    HTTP3
-};
 
 
 // 日志级别枚举
@@ -231,6 +137,35 @@ typedef NS_ENUM(NSInteger, EMASCurlLogLevel) {
 
 // 设置是否启用HTTP缓存，默认启用
 + (void)setCacheEnabled:(BOOL)enabled;
+
+@end
+
+#pragma mark - Multi-Instance Configuration Support
+
+@class EMASCurlConfiguration;
+
+/**
+ * 多实例配置支持分类
+ * 允许不同的NSURLSession实例拥有独立的配置
+ */
+@interface EMASCurlProtocol (MultiInstance)
+
+/**
+ * 将EMASCurlProtocol安装到带有特定配置的session配置中
+ * 每个session可以拥有自己的网络设置
+ *
+ * @param sessionConfig 要安装到的NSURLSessionConfiguration
+ * @param curlConfig 此session使用的EMASCurlConfiguration
+ */
++ (void)installIntoSessionConfiguration:(nonnull NSURLSessionConfiguration *)sessionConfig
+                       withConfiguration:(nonnull EMASCurlConfiguration *)curlConfig;
+
+/**
+ * 获取当前默认配置
+ *
+ * @return 默认配置
+ */
++ (nonnull EMASCurlConfiguration *)defaultConfiguration;
 
 @end
 

@@ -46,6 +46,10 @@
 		94E674122E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674112E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m */; };
 		94E674152E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674132E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m */; };
 		94E674A22E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674A12E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m */; };
+		94E674A72E621E1B005FE92E /* EMASCurlConfigurationManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94E674A52E621E1B005FE92E /* EMASCurlConfigurationManager.h */; };
+		94E674A82E621E1B005FE92E /* EMASCurlConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 94E674A32E621E1B005FE92E /* EMASCurlConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		94E674A92E621E1B005FE92E /* EMASCurlConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674A42E621E1B005FE92E /* EMASCurlConfiguration.m */; };
+		94E674AA2E621E1B005FE92E /* EMASCurlConfigurationManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674A62E621E1B005FE92E /* EMASCurlConfigurationManager.m */; };
 		94F806892E52B6E300B6FE7A /* EMASLocalProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = 94F806882E52B6E300B6FE7A /* EMASLocalProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		94F806A02E52C26100B6FE7A /* EMASLocalHttpProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = 94F8069F2E52C26100B6FE7A /* EMASLocalHttpProxy.m */; };
 		94F806A12E52C26100B6FE7A /* EMASLocalHttpProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = 94F8069E2E52C26100B6FE7A /* EMASLocalHttpProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -144,6 +148,10 @@
 		94E674132E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASLocalHttpProxyHalfCloseTest.m; sourceTree = "<group>"; };
 		94E674142E5C35E5005FE92E /* EMASLocalProxyTestConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalProxyTestConstants.h; sourceTree = "<group>"; };
 		94E674A12E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASLocalHttpProxyConnectionReuseTest.m; sourceTree = "<group>"; };
+		94E674A32E621E1B005FE92E /* EMASCurlConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlConfiguration.h; sourceTree = "<group>"; };
+		94E674A42E621E1B005FE92E /* EMASCurlConfiguration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlConfiguration.m; sourceTree = "<group>"; };
+		94E674A52E621E1B005FE92E /* EMASCurlConfigurationManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlConfigurationManager.h; sourceTree = "<group>"; };
+		94E674A62E621E1B005FE92E /* EMASCurlConfigurationManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlConfigurationManager.m; sourceTree = "<group>"; };
 		94F806862E52B6E300B6FE7A /* EMASLocalProxy.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EMASLocalProxy.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		94F806882E52B6E300B6FE7A /* EMASLocalProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalProxy.h; sourceTree = "<group>"; };
 		94F8069E2E52C26100B6FE7A /* EMASLocalHttpProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalHttpProxy.h; sourceTree = "<group>"; };
@@ -230,6 +238,10 @@
 			isa = PBXGroup;
 			children = (
 				6F3F601F2CD0E07F0014025B /* EMASCurl.h */,
+				94E674A32E621E1B005FE92E /* EMASCurlConfiguration.h */,
+				94E674A42E621E1B005FE92E /* EMASCurlConfiguration.m */,
+				94E674A52E621E1B005FE92E /* EMASCurlConfigurationManager.h */,
+				94E674A62E621E1B005FE92E /* EMASCurlConfigurationManager.m */,
 				6F3F60202CD0E07F0014025B /* EMASCurlProtocol.h */,
 				6F3F60212CD0E07F0014025B /* EMASCurlProtocol.m */,
 				94C5B5D82D071D86006BC856 /* EMASCurlManager.h */,
@@ -396,6 +408,8 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				94E674A72E621E1B005FE92E /* EMASCurlConfigurationManager.h in Headers */,
+				94E674A82E621E1B005FE92E /* EMASCurlConfiguration.h in Headers */,
 				949788D92D4FAA0D0042BE44 /* EMASCurlCookieStorage.h in Headers */,
 				6F3F60232CD0E07F0014025B /* EMASCurl.h in Headers */,
 				944708112DE01D5800856898 /* EMASCurlLogger.h in Headers */,
@@ -627,6 +641,8 @@
 				6F3F60252CD0E07F0014025B /* EMASCurlProtocol.m in Sources */,
 				94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */,
 				941470C42DD1A9680072507F /* NSCachedURLResponse+EMASCurl.m in Sources */,
+				94E674A92E621E1B005FE92E /* EMASCurlConfiguration.m in Sources */,
+				94E674AA2E621E1B005FE92E /* EMASCurlConfigurationManager.m in Sources */,
 				941470C62DD1A9680072507F /* EMASCurlResponseCache.m in Sources */,
 				944708122DE01D5800856898 /* EMASCurlLogger.m in Sources */,
 			);
