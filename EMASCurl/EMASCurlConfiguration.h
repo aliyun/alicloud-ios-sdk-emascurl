@@ -252,13 +252,6 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 #pragma mark - 配置管理
 
 /**
- * 验证配置设置
- * @param error 验证错误的输出参数
- * @return 有效返回YES，否则返回NO
- */
-- (BOOL)validateWithError:(NSError **)error;
-
-/**
  * 创建配置的深拷贝
  * @return 具有相同设置的新配置实例
  */

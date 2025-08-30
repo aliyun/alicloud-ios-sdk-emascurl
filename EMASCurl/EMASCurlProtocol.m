@@ -416,8 +416,6 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     NSString *configID = [request valueForHTTPHeaderField:kEMASCurlConfigurationHeaderKey];
     if (configID) {
         [NSURLProtocol setProperty:configID forKey:kEMASCurlConfigurationIDKey inRequest:mutableRequest];
-        // 移除header以避免发送给服务器
-        [mutableRequest setValue:nil forHTTPHeaderField:kEMASCurlConfigurationHeaderKey];
     }
 
     return mutableRequest;
@@ -1157,6 +1155,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         }
         // 对于Accept-Encoding，已经在populateRequestHeader中单独处理了，这里跳过避免重复设置
         if ([key caseInsensitiveCompare:@"Accept-Encoding"] == NSOrderedSame) {
+            continue;
+        }
+        // 跳过内部配置头，不发送给服务器
+        if ([key caseInsensitiveCompare:kEMASCurlConfigurationHeaderKey] == NSOrderedSame) {
             continue;
         }
         // 检查是否已提供User-Agent
