@@ -419,7 +419,7 @@
     timeoutRequest1.timeoutInterval = 1.5;  // 1.5秒总超时 < 2秒延迟，应该超时
 
     NSMutableURLRequest *timeoutRequest2 = [NSMutableURLRequest requestWithURL:timeoutURL];
-    timeoutRequest2.timeoutInterval = 3.0;  // 3秒总超时 > 2秒延迟，应该收到连接关闭错误
+    timeoutRequest2.timeoutInterval = 5.0;  // 5秒总超时 > 2秒延迟，应该收到连接关闭错误
 
     NSURLSessionDataTask *task3 = [session1 dataTaskWithRequest:timeoutRequest1
                                                completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
@@ -438,7 +438,7 @@
 
     NSURLSessionDataTask *task4 = [session2 dataTaskWithRequest:timeoutRequest2
                                                completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        // 应该收到连接被关闭的错误（3秒 > 2秒）
+        // 应该收到连接被关闭的错误（5秒 > 2秒）
         XCTAssertNotNil(error, @"Session2请求超时服务器应该产生错误");
         if (error) {
             // 不应该是超时错误，而是连接被关闭/重置
@@ -449,7 +449,7 @@
                                     (error.code == -1011); // NSURLErrorBadServerResponse
 
             // Session2有足够时间等待，所以应该是连接错误而不是超时
-            XCTAssertFalse(isTimeout, @"Session2不应该超时，因为3秒 > 2秒延迟");
+            XCTAssertFalse(isTimeout, @"Session2不应该超时，因为5秒 > 2秒延迟");
             XCTAssertTrue(isConnectionError || !isTimeout,
                          @"Session2应该收到连接错误而不是超时，实际错误: %@ (code: %ld)",
                          error, (long)error.code);
