@@ -54,16 +54,20 @@
     configuration.timeoutIntervalForRequest = 30;
     configuration.timeoutIntervalForResource = 300;
 
-    [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
-    [EMASCurlProtocol setCacheEnabled:YES];
-    [EMASCurlProtocol setBuiltInRedirectionEnabled:NO];
+    // 创建自定义EMASCurl配置
+    EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
+
+    // 设置基本网络参数
+    curlConfig.connectTimeoutInterval = 3.0;
+    curlConfig.cacheEnabled = YES;
+    curlConfig.enableBuiltInRedirection = NO;
 
     // 设置HTTPDNS解析器
-    [EMASCurlProtocol setDNSResolver:[RequestDemoDNSResolver class]];
+    curlConfig.dnsResolver = [RequestDemoDNSResolver class];
 
-    // 设置全局综合性能指标回调（推荐使用）- 基本等价于URLSessionTaskTransactionMetrics
-    [EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
-        NSLog(@"全局综合性能指标 [%@]:\n"
+    // 设置综合性能指标回调 - 基本等价于URLSessionTaskTransactionMetrics
+    curlConfig.transactionMetricsObserver = ^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
+        NSLog(@"综合性能指标 [%@]:\n"
               "成功: %d\n"
               "错误: %@\n"
               "获取开始: %@\n"
@@ -108,10 +112,13 @@
               metrics.remoteAddress ?: @"未知", (long)metrics.remotePort,
               metrics.tlsProtocolVersion ?: @"未使用",
               metrics.tlsCipherSuite ?: @"未使用");
-    }];
+    };
 
-    [EMASCurlProtocol setConnectTimeoutInterval:3];
-    [EMASCurlProtocol installIntoSessionConfiguration:configuration];
+    // 设置日志级别（仍使用全局设置，因为日志是全局的）
+    [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
+
+    // 使用新的配置API安装到session
+    [EMASCurlProtocol installIntoSessionConfiguration:configuration withConfiguration:curlConfig];
 
     self.session = [NSURLSession sessionWithConfiguration:configuration
                                                delegate:self
@@ -205,7 +212,7 @@
     NSURL *url = [NSURL URLWithString:urlString];
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
 
-    // 注意：使用在viewDidLoad中设置的全局性能指标回调，无需为每个请求单独设置
+    // 注意：使用在setupSession中配置的性能指标回调，无需为每个请求单独设置
     request.HTTPMethod = @"POST";
 
     // Create sample data to upload

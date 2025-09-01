@@ -544,8 +544,13 @@ static NSURLSession *session;
 
 + (void)setUp {
     [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
+
+    // 创建 EMASCurl 配置
+    EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
+    curlConfig.httpVersion = HTTP1;  // 显式设置 HTTP1
+
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-    [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
     session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
@@ -581,15 +586,19 @@ static NSURLSession *session;
 
 + (void)setUp {
     [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
-    [EMASCurlProtocol setHTTPVersion:HTTP2];
 
+    // 创建 EMASCurl 配置
+    EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
+    // HTTP2 是默认值，无需显式设置
+
+    // 设置自签名证书的 CA 证书
     NSBundle *testBundle = [NSBundle bundleForClass:[self class]];
     NSString *certPath = [testBundle pathForResource:@"ca" ofType:@"crt"];
     XCTAssertNotNil(certPath, @"Certificate file not found in test bundle.");
-    [EMASCurlProtocol setSelfSignedCAFilePath:certPath];
+    curlConfig.caFilePath = certPath;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-    [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
     session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 

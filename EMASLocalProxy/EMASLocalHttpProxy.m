@@ -38,6 +38,9 @@ static const useconds_t kEMASLocalProxyRetryInterval = 100000; // 100ms
 /// 自定义WebView数据存储标识符
 static NSString * const kEMASLocalProxyDataStoreUUID = @"CE5A8E48-C35B-4690-8526-D851C7B9A36B";
 
+/// 健康检查定时器间隔（秒）
+static const NSTimeInterval kEMASHealthCheckInterval = 5.0;
+
 /// 当前日志级别配置
 static EMASLocalHttpProxyLogLevel _currentLogLevel = EMASLocalHttpProxyLogLevelDebug;
 
@@ -73,13 +76,19 @@ static BOOL _shouldLog(EMASLocalHttpProxyLogLevel level) {
 @property (atomic, assign) BOOL isProxyReady;
 
 /// 当前代理服务监听端口
-@property (nonatomic, readonly) uint16_t proxyPort;
+@property (atomic, assign) uint16_t proxyPort;
 
 /// 自定义DNS解析器回调块
 @property (nonatomic, copy) NSArray<NSString *> *(^customDNSResolverBlock)(NSString *hostname);
 
 /// IP失败追踪字典，格式: {hostname: {ip: lastFailureTime}}
 @property (atomic, strong) NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSDate *> *> *failedIPsPerHost;
+
+/// 健康检查定时器
+@property (nonatomic, strong) dispatch_source_t healthCheckTimer;
+
+/// 记录进入后台的时间
+@property (nonatomic, strong) NSDate *backgroundEntryTime;
 
 #pragma mark - 私有方法
 
@@ -178,12 +187,19 @@ API_AVAILABLE(ios(17.0))
                                                  selector:@selector(applicationWillEnterForeground:)
                                                      name:UIApplicationWillEnterForegroundNotification
                                                    object:nil];
+
+        // 注册后台通知，用于暂停健康检查
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(applicationDidEnterBackground:)
+                                                     name:UIApplicationDidEnterBackgroundNotification
+                                                   object:nil];
     }
     return self;
 }
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [self stopHealthCheckTimer];
     [self stop];
     EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Proxy service instance destroyed");
 }
@@ -194,13 +210,42 @@ API_AVAILABLE(ios(17.0))
 
 /**
  *  应用即将进入前台通知处理
- *  检查代理服务健康状态，必要时进行恢复
+ *  检查代理服务健康状态，必要时进行恢复，重启健康检查定时器
  */
 - (void)applicationWillEnterForeground:(NSNotification *)notification {
-    EMAS_LOCAL_HTTP_PROXY_LOG_INFO("App entering foreground, checking proxy health");
+    EMAS_LOCAL_HTTP_PROXY_LOG_INFO("App entering foreground, resuming health monitoring");
 
     dispatch_async(_operationQueue, ^{
+        // 计算后台时长（可选）
+        if (self.backgroundEntryTime) {
+            NSTimeInterval backgroundDuration = [[NSDate date] timeIntervalSinceDate:self.backgroundEntryTime];
+            EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("App was in background for %.1f seconds", backgroundDuration);
+            self.backgroundEntryTime = nil;
+        }
+
+        // 立即执行健康检查
         [self performHealthCheckAndRecoverIfNeeded];
+
+        // 重启定期健康检查定时器
+        if (self.isProxyReady) {
+            [self startHealthCheckTimer];
+        }
+    });
+}
+
+/**
+ *  应用进入后台通知处理
+ *  停止健康检查定时器，节省资源
+ */
+- (void)applicationDidEnterBackground:(NSNotification *)notification {
+    EMAS_LOCAL_HTTP_PROXY_LOG_INFO("App entering background, pausing health check timer");
+
+    dispatch_async(_operationQueue, ^{
+        // 停止健康检查定时器
+        [self stopHealthCheckTimer];
+
+        // 记录进入后台时间，用于前台恢复时判断
+        self.backgroundEntryTime = [NSDate date];
     });
 }
 
@@ -239,7 +284,7 @@ API_AVAILABLE(ios(17.0))
     // 执行健康检查
 
     // 创建到监听器的测试连接
-    NSString *portString = [NSString stringWithFormat:@"%d", _proxyPort];
+    NSString *portString = [NSString stringWithFormat:@"%d", self.proxyPort];
     nw_endpoint_t testEndpoint = nw_endpoint_create_host("127.0.0.1", [portString UTF8String]);
 
     nw_parameters_t params = nw_parameters_create_secure_tcp(
@@ -299,7 +344,7 @@ API_AVAILABLE(ios(17.0))
     EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Starting proxy recovery");
 
     // 使用已分配的代理端口
-    if (_proxyPort == 0) {
+    if (self.proxyPort == 0) {
         EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("No proxy port available for recovery");
         // 注意：调用者负责重置_isRecovering标志
         return;
@@ -310,10 +355,12 @@ API_AVAILABLE(ios(17.0))
 
     // 在相同端口上尝试多次恢复
     for (NSInteger attempt = 0; attempt < 3; attempt++) {
-        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Recovery attempt %ld/3 on port: %d", (long)(attempt + 1), _proxyPort);
+        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Recovery attempt %ld/3 on port: %d", (long)(attempt + 1), self.proxyPort);
 
-        if ([self tryStartOnPort:_proxyPort]) {
-            EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Recovery successful on port: %d", _proxyPort);
+        if ([self tryStartOnPort:self.proxyPort]) {
+            // 恢复成功：端口已知，发布就绪
+            self.isProxyReady = YES;
+            EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Recovery successful on port: %d", self.proxyPort);
             // 注意：调用者负责重置_isRecovering标志
             return;
         }
@@ -326,9 +373,56 @@ API_AVAILABLE(ios(17.0))
     }
 
     // 所有恢复尝试失败
-    _isProxyReady = NO;
-    EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("Recovery failed after 3 attempts on port: %d", _proxyPort);
+    self.isProxyReady = NO;
+    EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("Recovery failed after 3 attempts on port: %d", self.proxyPort);
     // 注意：调用者负责重置_isRecovering标志
+}
+
+#pragma mark - 健康检查定时器
+
+/**
+ *  启动健康检查定时器
+ *  定期执行健康检查，主动发现并修复问题
+ */
+- (void)startHealthCheckTimer {
+    // 停止现有定时器
+    [self stopHealthCheckTimer];
+
+    // 创建定时器
+    self.healthCheckTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,
+                                                   0, 0,
+                                                   _operationQueue);
+
+    // 设置定时器：首次延迟5秒，之后每5秒执行一次
+    dispatch_source_set_timer(self.healthCheckTimer,
+                             dispatch_time(DISPATCH_TIME_NOW, kEMASHealthCheckInterval * NSEC_PER_SEC),
+                             kEMASHealthCheckInterval * NSEC_PER_SEC,
+                             1.0 * NSEC_PER_SEC);  // 1秒的容差
+
+    // 设置定时器处理
+    __weak typeof(self) weakSelf = self;
+    dispatch_source_set_event_handler(self.healthCheckTimer, ^{
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf) {
+            EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Periodic health check triggered");
+            [strongSelf performHealthCheckAndRecoverIfNeeded];
+        }
+    });
+
+    dispatch_resume(self.healthCheckTimer);
+
+    EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Health check timer started - interval: %.0f seconds", kEMASHealthCheckInterval);
+}
+
+/**
+ *  停止健康检查定时器
+ */
+- (void)stopHealthCheckTimer {
+    if (self.healthCheckTimer) {
+        dispatch_source_cancel(self.healthCheckTimer);
+        self.healthCheckTimer = nil;
+        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Health check timer stopped");
+    }
 }
 
 #pragma mark - Helper Methods
@@ -390,7 +484,6 @@ API_AVAILABLE(ios(17.0))
 
         switch (state) {
             case nw_listener_state_ready:
-                self->_isProxyReady = YES;
                 startSuccess = YES;
                 startCompleted = YES;
                 EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Port %d listener started successfully", port);
@@ -415,7 +508,7 @@ API_AVAILABLE(ios(17.0))
 
     // 配置连接处理器
     nw_listener_set_new_connection_handler(listener, ^(nw_connection_t connection) {
-        EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Incoming connection received at listener - connection: %p", connection);
+        EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Incoming connection received at listener - connection: %p", connection);
         nw_connection_set_queue(connection, dispatch_get_global_queue(QOS_CLASS_UTILITY, 0));
         nw_connection_start(connection);
         [self handleConnection:connection];
@@ -439,32 +532,6 @@ API_AVAILABLE(ios(17.0))
 }
 
 /**
- *  设置运行时状态监控
- *  监控代理服务运行期间的异常情况
- */
-- (void)setupRuntimeStateMonitoring {
-    if (!_listener) return;
-
-    nw_listener_set_state_changed_handler(_listener, ^(nw_listener_state_t state, nw_error_t error) {
-        switch (state) {
-            case nw_listener_state_failed:
-                EMAS_LOCAL_HTTP_PROXY_LOG_ERROR("Proxy service runtime exception - listener failed");
-                self->_isProxyReady = NO;
-                [self logListenerError:error context:@"Proxy service runtime exception"];
-                break;
-
-            case nw_listener_state_cancelled:
-                EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Proxy service listener cancelled");
-                self->_isProxyReady = NO;
-                break;
-
-            default:
-                break;
-        }
-    });
-}
-
-/**
  *  尝试在指定端口启动代理服务
  */
 - (BOOL)tryStartOnPort:(uint16_t)port {
@@ -475,14 +542,7 @@ API_AVAILABLE(ios(17.0))
         return NO;
     }
 
-    BOOL success = [self waitForListenerReady:_listener port:port];
-
-    if (success) {
-        [self setupRuntimeStateMonitoring];
-        EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Proxy service started successfully - listening address: 127.0.0.1:%d", port);
-    }
-
-    return success;
+    return [self waitForListenerReady:_listener port:port];
 }
 
 /**
@@ -495,7 +555,7 @@ API_AVAILABLE(ios(17.0))
     dispatch_sync(_operationQueue, ^{
         // 检查服务是否已经在运行
         if (self.isProxyReady) {
-            EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Proxy service already running - listening address: 127.0.0.1:%d", _proxyPort);
+            EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Proxy service already running - listening address: 127.0.0.1:%d", self.proxyPort);
             result = YES;
             return;
         }
@@ -511,7 +571,11 @@ API_AVAILABLE(ios(17.0))
 
             // 尝试在指定端口启动服务
             if ([self tryStartOnPort:port]) {
-                _proxyPort = port;
+                self.proxyPort = port;
+                // 先发布端口，再标记就绪，避免就绪可见但端口仍为0
+                self.isProxyReady = YES;
+                // 启动健康检查定时器
+                [self startHealthCheckTimer];
                 result = YES;
                 return;
             }
@@ -546,8 +610,11 @@ API_AVAILABLE(ios(17.0))
 
         EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Stopping proxy service...");
 
+        // 停止健康检查定时器
+        [self stopHealthCheckTimer];
+
         // 标记服务为停止状态，防止新的连接建立
-        self->_isProxyReady = NO;
+        self.isProxyReady = NO;
 
         // 清理活跃连接
         [self cleanup];
@@ -574,7 +641,7 @@ API_AVAILABLE(ios(17.0))
     // 2. 网络请求完成
     // 3. 连接超时或出错
 
-    // 注意：不重置_proxyPort，保持端口信息以供后续恢复使用
+    // 注意：不重置proxyPort，保持端口信息以供后续恢复使用
 }
 
 #pragma mark - 连接处理
@@ -584,7 +651,7 @@ API_AVAILABLE(ios(17.0))
  *  仅支持HTTPS CONNECT协议，适用于各种安全连接客户端（NSURLSession、WKWebView等）
  */
 - (void)handleConnection:(nw_connection_t)connection {
-    EMAS_LOCAL_HTTP_PROXY_LOG_INFO("New client connection established - connection: %p", connection);
+    EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("New client connection established - connection: %p", connection);
 
     // 设置连接状态监控
     nw_connection_set_state_changed_handler(connection, ^(nw_connection_state_t state, nw_error_t error) {
@@ -732,7 +799,7 @@ API_AVAILABLE(ios(17.0))
     NSString *resolvedHost = [self resolveHostname:host];
     nw_connection_t remoteConnection = [self createConnectionToHost:resolvedHost port:port];
 
-    EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Establishing HTTPS tunnel connection: %@:%d (resolved: %@)", host, port, resolvedHost);
+    EMAS_LOCAL_HTTP_PROXY_LOG_INFO("Establishing HTTPS tunnel connection: %@:%d (resolved: %@)", host, port, resolvedHost);
 
     // 配置远程连接处理队列
     nw_connection_set_queue(remoteConnection, dispatch_get_global_queue(QOS_CLASS_UTILITY, 0));
@@ -741,7 +808,7 @@ API_AVAILABLE(ios(17.0))
     nw_connection_set_state_changed_handler(remoteConnection, ^(nw_connection_state_t state, nw_error_t error) {
         switch (state) {
             case nw_connection_state_ready: {
-                EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("HTTPS tunnel connection established successfully: %@:%d", host, port);
+                EMAS_LOCAL_HTTP_PROXY_LOG_INFO("HTTPS tunnel connection established successfully: %@:%d", host, port);
 
                 // 记录IP连接成功
                 dispatch_async(self->_ipTrackingQueue, ^{

@@ -11,6 +11,8 @@
 #import "EMASCurlResponseCache.h"
 #import "NSCachedURLResponse+EMASCurl.h"
 #import "EMASCurlLogger.h"
+#import "EMASCurlConfiguration.h"
+#import "EMASCurlConfigurationManager.h"
 #import <curl/curl.h>
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #import <NetworkExtension/NetworkExtension.h>
@@ -31,6 +33,10 @@ static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlM
 
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
 static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
+
+// Multi-instance configuration support
+static NSString * _Nonnull const kEMASCurlConfigurationIDKey = @"kEMASCurlConfigurationIDKey";
+static NSString * _Nonnull const kEMASCurlConfigurationHeaderKey = @"X-EMASCurl-Config-ID";
 
 // EMASCurlTransactionMetrics实现
 @implementation EMASCurlTransactionMetrics
@@ -98,6 +104,8 @@ static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 
 @property (nonatomic, strong) NSMutableData *receivedResponseData;
 
+@property (nonatomic, strong) EMASCurlConfiguration *resolvedConfiguration;
+
 // 时间记录属性
 @property (nonatomic, strong) NSDate *fetchStartDate;
 @property (nonatomic, strong) NSDate *domainLookupStartDate;
@@ -113,52 +121,21 @@ static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 
 @end
 
-static HTTPVersion s_httpVersion;
-
 // runtime 的libcurl xcframework是否支持HTTP2
 static BOOL curlFeatureHttp2;
 
 // runtime 的libcurl xcframework是否支持HTTP3
 static BOOL curlFeatureHttp3;
 
-static BOOL s_enableBuiltInGzip;
-
-static NSString *s_caFilePath = nil;
-
-static BOOL s_enableBuiltInRedirection;
-
-static NSString *s_proxyServer;
-static dispatch_queue_t s_serialQueue;
-
-static Class<EMASCurlProtocolDNSResolver> s_dnsResolverClass;
-
+// 全局日志设置
 static BOOL s_enableDebugLog;
 
-// 标记是否启用了手动代理
-static BOOL s_manualProxyEnabled;
-
-// 拦截域名白名单
-static NSArray<NSString *> *s_domainWhiteList;
-static NSArray<NSString *> *s_domainBlackList;
-
-// 公钥固定(Public Key Pinning)的公钥文件路径
-static NSString *s_publicKeyPinningKeyPath;
-
-// 是否开启证书校验
-static BOOL s_certificateValidationEnabled;
-
-// 是否开启域名校验
-static BOOL s_domainNameVerificationEnabled;
-
+// 全局缓存相关
 static EMASCurlResponseCache *s_responseCache;
-static BOOL s_cacheEnabled;
 static dispatch_queue_t s_cacheQueue;
 
 // 全局综合性能指标观察回调
 static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverBlock = nil;
-
-// 全局连接超时时间（毫秒），默认2500ms
-static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
 
 @implementation EMASCurlProtocol
 
@@ -179,19 +156,27 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
 }
 
 + (void)setHTTPVersion:(HTTPVersion)version {
-    s_httpVersion = version;
+    // 更新默认配置
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.httpVersion = version;
 }
 
 + (void)setBuiltInGzipEnabled:(BOOL)enabled {
-    s_enableBuiltInGzip = enabled;
+    // 更新默认配置
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.enableBuiltInGzip = enabled;
 }
 
 + (void)setSelfSignedCAFilePath:(nonnull NSString *)selfSignedCAFilePath {
-    s_caFilePath = selfSignedCAFilePath;
+    // 更新默认配置
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.caFilePath = selfSignedCAFilePath;
 }
 
 + (void)setBuiltInRedirectionEnabled:(BOOL)enabled {
-    s_enableBuiltInRedirection = enabled;
+    // 更新默认配置
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.enableBuiltInRedirection = enabled;
 }
 
 + (void)setDebugLogEnabled:(BOOL)debugLogEnabled {
@@ -205,7 +190,9 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
 }
 
 + (void)setDNSResolver:(nonnull Class<EMASCurlProtocolDNSResolver>)dnsResolver {
-    s_dnsResolverClass = dnsResolver;
+    // 更新默认配置
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.dnsResolver = dnsResolver;
 }
 
 + (void)setUploadProgressUpdateBlockForRequest:(nonnull NSMutableURLRequest *)request uploadProgressUpdateBlock:(nonnull EMASCurlUploadProgressUpdateBlock)uploadProgressUpdateBlock {
@@ -227,48 +214,52 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
 }
 
 + (void)setConnectTimeoutInterval:(NSTimeInterval)timeoutInterval {
-    s_globalConnectTimeoutInterval = timeoutInterval;
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.connectTimeoutInterval = timeoutInterval;
     EMAS_LOG_INFO(@"EC-Config", @"Connect timeout set to %.1f seconds", timeoutInterval);
 }
 
 + (void)setHijackDomainWhiteList:(nullable NSArray<NSString *> *)domainWhiteList {
-    s_domainWhiteList = domainWhiteList;
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.domainWhiteList = domainWhiteList;
 }
 
 + (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList {
-    s_domainBlackList = domainBlackList;
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.domainBlackList = domainBlackList;
 }
 
 + (void)setPublicKeyPinningKeyPath:(nullable NSString *)publicKeyPath {
-    s_publicKeyPinningKeyPath = [publicKeyPath copy];
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.publicKeyPinningKeyPath = publicKeyPath;
 }
 
 + (void)setCertificateValidationEnabled:(BOOL)enabled {
-    s_certificateValidationEnabled = enabled;
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.certificateValidationEnabled = enabled;
 }
 
 + (void)setDomainNameVerificationEnabled:(BOOL)enabled {
-    s_domainNameVerificationEnabled = enabled;
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.domainNameVerificationEnabled = enabled;
 }
 
 + (void)setManualProxyServer:(nullable NSString *)proxyServerURL {
-    dispatch_sync(s_serialQueue, ^{
-        if (proxyServerURL && proxyServerURL.length > 0) {
-            s_manualProxyEnabled = YES;
-            s_proxyServer = [proxyServerURL copy];
-            EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy enabled: %@", proxyServerURL);
-        } else {
-            s_manualProxyEnabled = NO;
-            s_proxyServer = nil;
-            EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy disabled, will use system settings");
-        }
-    });
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.proxyServer = proxyServerURL;
+    defaultConfig.manualProxyEnabled = (proxyServerURL != nil);
+
+    if (proxyServerURL && proxyServerURL.length > 0) {
+        EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy enabled: %@", proxyServerURL);
+    } else {
+        EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy disabled, will use system settings");
+    }
 }
 
 + (void)setCacheEnabled:(BOOL)enabled {
-    dispatch_sync(s_cacheQueue, ^{
-        s_cacheEnabled = enabled;
-    });
+    // 更新默认配置
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.cacheEnabled = enabled;
 }
 
 #pragma mark * NSURLProtocol overrides
@@ -302,62 +293,48 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     curlFeatureHttp2 = (version_info->features & CURL_VERSION_HTTP2) ? YES : NO;
     curlFeatureHttp3 = (version_info->features & CURL_VERSION_HTTP3) ? YES : NO;
 
-    s_httpVersion = HTTP1;
     s_enableDebugLog = NO;
-
-    s_enableBuiltInGzip = YES;
-    s_enableBuiltInRedirection = YES;
-
-    // 默认开启证书和域名校验
-    s_certificateValidationEnabled = YES;
-    s_domainNameVerificationEnabled = YES;
 
     s_responseCache = [EMASCurlResponseCache new];
 
-    s_proxyServer = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        s_serialQueue = dispatch_queue_create("com.alicloud.emascurl.serialQueue", DISPATCH_QUEUE_SERIAL);
         s_cacheQueue = dispatch_queue_create("com.alicloud.emascurl.cacheQueue", DISPATCH_QUEUE_SERIAL);
     });
 }
 
 // 获取当前代理设置，优先使用手动设置的代理，否则读取系统代理设置
 + (nullable NSString *)getCurrentProxyServer {
-    __block NSString *currentProxy = nil;
+    // 从默认配置获取手动代理设置
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    if (defaultConfig.manualProxyEnabled && defaultConfig.proxyServer) {
+        return defaultConfig.proxyServer;
+    }
 
-    dispatch_sync(s_serialQueue, ^{
-        // 如果启用了手动代理，直接返回手动设置的代理
-        if (s_manualProxyEnabled) {
-            currentProxy = s_proxyServer;
-            return;
-        }
+    // 否则读取系统代理设置
+    CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
+    if (!proxySettings) {
+        return nil;
+    }
 
-        // 否则读取系统代理设置
-        CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
-        if (!proxySettings) {
-            return;
-        }
+    NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
 
-        NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
-
-        // 检查是否启用了HTTP代理
-        NSNumber *httpEnabled = proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable];
-        if (!httpEnabled || ![httpEnabled boolValue]) {
-            CFRelease(proxySettings);
-            return;
-        }
-
-        NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
-        NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
-
-        if (httpProxy && httpPort) {
-            currentProxy = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
-        }
-
+    // 检查是否启用了HTTP代理
+    NSNumber *httpEnabled = proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable];
+    if (!httpEnabled || ![httpEnabled boolValue]) {
         CFRelease(proxySettings);
-    });
+        return nil;
+    }
 
+    NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
+    NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
+    NSString *currentProxy = nil;
+
+    if (httpProxy && httpPort) {
+        currentProxy = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
+    }
+
+    CFRelease(proxySettings);
     return currentProxy;
 }
 
@@ -385,16 +362,32 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         EMAS_LOG_DEBUG(@"EC-Request", @"Rejected request without host");
         return NO;
     }
-    if (s_domainBlackList && s_domainBlackList.count > 0) {
-        for (NSString *blacklistDomain in s_domainBlackList) {
+
+    // 尝试获取请求特定的配置
+    EMASCurlConfiguration *config = nil;
+    NSString *configID = [request valueForHTTPHeaderField:kEMASCurlConfigurationHeaderKey];
+    if (configID) {
+        config = [[EMASCurlConfigurationManager sharedManager] configurationForID:configID];
+    }
+    if (!config) {
+        // 使用默认配置
+        config = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    }
+
+    // 使用配置中的域名黑白名单
+    NSArray<NSString *> *domainBlackList = config.domainBlackList;
+    NSArray<NSString *> *domainWhiteList = config.domainWhiteList;
+
+    if (domainBlackList && domainBlackList.count > 0) {
+        for (NSString *blacklistDomain in domainBlackList) {
             if ([host hasSuffix:blacklistDomain]) {
                 EMAS_LOG_DEBUG(@"EC-Request", @"Request rejected by domain blacklist: %@", host);
                 return NO;
             }
         }
     }
-    if (s_domainWhiteList && s_domainWhiteList.count > 0) {
-        for (NSString *whitelistDomain in s_domainWhiteList) {
+    if (domainWhiteList && domainWhiteList.count > 0) {
+        for (NSString *whitelistDomain in domainWhiteList) {
             if ([host hasSuffix:whitelistDomain]) {
                 EMAS_LOG_DEBUG(@"EC-Request", @"Request filtered by domain whitelist: %@", host);
                 return YES;
@@ -418,17 +411,44 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
 + (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request {
     NSMutableURLRequest *mutableRequest = [request mutableCopy];
     [NSURLProtocol setProperty:@YES forKey:kEMASCurlHandledKey inRequest:mutableRequest];
+
+    // 从HTTP header中提取配置ID并设置为protocol property
+    NSString *configID = [request valueForHTTPHeaderField:kEMASCurlConfigurationHeaderKey];
+    if (configID) {
+        [NSURLProtocol setProperty:configID forKey:kEMASCurlConfigurationIDKey inRequest:mutableRequest];
+    }
+
     return mutableRequest;
+}
+
+- (EMASCurlConfiguration *)resolveConfiguration {
+    // 尝试从protocol property中获取配置ID
+    NSString *configID = [NSURLProtocol propertyForKey:kEMASCurlConfigurationIDKey inRequest:self.request];
+
+    if (configID) {
+        EMASCurlConfiguration *config = [[EMASCurlConfigurationManager sharedManager] configurationForID:configID];
+        if (config) {
+            EMAS_LOG_DEBUG(@"EC-MultiInstance", @"Using configuration %@ for request", configID);
+            return config;
+        }
+    }
+
+    // 如果没有找到特定配置，使用默认配置
+    EMAS_LOG_DEBUG(@"EC-MultiInstance", @"Using default configuration for request");
+    return [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
 }
 
 - (void)startLoading {
     EMAS_LOG_INFO(@"EC-Protocol", @"Starting request for URL: %@", self.request.URL.absoluteString);
 
+    // 解析此请求应使用的配置
+    self.resolvedConfiguration = [self resolveConfiguration];
+
     // 检查是否启用缓存以及是否是可缓存的请求
     __block BOOL useCache = NO;
 
     dispatch_sync(s_cacheQueue, ^{
-        if (!s_cacheEnabled) {
+        if (!self.resolvedConfiguration.cacheEnabled) {
             return;
         }
 
@@ -498,7 +518,7 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         // 如果请求成功且状态码为200，则尝试缓存响应
         if (succeed &&
             self.currentResponse.statusCode == 200 &&
-            s_cacheEnabled &&
+            self.resolvedConfiguration.cacheEnabled &&
             [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
 
             dispatch_sync(s_cacheQueue, ^{
@@ -582,12 +602,15 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
                   totalTime * 1000, nameLookupTime * 1000, connectTime * 1000, startTransferTime * 1000);
 
     // 检查是否有全局综合性能指标回调
-    EMASCurlTransactionMetricsObserverBlock transactionCallback = nil;
+    EMASCurlTransactionMetricsObserverBlock globalTransactionCallback = nil;
     @synchronized ([EMASCurlProtocol class]) {
-        transactionCallback = globalTransactionMetricsObserverBlock;
+        globalTransactionCallback = globalTransactionMetricsObserverBlock;
     }
 
-    if (transactionCallback) {
+    // 检查是否有实例级别性能指标回调
+    EMASCurlTransactionMetricsObserverBlock instanceTransactionCallback = self.resolvedConfiguration.transactionMetricsObserver;
+
+    if (globalTransactionCallback || instanceTransactionCallback) {
         // 创建综合性能指标对象
         EMASCurlTransactionMetrics *metrics = [self createTransactionMetricsWithTotalTime:totalTime
                                                                           nameLookupTime:nameLookupTime
@@ -596,7 +619,12 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
                                                                          preTransferTime:preTransferTime
                                                                         startTransferTime:startTransferTime];
 
-        transactionCallback(self.request, success, error, metrics);
+        if (globalTransactionCallback) {
+            globalTransactionCallback(self.request, success, error, metrics);
+        }
+        if (instanceTransactionCallback) {
+            instanceTransactionCallback(self.request, success, error, metrics);
+        }
     }
 
     // 检查简单性能指标回调（向下兼容）
@@ -758,7 +786,8 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     curl_easy_setopt(easyHandle, CURLOPT_URL, request.URL.absoluteString.UTF8String);
 
     // 配置 http version
-    switch (s_httpVersion) {
+    HTTPVersion httpVersion = self.resolvedConfiguration.httpVersion;
+    switch (httpVersion) {
         case HTTP3:
             // 仅https url能使用quic
             if (curlFeatureHttp3 && [request.URL.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame) {
@@ -810,14 +839,14 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
                 EMAS_LOG_DEBUG(@"EC-Headers", @"No supported encodings found in manual Accept-Encoding: %@", trimmedEncoding);
             }
         }
-    } else if (s_enableBuiltInGzip) {
+    } else if (self.resolvedConfiguration.enableBuiltInGzip) {
         // 用户没有手动设置Accept-Encoding头部，使用内置gzip设置
         curl_easy_setopt(easyHandle, CURLOPT_ACCEPT_ENCODING, "");
         EMAS_LOG_DEBUG(@"EC-Headers", @"Using built-in gzip encoding");
     }
 
     // 只对GET请求添加缓存相关条件头
-    if (s_cacheEnabled && [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
+    if (self.resolvedConfiguration.cacheEnabled && [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
         // 再次从缓存获取，看是否有可用于条件GET的项
         // 注意：这里的 request 应该是用于网络请求的 NSMutableURLRequest
         // 而 s_responseCache.cachedResponseForRequest 需要原始的 self.request (或其副本) 作为键
@@ -922,12 +951,12 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     }
 
     // 是否设置自定义根证书
-    if (s_caFilePath) {
-        curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [s_caFilePath UTF8String]);
+    if (self.resolvedConfiguration.caFilePath) {
+        curl_easy_setopt(easyHandle, CURLOPT_CAINFO, [self.resolvedConfiguration.caFilePath UTF8String]);
     }
 
     // 配置证书校验
-    if (s_certificateValidationEnabled) {
+    if (self.resolvedConfiguration.certificateValidationEnabled) {
         curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYPEER, 1L);
     } else {
         EMAS_LOG_INFO(@"EC-SSL", @"Certificate validation disabled");
@@ -938,7 +967,7 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     // 0: 不校验域名
     // 1: 校验域名是否存在于证书中，但仅用于提示 (libcurl < 7.28.0)
     // 2: 校验域名是否存在于证书中且匹配 (libcurl >= 7.28.0 推荐)
-    if (s_domainNameVerificationEnabled) {
+    if (self.resolvedConfiguration.domainNameVerificationEnabled) {
         curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYHOST, 2L);
     } else {
         EMAS_LOG_INFO(@"EC-SSL", @"Domain name verification disabled");
@@ -946,13 +975,13 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     }
 
     // 设置公钥固定
-    if (s_publicKeyPinningKeyPath) {
+    if (self.resolvedConfiguration.publicKeyPinningKeyPath) {
         EMAS_LOG_INFO(@"EC-SSL", @"Using public key pinning for host: %@", self.request.URL.host);
-        curl_easy_setopt(easyHandle, CURLOPT_PINNEDPUBLICKEY, [s_publicKeyPinningKeyPath UTF8String]);
+        curl_easy_setopt(easyHandle, CURLOPT_PINNEDPUBLICKEY, [self.resolvedConfiguration.publicKeyPinningKeyPath UTF8String]);
     }
 
     // 假如设置了自定义resolve，则使用
-    if (s_dnsResolverClass) {
+    if (self.resolvedConfiguration.dnsResolver) {
         NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
         if ([self preResolveDomain:easyHandle]) {
             self.resolveDomainTimeInterval = [[NSDate date] timeIntervalSince1970] - startTime;
@@ -966,17 +995,17 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         curl_easy_setopt(easyHandle, CURLOPT_COOKIE, [cookieString UTF8String]);
     }
 
-    // 设置代理，每次请求时动态读取
-    NSString *currentProxy = [self.class getCurrentProxyServer];
-    if (currentProxy) {
-        curl_easy_setopt(easyHandle, CURLOPT_PROXY, [currentProxy UTF8String]);
-        EMAS_LOG_DEBUG(@"EC-Proxy", @"Using proxy: %@", currentProxy);
+    // 设置代理
+    if (self.resolvedConfiguration.manualProxyEnabled && self.resolvedConfiguration.proxyServer) {
+        curl_easy_setopt(easyHandle, CURLOPT_PROXY, [self.resolvedConfiguration.proxyServer UTF8String]);
+        EMAS_LOG_DEBUG(@"EC-Proxy", @"Using proxy: %@", self.resolvedConfiguration.proxyServer);
     } else {
         EMAS_LOG_DEBUG(@"EC-Proxy", @"No proxy configured");
     }
 
     // 设置debug回调函数以输出日志
-    if (s_enableDebugLog) {
+    // 注意：日志级别保持全局配置
+    if ([EMASCurlLogger currentLogLevel] >= EMASCurlLogLevelDebug) {
         curl_easy_setopt(easyHandle, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(easyHandle, CURLOPT_DEBUGFUNCTION, debug_cb);
     }
@@ -1007,8 +1036,8 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         connectTimeout = connectTimeoutInterval.doubleValue;
         EMAS_LOG_DEBUG(@"EC-Timeout", @"Using per-request connect timeout: %.1f seconds", connectTimeout);
     } else {
-        // 使用全局连接超时设置
-        connectTimeout = s_globalConnectTimeoutInterval;
+        // 使用配置中的连接超时设置
+        connectTimeout = self.resolvedConfiguration.connectTimeoutInterval;
     }
     curl_easy_setopt(easyHandle, CURLOPT_CONNECTTIMEOUT_MS, (long)(connectTimeout * 1000));
 
@@ -1019,7 +1048,7 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     }
 
     // 开启重定向
-    if (s_enableBuiltInRedirection) {
+    if (self.resolvedConfiguration.enableBuiltInRedirection) {
         curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 1L);
     } else {
         curl_easy_setopt(easyHandle, CURLOPT_FOLLOWLOCATION, 0L);
@@ -1055,7 +1084,7 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
     EMAS_LOG_INFO(@"EC-DNS", @"Using custom DNS resolver for domain: %@", host);
 
     CFAbsoluteTime startTime = CFAbsoluteTimeGetCurrent();
-    NSString *address = [s_dnsResolverClass resolveDomain:host];
+    NSString *address = [self.resolvedConfiguration.dnsResolver resolveDomain:host];
     CFAbsoluteTime endTime = CFAbsoluteTimeGetCurrent();
 
     double resolutionTime = (endTime - startTime) * 1000; // 转换为毫秒
@@ -1134,6 +1163,10 @@ static NSTimeInterval s_globalConnectTimeoutInterval = 2.5;
         }
         // 对于Accept-Encoding，已经在populateRequestHeader中单独处理了，这里跳过避免重复设置
         if ([key caseInsensitiveCompare:@"Accept-Encoding"] == NSOrderedSame) {
+            continue;
+        }
+        // 跳过内部配置头，不发送给服务器
+        if ([key caseInsensitiveCompare:kEMASCurlConfigurationHeaderKey] == NSOrderedSame) {
             continue;
         }
         // 检查是否已提供User-Agent
@@ -1230,7 +1263,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         NSString *reasonPhrase = protocol.currentResponse.reasonPhrase;
 
         // 处理304 Not Modified响应
-        if (statusCode == 304 && s_cacheEnabled) {
+        if (statusCode == 304 && protocol.resolvedConfiguration.cacheEnabled) {
             // 查找缓存
             NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:protocol.request];
             if (cachedResponse) {
@@ -1254,7 +1287,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                                                                      HTTPVersion:protocol.currentResponse.httpVersion
                                                                     headerFields:protocol.currentResponse.headers];
         if (isRedirectionStatusCode(statusCode)) {
-            if (!s_enableBuiltInRedirection) {
+            if (!protocol.resolvedConfiguration.enableBuiltInRedirection) {
                 // 关闭了重定向支持，则把重定向信息往外传递
                 __block NSString *location = nil;
                 [protocol.currentResponse.headers enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSString * _Nonnull obj, BOOL * _Nonnull stop) {
@@ -1316,7 +1349,7 @@ static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
     NSData *data = [[NSData alloc] initWithBytes:contents length:totalSize];
 
     // 收集响应数据用于缓存
-    if (s_cacheEnabled && protocol.currentResponse.statusCode == 200 &&
+    if (protocol.resolvedConfiguration.cacheEnabled && protocol.currentResponse.statusCode == 200 &&
         [[protocol.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
         [protocol.receivedResponseData appendData:data];
     }
@@ -1428,6 +1461,42 @@ static int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, v
 
 + (EMASCurlLogLevel)currentLogLevel {
     return [EMASCurlLogger currentLogLevel];
+}
+
+@end
+
+#pragma mark - 多实例配置支持
+
+@implementation EMASCurlProtocol (MultiInstance)
+
++ (void)installIntoSessionConfiguration:(NSURLSessionConfiguration *)sessionConfig
+                       withConfiguration:(EMASCurlConfiguration *)curlConfig {
+    if (!sessionConfig || !curlConfig) {
+        EMAS_LOG_ERROR(@"EC-MultiInstance", @"Cannot install: nil session or configuration");
+        return;
+    }
+
+    // 生成唯一的配置ID
+    NSString *configID = [[NSUUID UUID] UUIDString];
+
+    // 将配置存储到管理器
+    [[EMASCurlConfigurationManager sharedManager] setConfiguration:curlConfig forID:configID];
+
+    // 将配置ID注入到session的HTTPAdditionalHeaders中
+    NSMutableDictionary *headers = [NSMutableDictionary dictionaryWithDictionary:sessionConfig.HTTPAdditionalHeaders ?: @{}];
+    headers[kEMASCurlConfigurationHeaderKey] = configID;
+    sessionConfig.HTTPAdditionalHeaders = headers;
+
+    // 安装protocol到session
+    NSMutableArray *protocolsArray = [NSMutableArray arrayWithArray:sessionConfig.protocolClasses];
+    [protocolsArray insertObject:self atIndex:0];
+    [sessionConfig setProtocolClasses:protocolsArray];
+
+    EMAS_LOG_INFO(@"EC-MultiInstance", @"Installed configuration %@ into session", configID);
+}
+
++ (EMASCurlConfiguration *)defaultConfiguration {
+    return [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
 }
 
 @end

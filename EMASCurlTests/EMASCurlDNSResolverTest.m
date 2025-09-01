@@ -114,11 +114,15 @@ static NSURLSession *session;
 
 + (void)setUp {
     [EMASCurlProtocol setDebugLogEnabled:YES];
-    [EMASCurlProtocol setConnectTimeoutInterval:1.5];
-    [EMASCurlProtocol setDNSResolver:[TestDNSResolver class]];
+
+    // 创建 EMASCurl 配置
+    EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
+    curlConfig.connectTimeoutInterval = 1.5;
+    curlConfig.dnsResolver = [TestDNSResolver class];
+    curlConfig.httpVersion = HTTP1;  // 显式设置 HTTP1
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-    [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
     session = [NSURLSession sessionWithConfiguration:config];
 }
 
@@ -131,8 +135,15 @@ static NSURLSession *session;
 }
 
 - (void)testDNSFallbackToSecondIP {
-    // 使用返回多个IP的DNS解析器
-    [EMASCurlProtocol setDNSResolver:[TestDNSResolverWithFallback class]];
+    // 创建使用 fallback DNS 解析器的新会话
+    EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
+    curlConfig.connectTimeoutInterval = 1.5;
+    curlConfig.dnsResolver = [TestDNSResolverWithFallback class];  // 使用返回多个 IP 的解析器
+    curlConfig.httpVersion = HTTP1;
+
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+    [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
+    NSURLSession *fallbackSession = [NSURLSession sessionWithConfiguration:config];
 
     NSString *testURL = [NSString stringWithFormat:@"%@%@", HTTP11_ENDPOINT, PATH_ECHO];
     // 替换为测试域名
@@ -145,7 +156,7 @@ static NSURLSession *session;
     __block NSError *receivedError = nil;
     __block NSHTTPURLResponse *receivedResponse = nil;
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [fallbackSession dataTaskWithRequest:request
                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         receivedError = error;
         receivedResponse = (NSHTTPURLResponse *)response;
@@ -161,9 +172,6 @@ static NSURLSession *session;
     XCTAssertNil(receivedError, @"Request should succeed after falling back to second IP, but got error: %@", receivedError);
     XCTAssertNotNil(receivedResponse, @"Should receive a response");
     XCTAssertEqual(receivedResponse.statusCode, 200, @"Expected 200 status code after DNS fallback");
-
-    // 恢复原来的DNS解析器
-    [EMASCurlProtocol setDNSResolver:[TestDNSResolver class]];
 }
 
 @end

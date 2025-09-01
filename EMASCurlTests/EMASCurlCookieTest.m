@@ -21,8 +21,13 @@
     [super setUp];
 
     [EMASCurlProtocol setDebugLogEnabled:YES];
+
+    // 创建 EMASCurl 配置
+    EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
+    // 使用默认设置
+
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-    [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
     _session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 

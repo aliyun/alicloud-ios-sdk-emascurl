@@ -21,17 +21,21 @@ static NSURLSession *session;
     [super setUp];
     [EMASCurlProtocol setDebugLogEnabled:YES];
 
+    // 创建 EMASCurl 配置
+    EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
+    curlConfig.connectTimeoutInterval = 1.0;  // 设置默认连接超时
+
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     config.HTTPShouldUsePipelining = YES;
     config.HTTPShouldSetCookies = YES;
-    [EMASCurlProtocol installIntoSessionConfiguration:config];
+    [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
     session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testConnectTimeout {
     NSURL *url = [NSURL URLWithString:TIMEOUT_TEST_ENDPOINT];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    [EMASCurlProtocol setConnectTimeoutIntervalForRequest:request connectTimeoutInterval:1];
+    // \u8fde\u63a5\u8d85\u65f6\u73b0\u5728\u5df2\u7ecf\u5728\u4e0a\u9762\u7684\u914d\u7f6e\u4e2d\u8bbe\u7f6e
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
     __block NSError *receivedError = nil;
