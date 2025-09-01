@@ -11,7 +11,7 @@
 #import <Foundation/Foundation.h>
 #import <EMASCurl/EMASCurlConfiguration.h>
 
-#define EMASCURL_SDK_VERSION @"1.3.6"
+#define EMASCURL_SDK_VERSION @"1.4.0"
 
 
 // 日志级别枚举

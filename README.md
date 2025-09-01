@@ -119,7 +119,11 @@ target 'yourAppTarget' do
     pod 'EMASCurl', 'x.x.x'
 end
 ```
+
+当前最新版本：1.4.0
+
 在您的Terminal中进入`Podfile`所在目录，执行以下命令安装依赖：
+
 
 ```shell
 pod install --repo-update
@@ -127,7 +131,9 @@ pod install --repo-update
 
 #### 使用EMASCurl发送网络请求
 
+
 首先，创建EMASCurl配置并安装到您的`NSURLSessionConfiguration`。
+
 
 ```objc
 // 实现自定义DNS解析器（例如使用HTTPDNS）
@@ -153,6 +159,7 @@ NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSes
 ```
 
 之后，EMASCurl可以拦截此`NSURLSessionConfiguration`创建的`NSURLSession`发起的请求，并使用自定义的DNS解析器。
+
 
 ```objc
 NSURLSession *session = [NSURLSession sessionWithConfiguration:sessionConfig
@@ -881,7 +888,7 @@ target 'yourAppTarget' do
 end
 ```
 
-当前版本: 1.3.6
+当前最新版本: 1.4.0
 
 ### WKWebView集成
 

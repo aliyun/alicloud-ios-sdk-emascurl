@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
     s.name         = "EMASLocalProxy"
-    s.version      = "1.3.6"
+    s.version      = "1.4.0"
     s.summary      = "EMAS Local HTTPS proxy iOS SDK for easier integration with HTTPDNS."
     s.homepage     = "https://www.aliyun.com/product/httpdns"
     s.author       = { "zhouzhuo" => "yecan.xyc@alibaba-inc.com" }
