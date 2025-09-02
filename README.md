@@ -904,7 +904,7 @@ WKWebView 的代理配置相对简单，因为 WebView 通常不会在应用启�
     WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
 
     // EMASLocalProxy 会内部检查系统版本，iOS 17 以下会返回 NO
-    BOOL success = [EMASLocalHttpProxy installIntoWkWebViewConfiguration:config];
+    BOOL success = [EMASLocalHttpProxy installIntoWebViewConfiguration:config];
     NSLog(@"WebView代理配置: %@", success ? @"成功" : @"失败，使用系统网络");
 
     self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:config];
