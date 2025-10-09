@@ -462,6 +462,15 @@ def create_app():
             headers={"Content-Encoding": "gzip"}
         )
 
+    @app.get("/cache/no_store")
+    async def cache_no_store(body: Optional[Any] = Body(None)):
+        """Return a small JSON with Cache-Control: no-store to test non-cacheable responses"""
+        payload = {"message": "no-store"}
+        return JSONResponse(
+            content=payload,
+            headers={"Cache-Control": "no-store", "Content-Type": "application/json"}
+        )
+
     @app.get("/timeout/request")
     async def timeout_request():
         # Sleep for 2 seconds to simulate a slow response

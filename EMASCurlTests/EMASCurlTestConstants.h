@@ -29,6 +29,7 @@ static NSString *PATH_REDIRECT_CHAIN = @"/redirect_chain";
 static NSString *PATH_DOWNLOAD_1MB_DATA_AT_200KBPS_SPEED = @"/download/1MB_data_at_200KBps_speed";
 
 static NSString *PATH_GZIP_RESPONSE = @"/get/gzip_response";
+static NSString *PATH_CACHE_NO_STORE = @"/cache/no_store";
 
 static NSString *PATH_UPLOAD_POST_SLOW = @"/upload/post/slow";
 
