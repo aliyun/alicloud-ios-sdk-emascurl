@@ -51,6 +51,7 @@
 
     // 缓存设置
     _cacheEnabled = YES; // Will be set to shared instance when needed
+    _maximumCacheableBodyBytes = 5 * 1024 * 1024; // 5 MiB 默认阈值，防止大响应占用过多内存
 
     // 性能监控
     _transactionMetricsObserver = nil;
@@ -87,6 +88,7 @@
     copy.domainBlackList = [self.domainBlackList copy];
 
     copy.cacheEnabled = self.cacheEnabled;
+    copy.maximumCacheableBodyBytes = self.maximumCacheableBodyBytes;
     // 缓存全局管理，不属于配置
 
     copy.transactionMetricsObserver = [self.transactionMetricsObserver copy];
@@ -128,6 +130,7 @@
         ![self.domainBlackList isEqualToArray:configuration.domainBlackList]) return NO;
 
     if (self.cacheEnabled != configuration.cacheEnabled) return NO;
+    if (self.maximumCacheableBodyBytes != configuration.maximumCacheableBodyBytes) return NO;
 
     // 注意：不比较block (transactionMetricsObserver)
 
@@ -156,6 +159,7 @@
     hash ^= [self.domainWhiteList hash];
     hash ^= [self.domainBlackList hash];
     hash ^= self.cacheEnabled ? 32 : 0;
+    hash ^= self.maximumCacheableBodyBytes;
     return hash;
 }
 

@@ -106,6 +106,10 @@ static NSString * _Nonnull const kEMASCurlConfigurationHeaderKey = @"X-EMASCurl-
 
 @property (nonatomic, strong) EMASCurlConfiguration *resolvedConfiguration;
 
+// 缓存缓冲控制
+@property (nonatomic, assign) BOOL shouldBufferBodyForCache;
+@property (nonatomic, assign) NSUInteger bufferedCacheBytes;
+
 // 时间记录属性
 @property (nonatomic, strong) NSDate *fetchStartDate;
 @property (nonatomic, strong) NSDate *domainLookupStartDate;
@@ -277,6 +281,8 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         // 初始化时间记录
         _fetchStartDate = [NSDate date];
         _receivedResponseData = [NSMutableData new];
+        _shouldBufferBodyForCache = NO;
+        _bufferedCacheBytes = 0;
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
@@ -515,11 +521,12 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error) {
         [self reportNetworkMetric:succeed error:error];
 
-        // 如果请求成功且状态码为200，则尝试缓存响应
+        // 如果请求成功且状态码为200，则尝试缓存响应（仅在内存中曾经缓冲成功时）
         if (succeed &&
             self.currentResponse.statusCode == 200 &&
             self.resolvedConfiguration.cacheEnabled &&
-            [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
+            [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"] &&
+            self.receivedResponseData != nil) {
 
             dispatch_sync(s_cacheQueue, ^{
                 NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:self.request.URL
@@ -1313,6 +1320,45 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         } else {
             [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageNotAllowed];
             protocol.currentResponse.isFinalResponse = YES;
+
+            // 仅在最终响应首包前决定是否在内存中缓冲以用于缓存。
+            // 复杂原因：若无上限，巨大GET响应会导致NSMutableData反复扩容，引发NSMallocException。
+            if (protocol.resolvedConfiguration.cacheEnabled &&
+                [[protocol.request.HTTPMethod uppercaseString] isEqualToString:@"GET"] &&
+                statusCode == 200) {
+                // 检查Cache-Control: no-store，遇到则不缓冲
+                NSString *cacheCtl = protocol.currentResponse.headers[@"Cache-Control"] ?: protocol.currentResponse.headers[@"cache-control"];
+                BOOL hasNoStore = NO;
+                if (cacheCtl.length > 0) {
+                    NSString *lc = [cacheCtl lowercaseString];
+                    hasNoStore = [lc containsString:@"no-store"];
+                }
+
+                if (!hasNoStore) {
+                    protocol.shouldBufferBodyForCache = YES;
+
+                    // 依据Content-Length和阈值预判是否值得在内存中缓冲
+                    NSString *clStr = protocol.currentResponse.headers[@"Content-Length"] ?: protocol.currentResponse.headers[@"content-length"];
+                    unsigned long long contentLen = (unsigned long long) [clStr longLongValue];
+                    NSUInteger cap = (NSUInteger)MIN(contentLen > 0 ? contentLen : 0, protocol.resolvedConfiguration.maximumCacheableBodyBytes);
+
+                    if (contentLen > 0 && contentLen > protocol.resolvedConfiguration.maximumCacheableBodyBytes) {
+                        // 预判超过阈值，直接放弃缓冲，避免后续appendData内存暴涨
+                        protocol.shouldBufferBodyForCache = NO;
+                        protocol.receivedResponseData = nil;
+                        protocol.bufferedCacheBytes = 0;
+                    } else {
+                        if (cap > 0) {
+                            protocol.receivedResponseData = [NSMutableData dataWithCapacity:cap];
+                        } else {
+                            // 保留已有对象，但仍受后续增量检查限制
+                            if (!protocol.receivedResponseData) {
+                                protocol.receivedResponseData = [NSMutableData new];
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1348,10 +1394,19 @@ static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t totalSize = size * nmemb;
     NSData *data = [[NSData alloc] initWithBytes:contents length:totalSize];
 
-    // 收集响应数据用于缓存
-    if (protocol.resolvedConfiguration.cacheEnabled && protocol.currentResponse.statusCode == 200 &&
-        [[protocol.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
-        [protocol.receivedResponseData appendData:data];
+    // 收集响应数据用于缓存（带内存上限保护）
+    if (protocol.shouldBufferBodyForCache) {
+        NSUInteger limit = protocol.resolvedConfiguration.maximumCacheableBodyBytes;
+        if (protocol.bufferedCacheBytes + totalSize <= limit) {
+            [protocol.receivedResponseData appendData:data];
+            protocol.bufferedCacheBytes += totalSize;
+        } else {
+            // 超过阈值，停止继续缓冲并释放已占用的缓冲，避免持续膨胀
+            // 中文注释（复杂逻辑）：一旦发现累计大小超过配置阈值，立即放弃内存缓存，释放已缓存数据，后续不再尝试缓存，保证内存峰值受控。
+            protocol.shouldBufferBodyForCache = NO;
+            protocol.receivedResponseData = nil;
+            protocol.bufferedCacheBytes = 0;
+        }
     }
 
     // 只有确认获得已经读取了最后一个响应，接受的数据才视为有效数据

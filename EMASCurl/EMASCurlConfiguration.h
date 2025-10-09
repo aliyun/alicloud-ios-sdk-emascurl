@@ -213,6 +213,14 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
  */
 @property (nonatomic, assign) BOOL cacheEnabled;
 
+/**
+ * 可缓存响应体的最大内存大小（字节）。
+ * 超过该阈值时将放弃在内存中累积响应体，从而避免内存暴涨引发崩溃；
+ * 若需要缓存超大响应，请使用磁盘缓存方案。
+ * 默认值：5 MiB。
+ */
+@property (nonatomic, assign) NSUInteger maximumCacheableBodyBytes;
+
 
 #pragma mark - 性能监控
 
