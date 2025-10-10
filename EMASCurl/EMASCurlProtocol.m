@@ -1197,6 +1197,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         headerFields = curl_slist_append(headerFields, [defaultUAHeader UTF8String]);
     }
 
+    // 携带版本信息的自定义头
+    NSString *verHeader = [NSString stringWithFormat:@"x-emascurl-version: %@", EMASCURL_SDK_VERSION];
+    headerFields = curl_slist_append(headerFields, [verHeader UTF8String]);
+
     return headerFields;
 }
 
