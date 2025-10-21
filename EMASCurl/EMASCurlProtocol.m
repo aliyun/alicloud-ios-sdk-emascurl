@@ -123,6 +123,27 @@ static NSString * _Nonnull const kEMASCurlConfigurationHeaderKey = @"X-EMASCurl-
 @property (nonatomic, strong) NSDate *responseStartDate;
 @property (nonatomic, strong) NSDate *responseEndDate;
 
+// 客户端回调线程/RunLoop信息
+@property (nonatomic, strong) NSThread *clientThread;
+@property (nonatomic, strong) NSArray<NSString *> *clientRunLoopModes;
+
+// 生命周期与幂等控制
+@property (atomic, assign) BOOL clientNotified;   // 保证只通知一次客户端
+@property (atomic, assign) BOOL cancelled;        // 是否已触发取消
+@property (atomic, assign) BOOL cleanedUp;        // 资源是否已清理
+
+@end
+
+@interface EMASCurlProtocol (ClientThreading)
+
+- (void)invokeOnClientThread:(dispatch_block_t)block;
+
+- (BOOL)markClientNotifiedIfNeeded;
+
+- (BOOL)hasClientNotified;
+
+- (void)cleanupIfNeeded;
+
 @end
 
 // runtime 的libcurl xcframework是否支持HTTP2
@@ -286,6 +307,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
         _uploadProgressUpdateBlock = [NSURLProtocol propertyForKey:kEMASCurlUploadProgressUpdateBlockKey inRequest:request];
         _metricsObserverBlock = [NSURLProtocol propertyForKey:kEMASCurlMetricsObserverBlockKey inRequest:request];
+
+        _clientNotified = NO;
+        _cancelled = NO;
+        _cleanedUp = NO;
     }
     return self;
 }
@@ -447,11 +472,16 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 - (void)startLoading {
     EMAS_LOG_INFO(@"EC-Protocol", @"Starting request for URL: %@", self.request.URL.absoluteString);
 
+    // 记录客户端调度线程与常用RunLoop模式
+    self.clientThread = [NSThread currentThread];
+    self.clientRunLoopModes = @[NSDefaultRunLoopMode, NSRunLoopCommonModes];
+
     // 解析此请求应使用的配置
     self.resolvedConfiguration = [self resolveConfiguration];
 
     // 检查是否启用缓存以及是否是可缓存的请求
     __block BOOL useCache = NO;
+    __block NSCachedURLResponse *hitCachedResponse = nil;
 
     dispatch_sync(s_cacheQueue, ^{
         if (!self.resolvedConfiguration.cacheEnabled) {
@@ -472,12 +502,8 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
             if (isFresh && !requiresRevalidation) {
                 // 响应是新鲜的，且不需要因为 no-cache 等指令而重新验证
                 useCache = YES; // 标记已使用缓存
+                hitCachedResponse = cachedResponse;
                 EMAS_LOG_INFO(@"EC-Cache", @"Cache hit for request: %@", self.request.URL.absoluteString);
-                [self.client URLProtocol:self didReceiveResponse:cachedResponse.response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
-                [self.client URLProtocol:self didLoadData:cachedResponse.data];
-                [self.client URLProtocolDidFinishLoading:self];
-                // 注意：因为在dispatch_sync块中，直接return可能不是预期行为，
-                // 取决于外部如何处理 useCache 标记。这里假设 useCache 会被外部检查。
             } else {
                 // 响应是陈旧的，或者新鲜但需要重新验证 (no-cache)。
                 // 条件请求头将在后续步骤中添加 (如果 cachedResponse 有 ETag/Last-Modified)。
@@ -489,7 +515,15 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 如果使用了缓存，则直接返回
     if (useCache) {
-        dispatch_semaphore_signal(self.cleanupSemaphore);
+        [self invokeOnClientThread:^{
+            if (![self markClientNotifiedIfNeeded]) {
+                return;
+            }
+            [self.client URLProtocol:self didReceiveResponse:hitCachedResponse.response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+            [self.client URLProtocol:self didLoadData:hitCachedResponse.data];
+            [self.client URLProtocolDidFinishLoading:self];
+            [self cleanupIfNeeded];
+        }];
         return;
     }
 
@@ -500,9 +534,13 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         NSError *error = [NSError errorWithDomain:@"fail to init easy handle." code:-1 userInfo:nil];
         EMAS_LOG_ERROR(@"EC-Protocol", @"Failed to create easy handle for URL: %@", self.request.URL.absoluteString);
         [self reportNetworkMetric:NO error:error];
-        [self.client URLProtocol:self didFailWithError:error];
-        // 复杂逻辑说明：early return 场景必须唤醒 stopLoading 的等待者，否则调用方会永久阻塞
-        dispatch_semaphore_signal(self.cleanupSemaphore);
+        [self invokeOnClientThread:^{
+            if (![self markClientNotifiedIfNeeded]) {
+                return;
+            }
+            [self.client URLProtocol:self didFailWithError:error];
+            [self cleanupIfNeeded];
+        }];
         return;
     }
 
@@ -516,9 +554,13 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     if (error) {
         EMAS_LOG_ERROR(@"EC-Protocol", @"Failed to configure easy handle: %@", error.localizedDescription);
         [self reportNetworkMetric:NO error:error];
-        [self.client URLProtocol:self didFailWithError:error];
-        // 复杂逻辑说明：配置阶段失败同样需要发出完成信号，避免 stopLoading 卡死
-        dispatch_semaphore_signal(self.cleanupSemaphore);
+        [self invokeOnClientThread:^{
+            if (![self markClientNotifiedIfNeeded]) {
+                return;
+            }
+            [self.client URLProtocol:self didFailWithError:error];
+            [self cleanupIfNeeded];
+        }];
         return;
     }
 
@@ -547,41 +589,41 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
             });
         }
 
-        if (succeed) {
-            EMAS_LOG_DEBUG(@"EC-Protocol", @"Request processing completed with status: %ld", (long)self.currentResponse.statusCode);
-            [self.client URLProtocolDidFinishLoading:self];
-        } else {
-            EMAS_LOG_ERROR(@"EC-Protocol", @"Request failed: %@", error ? error.localizedDescription : @"Unknown error");
-            [self.client URLProtocol:self didFailWithError:error];
-        }
-
-        dispatch_semaphore_signal(self.cleanupSemaphore);
+        [self invokeOnClientThread:^{
+            if (![self markClientNotifiedIfNeeded]) {
+                return;
+            }
+            if (self.cancelled) {
+                NSError *cancelErr = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil];
+                EMAS_LOG_INFO(@"EC-Protocol", @"Request cancelled, notifying client");
+                [self.client URLProtocol:self didFailWithError:cancelErr];
+            } else if (succeed) {
+                EMAS_LOG_DEBUG(@"EC-Protocol", @"Request processing completed with status: %ld", (long)self.currentResponse.statusCode);
+                [self.client URLProtocolDidFinishLoading:self];
+            } else {
+                EMAS_LOG_ERROR(@"EC-Protocol", @"Request failed: %@", error ? error.localizedDescription : @"Unknown error");
+                [self.client URLProtocol:self didFailWithError:error];
+            }
+            [self cleanupIfNeeded];
+        }];
     }];
 }
 
 - (void)stopLoading {
     self.shouldCancel = YES;
-    dispatch_semaphore_wait(self.cleanupSemaphore, DISPATCH_TIME_FOREVER);
+    self.cancelled = YES;
+    // 提醒网络线程尽快从 curl_multi_wait 唤醒，进入 progress 回调并中止
+    [[EMASCurlManager sharedInstance] wakeup];
 
-    if (self.inputStream) {
-        if ([self.inputStream streamStatus] == NSStreamStatusOpen) {
-            [self.inputStream close];
+    // 非阻塞：立即返回。客户端取消通知切回调度线程且保证只发一次
+    [self invokeOnClientThread:^{
+        if (![self markClientNotifiedIfNeeded]) {
+            return;
         }
-        self.inputStream = nil;
-    }
-
-    if (self.requestHeaderFields) {
-        curl_slist_free_all(self.requestHeaderFields);
-        self.requestHeaderFields = nil;
-    }
-    if (self.resolveList) {
-        curl_slist_free_all(self.resolveList);
-        self.resolveList = nil;
-    }
-    if (self.easyHandle) {
-        curl_easy_cleanup(self.easyHandle);
-        self.easyHandle = nil;
-    }
+        NSError *cancelErr = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil];
+        [self.client URLProtocol:self didFailWithError:cancelErr];
+        [self cleanupIfNeeded];
+    }];
 }
 
 - (void)reportNetworkMetric:(BOOL)success error:(NSError *)error {
@@ -1290,8 +1332,12 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                 NSCachedURLResponse *updatedResponse = [s_responseCache updateCachedResponseWithHeaders:httpResponse.allHeaderFields
                                                                                              forRequest:protocol.request];
                 if (updatedResponse) {
-                    [protocol.client URLProtocol:protocol didReceiveResponse:updatedResponse.response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
-                    [protocol.client URLProtocol:protocol didLoadData:updatedResponse.data];
+                    [protocol invokeOnClientThread:^{
+                        if (![protocol hasClientNotified]) {
+                            [protocol.client URLProtocol:protocol didReceiveResponse:updatedResponse.response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+                            [protocol.client URLProtocol:protocol didLoadData:updatedResponse.data];
+                        }
+                    }];
                     return totalSize;
                 }
             }
@@ -1317,7 +1363,11 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                     NSMutableURLRequest *redirectedRequest = [protocol.request mutableCopy];
                     [NSURLProtocol removePropertyForKey:kEMASCurlHandledKey inRequest:redirectedRequest];
                     [redirectedRequest setURL:locationURL];
-                    [protocol.client URLProtocol:protocol wasRedirectedToRequest:redirectedRequest redirectResponse:httpResponse];
+                    [protocol invokeOnClientThread:^{
+                        if (![protocol hasClientNotified]) {
+                            [protocol.client URLProtocol:protocol wasRedirectedToRequest:redirectedRequest redirectResponse:httpResponse];
+                        }
+                    }];
                 }
             }
             [protocol.currentResponse reset];
@@ -1326,7 +1376,11 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         } else if (isConnectEstablishedStatusCode(statusCode, reasonPhrase)) {
             [protocol.currentResponse reset];
         } else {
-            [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+            [protocol invokeOnClientThread:^{
+                if (![protocol hasClientNotified]) {
+                    [protocol.client URLProtocol:protocol didReceiveResponse:httpResponse cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+                }
+            }];
             protocol.currentResponse.isFinalResponse = YES;
 
             // 仅在最终响应首包前决定是否在内存中缓冲以用于缓存。
@@ -1419,7 +1473,12 @@ static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
 
     // 只有确认获得已经读取了最后一个响应，接受的数据才视为有效数据
     if (protocol.currentResponse.isFinalResponse) {
-        [protocol.client URLProtocol:protocol didLoadData:data];
+        // 将客户端回调切回协议调度线程
+        [protocol invokeOnClientThread:^{
+            if (![protocol hasClientNotified]) {
+                [protocol.client URLProtocol:protocol didLoadData:data];
+            }
+        }];
     }
 
     return totalSize;
@@ -1524,6 +1583,76 @@ static int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, v
 
 + (EMASCurlLogLevel)currentLogLevel {
     return [EMASCurlLogger currentLogLevel];
+}
+
+@end
+
+#pragma mark - 调度线程封装与清理
+
+@implementation EMASCurlProtocol (ClientThreading)
+
+- (void)_invokeBlockOnClientThread:(dispatch_block_t)block {
+    if (block) {
+        block();
+    }
+}
+
+- (void)invokeOnClientThread:(dispatch_block_t)block {
+    if (!block) {
+        return;
+    }
+    if ([NSThread currentThread] == self.clientThread) {
+        block();
+        return;
+    }
+    // 必须在协议调度线程/RunLoop模式下执行所有 client 回调，避免CFNetwork内部状态被跨线程访问导致竞态
+    [self performSelector:@selector(_invokeBlockOnClientThread:)
+                 onThread:self.clientThread
+               withObject:[block copy]
+            waitUntilDone:NO
+                    modes:(self.clientRunLoopModes.count > 0 ? self.clientRunLoopModes : @[NSDefaultRunLoopMode])];
+}
+
+- (BOOL)markClientNotifiedIfNeeded {
+    @synchronized (self) {
+        if (self.clientNotified) {
+            return NO;
+        }
+        self.clientNotified = YES;
+        return YES;
+    }
+}
+
+- (BOOL)hasClientNotified {
+    @synchronized (self) {
+        return self.clientNotified;
+    }
+}
+
+- (void)cleanupIfNeeded {
+    @synchronized (self) {
+        if (self.cleanedUp) {
+            return;
+        }
+        self.cleanedUp = YES;
+    }
+    // easy 句柄的销毁必须在被从 multi handle 移除后再执行；改为由 Manager 统一 cleanup，避免并发销毁
+    if (self.inputStream) {
+        if ([self.inputStream streamStatus] == NSStreamStatusOpen) {
+            [self.inputStream close];
+        }
+        self.inputStream = nil;
+    }
+    if (self.requestHeaderFields) {
+        curl_slist_free_all(self.requestHeaderFields);
+        self.requestHeaderFields = nil;
+    }
+    if (self.resolveList) {
+        curl_slist_free_all(self.resolveList);
+        self.resolveList = nil;
+    }
+    // easyHandle 由 Manager 在 curl_multi_remove_handle 之后统一 curl_easy_cleanup
+    self.easyHandle = nil;
 }
 
 @end

@@ -11,7 +11,7 @@
 #import <EMASCurl/EMASCurlProtocol.h>
 
 // 为避免在测试目标中引入 libcurl 头文件，这里用占位声明匹配指针尺寸
-// 复杂逻辑：仅用于 method swizzling 的签名对齐，不参与实际调用
+// 仅用于 method swizzling 的签名对齐，不参与实际调用
 typedef void CURL;
 
 @interface EMASCurlProtocol (EMAS_EarlyFail_Swizzle)
@@ -31,7 +31,7 @@ typedef void CURL;
 @implementation EMASCurlProtocolEarlyFailTest
 
 - (void)testStopLoadingDoesNotHangOnEarlyConfigFailure {
-    // 复杂逻辑：通过 method swizzling 注入 configEasyHandle 的失败分支，验证 stopLoading 不会无限阻塞
+    // 通过 method swizzling 注入 configEasyHandle 的失败分支，验证 stopLoading 不会无限阻塞
     Method m1 = class_getInstanceMethod(EMASCurlProtocol.class, @selector(configEasyHandle:error:));
     Method m2 = class_getInstanceMethod(EMASCurlProtocol.class, @selector(emas_test_configEasyHandle:error:));
     method_exchangeImplementations(m1, m2);

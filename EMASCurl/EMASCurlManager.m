@@ -187,6 +187,8 @@
             }
 
             curl_multi_remove_handle(_multiHandle, easy);
+            // easy 句柄必须在从 multi 中移除后再 cleanup，避免并发销毁
+            curl_easy_cleanup(easy);
             EMAS_LOG_DEBUG(@"EC-Manager", @"Removed easy handle from multi handle (remaining: %lu)", (unsigned long)_completionMap.count);
 
             if (completion) {
@@ -196,6 +198,17 @@
             }
         }
     }
+}
+
+- (void)wakeup {
+    // 唤醒等待，促使尽快进入 perform/回调。无需持锁即可安全调用。
+    if (_multiHandle) {
+        curl_multi_wakeup(_multiHandle);
+    }
+    // 同时signal条件量，确保线程从 wait 中返回
+    [_condition lock];
+    [_condition signal];
+    [_condition unlock];
 }
 
 @end

@@ -14,4 +14,7 @@
 
 - (void)enqueueNewEasyHandle:(CURL *)easyHandle completion:(void (^)(BOOL, NSError *))completion;
 
+/// 唤醒 multi 事件循环，常用于取消请求后尽快进入回调
+- (void)wakeup;
+
 @end
