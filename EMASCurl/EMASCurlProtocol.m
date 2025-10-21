@@ -501,6 +501,8 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         EMAS_LOG_ERROR(@"EC-Protocol", @"Failed to create easy handle for URL: %@", self.request.URL.absoluteString);
         [self reportNetworkMetric:NO error:error];
         [self.client URLProtocol:self didFailWithError:error];
+        // 复杂逻辑说明：early return 场景必须唤醒 stopLoading 的等待者，否则调用方会永久阻塞
+        dispatch_semaphore_signal(self.cleanupSemaphore);
         return;
     }
 
@@ -515,6 +517,8 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         EMAS_LOG_ERROR(@"EC-Protocol", @"Failed to configure easy handle: %@", error.localizedDescription);
         [self reportNetworkMetric:NO error:error];
         [self.client URLProtocol:self didFailWithError:error];
+        // 复杂逻辑说明：配置阶段失败同样需要发出完成信号，避免 stopLoading 卡死
+        dispatch_semaphore_signal(self.cleanupSemaphore);
         return;
     }
 
