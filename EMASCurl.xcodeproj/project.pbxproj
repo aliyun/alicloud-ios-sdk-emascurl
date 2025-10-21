@@ -29,6 +29,7 @@
 		942FF3822E16235C005C70B2 /* EMASCurlConcurrencyTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 942FF3812E16235C005C70B2 /* EMASCurlConcurrencyTest.m */; };
 		944708112DE01D5800856898 /* EMASCurlLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 9447080F2DE01D5800856898 /* EMASCurlLogger.h */; };
 		944708122DE01D5800856898 /* EMASCurlLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 944708102DE01D5800856898 /* EMASCurlLogger.m */; };
+		946DB1A42EA784AF00DC89E2 /* EMASCurlProtocolThreadingTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 946DB1A32EA784AF00DC89E2 /* EMASCurlProtocolThreadingTest.m */; };
 		9492D6A82D30226200008A84 /* RequestDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6A52D30226200008A84 /* RequestDemoController.m */; };
 		9492D6A92D30226200008A84 /* WkWebViewDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9492D6A72D30226200008A84 /* WkWebViewDemoController.m */; };
 		949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */; };
@@ -135,6 +136,7 @@
 		942FF3812E16235C005C70B2 /* EMASCurlConcurrencyTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlConcurrencyTest.m; sourceTree = "<group>"; };
 		9447080F2DE01D5800856898 /* EMASCurlLogger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlLogger.h; sourceTree = "<group>"; };
 		944708102DE01D5800856898 /* EMASCurlLogger.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlLogger.m; sourceTree = "<group>"; };
+		946DB1A32EA784AF00DC89E2 /* EMASCurlProtocolThreadingTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlProtocolThreadingTest.m; sourceTree = "<group>"; };
 		9492D6A42D30226200008A84 /* RequestDemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RequestDemoController.h; sourceTree = "<group>"; };
 		9492D6A52D30226200008A84 /* RequestDemoController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RequestDemoController.m; sourceTree = "<group>"; };
 		9492D6A62D30226200008A84 /* WkWebViewDemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WkWebViewDemoController.h; sourceTree = "<group>"; };
@@ -284,6 +286,7 @@
 				9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */,
 				94953A962D1BEBE8001FE850 /* EMASCurlTimeoutTest.m */,
 				949789042D4FE2DB0042BE44 /* EMASCurlCookieTest.m */,
+				946DB1A32EA784AF00DC89E2 /* EMASCurlProtocolThreadingTest.m */,
 				949538CC2D0F1CB3001FE850 /* README.md */,
 			);
 			path = EMASCurlTests;
@@ -613,9 +616,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -672,6 +679,7 @@
 				94E674122E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m in Sources */,
 				94E674A22E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m in Sources */,
 				949538D82D0F372B001FE850 /* EMASCurlDownloadTest.m in Sources */,
+				946DB1A42EA784AF00DC89E2 /* EMASCurlProtocolThreadingTest.m in Sources */,
 				949789052D4FE2DB0042BE44 /* EMASCurlCookieTest.m in Sources */,
 				942FF3822E16235C005C70B2 /* EMASCurlConcurrencyTest.m in Sources */,
 				9495391B2D1194DD001FE850 /* EMASCurlDNSResolverTest.m in Sources */,
