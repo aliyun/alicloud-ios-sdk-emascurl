@@ -8,12 +8,23 @@
 #import "EMASCurlManager.h"
 #import "EMASCurlLogger.h"
 
+@interface EMASCurlRequest : NSObject
+
+@property (nonatomic, assign) CURL *easy;
+@property (nonatomic, copy) void (^ _Nullable completion)(BOOL, NSError *);
+
+@end
+
+@implementation EMASCurlRequest
+@end
+
 @interface EMASCurlManager () {
     CURLM *_multiHandle;
     CURLSH *_shareHandle;
     NSThread *_networkThread;
     NSCondition *_condition;
-    NSMutableDictionary<NSNumber *, void (^)(BOOL, NSError *)> *_completionMap;
+    NSMutableDictionary<NSNumber *, EMASCurlRequest *> *_requestsByHandle;
+    NSMutableArray<EMASCurlRequest *> *_pendingAddQueue;
 }
 
 @end
@@ -57,7 +68,8 @@
 
         EMAS_LOG_DEBUG(@"EC-Manager", @"Configured share handle for DNS, SSL sessions, and connections");
 
-        _completionMap = [NSMutableDictionary dictionary];
+        _requestsByHandle = [NSMutableDictionary dictionary];
+        _pendingAddQueue = [NSMutableArray array];
 
         _condition = [[NSCondition alloc] init];
         _networkThread = [[NSThread alloc] initWithTarget:self selector:@selector(networkThreadEntry) object:nil];
@@ -70,39 +82,19 @@
 }
 
 - (void)enqueueNewEasyHandle:(CURL *)easyHandle completion:(void (^)(BOOL, NSError *))completion {
-    NSNumber *easyKey = @((uintptr_t)easyHandle);
+    curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
+
+    EMASCurlRequest *request = [[EMASCurlRequest alloc] init];
+    request.easy = easyHandle;
+    request.completion = completion;
 
     [_condition lock];
-
-    // 在锁保护下操作_completionMap
-    _completionMap[easyKey] = completion;
-    EMAS_LOG_DEBUG(@"EC-Manager", @"Enqueueing new easy handle (total pending: %lu)", (unsigned long)_completionMap.count);
-
-    curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
-    CURLMcode result = curl_multi_add_handle(_multiHandle, easyHandle);
-
-    if (result != CURLM_OK) {
-        EMAS_LOG_ERROR(@"EC-Manager", @"Failed to add easy handle to multi handle: %s", curl_multi_strerror(result));
-        [_completionMap removeObjectForKey:easyKey];
-        [_condition unlock];
-
-        if (completion) {
-            NSError *error = [NSError errorWithDomain:@"EMASCurlManager"
-                                               code:result
-                                           userInfo:@{NSLocalizedDescriptionKey: @(curl_multi_strerror(result))}];
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                completion(NO, error);
-            });
-        }
-        return;
-    }
-
-    curl_multi_wakeup(_multiHandle);
-
-    EMAS_LOG_DEBUG(@"EC-Manager", @"Easy handle added to multi handle successfully");
-
+    [_pendingAddQueue addObject:request];
+    EMAS_LOG_DEBUG(@"EC-Manager", @"Enqueueing new easy handle (pending queue: %lu)", (unsigned long)_pendingAddQueue.count);
     [_condition signal];
     [_condition unlock];
+
+    curl_multi_wakeup(_multiHandle);
 }
 
 #pragma mark - Thread Entry and Main Loop
@@ -114,21 +106,21 @@
         [_condition lock];
 
         while (YES) {
-            if (_completionMap.count == 0) {
+            if (_requestsByHandle.count == 0 && _pendingAddQueue.count == 0) {
                 EMAS_LOG_DEBUG(@"EC-Manager", @"No pending requests, waiting for new work");
                 [_condition wait];
             }
 
-            // 唤醒后应该有任务需要处理
-            // 在执行期间保持锁定，以防止添加新句柄时发生竞争条件
+            [self drainPendingAddQueueLocked];
+
             [self processCurlMessages];
 
-            if (_completionMap.count > 0) {
+            if (_requestsByHandle.count > 0) {
                 [_condition unlock];
 
                 // 等待网络事件，超时时间为250ms
                 int numfds = 0;
-                CURLMcode result = curl_multi_wait(_multiHandle, NULL, 0, 250, &numfds);
+                CURLMcode result = curl_multi_poll(_multiHandle, NULL, 0, 250, &numfds);
                 if (result != CURLM_OK) {
                     EMAS_LOG_ERROR(@"EC-Manager", @"curl_multi_wait failed: %s", curl_multi_strerror(result));
                 }
@@ -141,6 +133,36 @@
     }
 
     EMAS_LOG_INFO(@"EC-Manager", @"Network thread stopped");
+}
+
+- (void)drainPendingAddQueueLocked {
+    while (_pendingAddQueue.count > 0) {
+        EMASCurlRequest *request = _pendingAddQueue.firstObject;
+        [_pendingAddQueue removeObjectAtIndex:0];
+
+        CURLMcode addResult = curl_multi_add_handle(_multiHandle, request.easy);
+        if (addResult != CURLM_OK) {
+            EMAS_LOG_ERROR(@"EC-Manager", @"Failed to add easy handle: %s", curl_multi_strerror(addResult));
+
+            NSError *error = [NSError errorWithDomain:@"EMASCurlManager"
+                                                 code:addResult
+                                             userInfo:@{NSLocalizedDescriptionKey: @(curl_multi_strerror(addResult))}];
+
+            curl_easy_cleanup(request.easy);
+
+            void (^completion)(BOOL, NSError *) = request.completion;
+            if (completion) {
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                    completion(NO, error);
+                });
+            }
+            continue;
+        }
+
+        NSNumber *easyKey = @((uintptr_t)request.easy);
+        _requestsByHandle[easyKey] = request;
+        EMAS_LOG_DEBUG(@"EC-Manager", @"Easy handle added to multi handle successfully (total running: %lu)", (unsigned long)_requestsByHandle.count);
+    }
 }
 
 - (void)processCurlMessages {
@@ -158,9 +180,9 @@
         if (msg->msg == CURLMSG_DONE) {
             CURL *easy = msg->easy_handle;
             NSNumber *easyKey = @((uintptr_t)easy);
-            void (^completion)(BOOL, NSError *) = _completionMap[easyKey];
+            EMASCurlRequest *request = _requestsByHandle[easyKey];
 
-            [_completionMap removeObjectForKey:easyKey];
+            [_requestsByHandle removeObjectForKey:easyKey];
 
             BOOL succeeded = (msg->data.result == CURLE_OK);
             NSError *error = nil;
@@ -189,8 +211,9 @@
             curl_multi_remove_handle(_multiHandle, easy);
             // easy 句柄必须在从 multi 中移除后再 cleanup，避免并发销毁
             curl_easy_cleanup(easy);
-            EMAS_LOG_DEBUG(@"EC-Manager", @"Removed easy handle from multi handle (remaining: %lu)", (unsigned long)_completionMap.count);
+            EMAS_LOG_DEBUG(@"EC-Manager", @"Removed easy handle from multi handle (remaining: %lu)", (unsigned long)_requestsByHandle.count);
 
+            void (^completion)(BOOL, NSError *) = request.completion;
             if (completion) {
                 dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
                     completion(succeeded, error);
