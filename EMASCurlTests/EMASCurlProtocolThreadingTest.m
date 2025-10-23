@@ -1,5 +1,5 @@
 //
-//  EMASCurlProtocolReproTest.m
+//  EMASCurlProtocolThreadingTest.m
 //
 //  EMASCurl
 //
@@ -46,12 +46,28 @@
     }
 }
 
+- (void)URLProtocol:(nonnull NSURLProtocol *)protocol cachedResponseIsValid:(nonnull NSCachedURLResponse *)cachedResponse {
+}
+
+
+- (void)URLProtocol:(nonnull NSURLProtocol *)protocol didCancelAuthenticationChallenge:(nonnull NSURLAuthenticationChallenge *)challenge {
+}
+
+
+- (void)URLProtocol:(nonnull NSURLProtocol *)protocol didReceiveAuthenticationChallenge:(nonnull NSURLAuthenticationChallenge *)challenge {
+}
+
+
+- (void)URLProtocol:(nonnull NSURLProtocol *)protocol wasRedirectedToRequest:(nonnull NSURLRequest *)request redirectResponse:(nonnull NSURLResponse *)redirectResponse {
+}
+
+
 @end
 
-@interface EMASCurlProtocolReproTest : XCTestCase
+@interface EMASCurlProtocolThreadingTest : XCTestCase
 @end
 
-@implementation EMASCurlProtocolReproTest
+@implementation EMASCurlProtocolThreadingTest
 
 - (void)setUp {
     [super setUp];

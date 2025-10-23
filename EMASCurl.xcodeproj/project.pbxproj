@@ -526,8 +526,6 @@
 			dependencies = (
 			);
 			name = EMASLocalProxy;
-			packageProductDependencies = (
-			);
 			productName = EMASLocalProxy;
 			productReference = 94F806862E52B6E300B6FE7A /* EMASLocalProxy.framework */;
 			productType = "com.apple.product-type.framework";
@@ -622,13 +620,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

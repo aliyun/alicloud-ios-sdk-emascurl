@@ -42,6 +42,8 @@ static NSURLSession *session;
 }
 
 - (void)testLargeBodyDoesNotCacheWhenExceedingThreshold {
+    [[NSURLCache sharedURLCache] removeAllCachedResponses];
+
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", HTTP11_ENDPOINT, PATH_DOWNLOAD_1MB_DATA_AT_200KBPS_SPEED]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"GET";
@@ -111,6 +113,8 @@ static NSURLSession *session;
 }
 
 - (void)testLargeBodyDoesNotCacheWhenExceedingThreshold {
+    [[NSURLCache sharedURLCache] removeAllCachedResponses];
+
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", HTTP2_ENDPOINT, PATH_DOWNLOAD_1MB_DATA_AT_200KBPS_SPEED]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"GET";
