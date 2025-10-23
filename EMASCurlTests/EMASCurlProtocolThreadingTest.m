@@ -13,6 +13,7 @@
 
 @property (nonatomic, strong) NSThread *expectedThread;
 @property (nonatomic, copy) void (^onCallback)(NSString *method, BOOL onExpectedThread);
+@property (nonatomic, strong) NSError *lastError;
 
 @end
 
@@ -33,6 +34,7 @@
 }
 
 - (void)URLProtocol:(NSURLProtocol *)protocol didFailWithError:(NSError *)error {
+    self.lastError = error;
     BOOL ok = ([NSThread currentThread] == self.expectedThread);
     if (self.onCallback) {
         self.onCallback(@"didFailWithError", ok);
@@ -79,21 +81,24 @@
     [super tearDown];
 }
 
-- (void)testClientCallbacksDispatchedOnWrongThread {
-    // 复杂点：通过自定义NSURLProtocolClient记录回调线程，与startLoading触发线程对比
-    // 期望：至少有一个回调不在“协议调度线程”上（即存在跨线程回调）
-
-    XCTestExpectation *mismatchExpectation = [self expectationWithDescription:@"expect callback on wrong thread"];
+- (void)testClientCallbacksStayOnDispatchThread {
+    XCTestExpectation *terminalExpectation = [self expectationWithDescription:@"expect terminal callback on dispatch thread"];
+    __block BOOL sawMismatch = NO;
+    __block BOOL fulfilled = NO;
 
     _EMAS_ThreadCapturingClient *client = [_EMAS_ThreadCapturingClient new];
     client.expectedThread = [NSThread currentThread];
     client.onCallback = ^(NSString *method, BOOL onExpectedThread) {
         if (!onExpectedThread) {
-            [mismatchExpectation fulfill];
+            sawMismatch = YES;
+        }
+        if (!fulfilled && ([method isEqualToString:@"didFailWithError"] || [method isEqualToString:@"URLProtocolDidFinishLoading"])) {
+            fulfilled = YES;
+            [terminalExpectation fulfill];
         }
     };
 
-    NSURL *url = [NSURL URLWithString:@"http://127.0.0.1:9/"]; // 端口9通常无服务，便于快速失败
+    NSURL *url = [NSURL URLWithString:@"http://127.0.0.1:9/"];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     [EMASCurlProtocol setConnectTimeoutIntervalForRequest:request connectTimeoutInterval:0.2];
 
@@ -103,24 +108,30 @@
 
     [protocol startLoading];
 
-    // 等待证明有一次跨线程回调发生
-    [self waitForExpectations:@[mismatchExpectation] timeout:5.0];
-
-    // 尝试收尾；若已完成，该调用应迅速返回
+    [self waitForExpectations:@[terminalExpectation] timeout:5.0];
+    XCTAssertFalse(sawMismatch, @"所有 client 回调都应在调度线程执行");
     [protocol stopLoading];
 }
 
--(void)testStopLoadingIsBlocking {
-    // 复杂点：使用 MockServer /stream 端点（每秒发送一块数据），确保请求处于进行中；
-    // 立刻调用 stopLoading，测量其阻塞时间，应显著大于 0.8s，体现同步等待。
-
+- (void)testStopLoadingReturnsQuicklyAndCancelsOnDispatchThread {
     NSURL *url = [NSURL URLWithString:@"http://127.0.0.1:9080/stream"];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     [EMASCurlProtocol setConnectTimeoutIntervalForRequest:request connectTimeoutInterval:3.0];
 
     _EMAS_ThreadCapturingClient *client = [_EMAS_ThreadCapturingClient new];
     client.expectedThread = [NSThread currentThread];
-    client.onCallback = nil;
+    __block BOOL sawMismatch = NO;
+    __block BOOL cancelOnExpectedThread = NO;
+    XCTestExpectation *cancelExpectation = [self expectationWithDescription:@"expect cancel callback"];
+    client.onCallback = ^(NSString *method, BOOL onExpectedThread) {
+        if (!onExpectedThread) {
+            sawMismatch = YES;
+        }
+        if ([method isEqualToString:@"didFailWithError"]) {
+            cancelOnExpectedThread = onExpectedThread;
+            [cancelExpectation fulfill];
+        }
+    };
 
     EMASCurlProtocol *protocol = [[EMASCurlProtocol alloc] initWithRequest:request
                                                            cachedResponse:nil
@@ -134,9 +145,12 @@
     [protocol stopLoading];
     CFAbsoluteTime elapsed = CFAbsoluteTimeGetCurrent() - t0;
 
-    // 说明：此断言用于证明 stopLoading 为同步等待行为，不追求长时间阻塞；
-    // 由于内部有 curl_multi_wait(250ms) 等调度，取消路径通常在数十到数百毫秒内完成。
-    XCTAssertTrue(elapsed > 0.1, @"stopLoading 未表现出同步阻塞，elapsed=%.3f", elapsed);
+    XCTAssertLessThan(elapsed, 0.1, @"stopLoading 应尽快返回，elapsed=%.3f", elapsed);
+    [self waitForExpectations:@[cancelExpectation] timeout:5.0];
+    XCTAssertFalse(sawMismatch, @"取消期间不应出现跨线程回调");
+    XCTAssertTrue(cancelOnExpectedThread, @"取消回调必须在调度线程触发");
+    XCTAssertEqualObjects(client.lastError.domain, NSURLErrorDomain, @"取消应产生 NSURLErrorDomain 错误");
+    XCTAssertEqual(client.lastError.code, NSURLErrorCancelled, @"取消应返回 NSURLErrorCancelled，实际 code=%ld", (long)client.lastError.code);
 }
 
 @end
