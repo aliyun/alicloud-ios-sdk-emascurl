@@ -16,6 +16,7 @@
 #import <curl/curl.h>
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #import <NetworkExtension/NetworkExtension.h>
+#import <notify.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 
 #define HTTP_METHOD_GET @"GET"
@@ -155,6 +156,12 @@ static BOOL curlFeatureHttp3;
 // 全局日志设置
 static BOOL s_enableDebugLog;
 
+// 系统代理监听状态
+static dispatch_queue_t s_serialQueue;
+static NSString *s_cachedSystemProxy;
+static BOOL s_manualProxyEnabled;
+static int s_proxyNotifyToken;
+
 // 全局缓存相关
 static EMASCurlResponseCache *s_responseCache;
 static dispatch_queue_t s_cacheQueue;
@@ -272,11 +279,22 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 + (void)setManualProxyServer:(nullable NSString *)proxyServerURL {
     EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
     defaultConfig.proxyServer = proxyServerURL;
-    defaultConfig.manualProxyEnabled = (proxyServerURL != nil);
+    BOOL manualEnabled = (proxyServerURL != nil && proxyServerURL.length > 0);
+    defaultConfig.manualProxyEnabled = manualEnabled;
 
-    if (proxyServerURL && proxyServerURL.length > 0) {
+    dispatch_sync(s_serialQueue, ^{
+        s_manualProxyEnabled = manualEnabled;
+        if (manualEnabled) {
+            s_cachedSystemProxy = nil;
+        }
+    });
+
+    if (manualEnabled) {
+        [self stopProxyObservation];
         EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy enabled: %@", proxyServerURL);
     } else {
+        [self startProxyObservation];
+        [self updateProxySettings];
         EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy disabled, will use system settings");
     }
 }
@@ -330,43 +348,123 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
+        s_serialQueue = dispatch_queue_create("com.alicloud.emascurl.proxyQueue", DISPATCH_QUEUE_SERIAL);
         s_cacheQueue = dispatch_queue_create("com.alicloud.emascurl.cacheQueue", DISPATCH_QUEUE_SERIAL);
+        s_cachedSystemProxy = nil;
+        s_proxyNotifyToken = 0;
+    });
+
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    s_manualProxyEnabled = defaultConfig.manualProxyEnabled;
+
+    if (!s_manualProxyEnabled) {
+        [self startProxyObservation];
+        [self updateProxySettings];
+    }
+}
+
+// 使用Darwin通知监听系统代理变化
++ (void)startProxyObservation {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        __block BOOL manualEnabled = NO;
+        __block int existingToken = 0;
+        dispatch_sync(s_serialQueue, ^{
+            manualEnabled = s_manualProxyEnabled;
+            existingToken = s_proxyNotifyToken;
+        });
+        if (manualEnabled) {
+            return;
+        }
+        if (existingToken != 0) {
+            return;
+        }
+
+        // 使用Darwin通知监听网络配置变化，避免周期轮询
+        int token = 0;
+        int status = notify_register_dispatch("com.apple.system.config.network_change",
+                                              &token,
+                                              dispatch_get_main_queue(),
+                                              ^(int notifyToken) {
+                                                  (void)notifyToken;
+                                                  __block BOOL manual = NO;
+                                                  dispatch_sync(s_serialQueue, ^{
+                                                      manual = s_manualProxyEnabled;
+                                                  });
+                                                  if (manual) {
+                                                      return;
+                                                  }
+                                                  [EMASCurlProtocol updateProxySettings];
+                                              });
+        if (status != NOTIFY_STATUS_OK) {
+            dispatch_sync(s_serialQueue, ^{
+                s_proxyNotifyToken = 0;
+            });
+            [EMASCurlProtocol updateProxySettings];
+            return;
+        }
+
+        dispatch_sync(s_serialQueue, ^{
+            s_proxyNotifyToken = token;
+        });
+        [EMASCurlProtocol updateProxySettings];
     });
 }
 
-// 获取当前代理设置，优先使用手动设置的代理，否则读取系统代理设置
++ (void)stopProxyObservation {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        __block int token = 0;
+        dispatch_sync(s_serialQueue, ^{
+            token = s_proxyNotifyToken;
+            s_proxyNotifyToken = 0;
+        });
+        if (token != 0) {
+            notify_cancel(token);
+        }
+    });
+}
+
++ (void)updateProxySettings {
+    dispatch_sync(s_serialQueue, ^{
+        if (s_manualProxyEnabled) {
+            return;
+        }
+
+        EMAS_LOG_INFO(@"EC-Proxy", @"Try to update proxy config.");
+
+        CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
+        if (!proxySettings) {
+            s_cachedSystemProxy = nil;
+            return;
+        }
+
+        NSDictionary *proxyDict = CFBridgingRelease(proxySettings);
+        NSNumber *httpEnabled = proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable];
+        if (!httpEnabled || ![httpEnabled boolValue]) {
+            s_cachedSystemProxy = nil;
+            return;
+        }
+
+        NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
+        NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
+        if (httpProxy.length > 0 && httpPort != nil) {
+            s_cachedSystemProxy = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
+        } else {
+            s_cachedSystemProxy = nil;
+        }
+    });
+}
+
+// 获取当前系统代理
 + (nullable NSString *)getCurrentProxyServer {
-    // 从默认配置获取手动代理设置
-    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
-    if (defaultConfig.manualProxyEnabled && defaultConfig.proxyServer) {
-        return defaultConfig.proxyServer;
+    __block NSString *proxy = nil;
+    dispatch_sync(s_serialQueue, ^{
+        proxy = s_cachedSystemProxy;
+    });
+    if (proxy.length > 0) {
+        return proxy;
     }
 
-    // 否则读取系统代理设置
-    CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
-    if (!proxySettings) {
-        return nil;
-    }
-
-    NSDictionary *proxyDict = (__bridge NSDictionary *)(proxySettings);
-
-    // 检查是否启用了HTTP代理
-    NSNumber *httpEnabled = proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable];
-    if (!httpEnabled || ![httpEnabled boolValue]) {
-        CFRelease(proxySettings);
-        return nil;
-    }
-
-    NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
-    NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
-    NSString *currentProxy = nil;
-
-    if (httpProxy && httpPort) {
-        currentProxy = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
-    }
-
-    CFRelease(proxySettings);
-    return currentProxy;
+    return nil;
 }
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
@@ -1049,9 +1147,16 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     }
 
     // 设置代理
-    if (self.resolvedConfiguration.manualProxyEnabled && self.resolvedConfiguration.proxyServer) {
-        curl_easy_setopt(easyHandle, CURLOPT_PROXY, [self.resolvedConfiguration.proxyServer UTF8String]);
-        EMAS_LOG_DEBUG(@"EC-Proxy", @"Using proxy: %@", self.resolvedConfiguration.proxyServer);
+    NSString *proxyServer = nil;
+    if (self.resolvedConfiguration.manualProxyEnabled && self.resolvedConfiguration.proxyServer.length > 0) {
+        proxyServer = self.resolvedConfiguration.proxyServer;
+    } else {
+        proxyServer = [EMASCurlProtocol getCurrentProxyServer];
+    }
+
+    if (proxyServer.length > 0) {
+        curl_easy_setopt(easyHandle, CURLOPT_PROXY, [proxyServer UTF8String]);
+        EMAS_LOG_DEBUG(@"EC-Proxy", @"Using proxy: %@", proxyServer);
     } else {
         EMAS_LOG_DEBUG(@"EC-Proxy", @"No proxy configured");
     }
