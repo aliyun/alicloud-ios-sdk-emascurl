@@ -158,7 +158,7 @@ static BOOL s_enableDebugLog;
 
 // 系统代理监听状态
 static dispatch_queue_t s_serialQueue;
-static NSString *s_cachedSystemProxy;
+static NSDictionary *s_cachedProxySettings;
 static BOOL s_manualProxyEnabled;
 static int s_proxyNotifyToken;
 
@@ -285,7 +285,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     dispatch_sync(s_serialQueue, ^{
         s_manualProxyEnabled = manualEnabled;
         if (manualEnabled) {
-            s_cachedSystemProxy = nil;
+            s_cachedProxySettings = nil;
         }
     });
 
@@ -350,7 +350,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     dispatch_once(&onceToken, ^{
         s_serialQueue = dispatch_queue_create("com.alicloud.emascurl.proxyQueue", DISPATCH_QUEUE_SERIAL);
         s_cacheQueue = dispatch_queue_create("com.alicloud.emascurl.cacheQueue", DISPATCH_QUEUE_SERIAL);
-        s_cachedSystemProxy = nil;
+        s_cachedProxySettings = nil;
         s_proxyNotifyToken = 0;
     });
 
@@ -433,38 +433,73 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
         CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
         if (!proxySettings) {
-            s_cachedSystemProxy = nil;
+            s_cachedProxySettings = nil;
             return;
         }
 
         NSDictionary *proxyDict = CFBridgingRelease(proxySettings);
-        NSNumber *httpEnabled = proxyDict[(NSString *)kCFNetworkProxiesHTTPEnable];
-        if (!httpEnabled || ![httpEnabled boolValue]) {
-            s_cachedSystemProxy = nil;
+        if (proxyDict.count == 0) {
+            s_cachedProxySettings = nil;
             return;
         }
 
-        NSString *httpProxy = proxyDict[(NSString *)kCFNetworkProxiesHTTPProxy];
-        NSNumber *httpPort = proxyDict[(NSString *)kCFNetworkProxiesHTTPPort];
-        if (httpProxy.length > 0 && httpPort != nil) {
-            s_cachedSystemProxy = [NSString stringWithFormat:@"http://%@:%@", httpProxy, httpPort];
-        } else {
-            s_cachedSystemProxy = nil;
-        }
+        s_cachedProxySettings = [proxyDict copy];
     });
 }
 
-// 获取当前系统代理
-+ (nullable NSString *)getCurrentProxyServer {
-    __block NSString *proxy = nil;
-    dispatch_sync(s_serialQueue, ^{
-        proxy = s_cachedSystemProxy;
-    });
-    if (proxy.length > 0) {
-        return proxy;
++ (nullable NSString *)proxyServerForURL:(NSURL *)url {
+    if (!url) {
+        return nil;
     }
 
-    return nil;
+    __block NSDictionary *proxySettings = nil;
+    dispatch_sync(s_serialQueue, ^{
+        proxySettings = s_cachedProxySettings;
+    });
+    if (!proxySettings) {
+        return nil;
+    }
+
+    CFArrayRef proxiesRef = CFNetworkCopyProxiesForURL((__bridge CFURLRef)url, (__bridge CFDictionaryRef)proxySettings);
+    if (!proxiesRef) {
+        return nil;
+    }
+
+    NSArray *proxies = CFBridgingRelease(proxiesRef);
+    NSDictionary *proxyInfo = nil;
+    for (NSDictionary *candidate in proxies) {
+        NSString *candidateType = candidate[(NSString *)kCFProxyTypeKey];
+        if ([candidateType isEqualToString:(NSString *)kCFProxyTypeNone]) {
+            continue;
+        }
+        if ([candidateType isEqualToString:(NSString *)kCFProxyTypeHTTP] ||
+            [candidateType isEqualToString:(NSString *)kCFProxyTypeHTTPS] ||
+            [candidateType isEqualToString:(NSString *)kCFProxyTypeSOCKS]) {
+            proxyInfo = candidate;
+            break;
+        }
+    }
+    if (!proxyInfo) {
+        return nil;
+    }
+
+    NSString *type = proxyInfo[(NSString *)kCFProxyTypeKey];
+    NSString *host = proxyInfo[(NSString *)kCFProxyHostNameKey];
+    NSNumber *port = proxyInfo[(NSString *)kCFProxyPortNumberKey];
+    if (host.length == 0 || port == nil) {
+        return nil;
+    }
+
+    NSString *scheme = @"http";
+    if ([type isEqualToString:(NSString *)kCFProxyTypeHTTPS]) {
+        scheme = @"https";
+    } else if ([type isEqualToString:(NSString *)kCFProxyTypeSOCKS]) {
+        scheme = @"socks5";
+    } else if (![type isEqualToString:(NSString *)kCFProxyTypeHTTP]) {
+        return nil;
+    }
+
+    return [NSString stringWithFormat:@"%@://%@:%@", scheme, host, port];
 }
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
@@ -1131,8 +1166,16 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         curl_easy_setopt(easyHandle, CURLOPT_PINNEDPUBLICKEY, [self.resolvedConfiguration.publicKeyPinningKeyPath UTF8String]);
     }
 
-    // 假如设置了自定义resolve，则使用
-    if (self.resolvedConfiguration.dnsResolver) {
+    NSString *proxyServer = nil;
+    if (self.resolvedConfiguration.manualProxyEnabled && self.resolvedConfiguration.proxyServer.length > 0) {
+        proxyServer = self.resolvedConfiguration.proxyServer;
+    } else {
+        proxyServer = [EMASCurlProtocol proxyServerForURL:self.request.URL];
+    }
+
+    // 无代理时才需要提前解析域名
+    BOOL shouldRequestDirectly = (proxyServer.length == 0);
+    if (self.resolvedConfiguration.dnsResolver && shouldRequestDirectly) {
         NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
         if ([self preResolveDomain:easyHandle]) {
             self.resolveDomainTimeInterval = [[NSDate date] timeIntervalSince1970] - startTime;
@@ -1144,14 +1187,6 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     NSString *cookieString = [cookieStorage cookieStringForURL:self.request.URL];
     if (cookieString) {
         curl_easy_setopt(easyHandle, CURLOPT_COOKIE, [cookieString UTF8String]);
-    }
-
-    // 设置代理
-    NSString *proxyServer = nil;
-    if (self.resolvedConfiguration.manualProxyEnabled && self.resolvedConfiguration.proxyServer.length > 0) {
-        proxyServer = self.resolvedConfiguration.proxyServer;
-    } else {
-        proxyServer = [EMASCurlProtocol getCurrentProxyServer];
     }
 
     if (proxyServer.length > 0) {
