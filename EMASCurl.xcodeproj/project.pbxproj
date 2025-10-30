@@ -55,6 +55,8 @@
 		94E674AD2E62B4D3005FE92E /* EMASCurlMultiInstanceTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674AC2E62B4D3005FE92E /* EMASCurlMultiInstanceTest.m */; };
 		94E674AE2E62B4D3005FE92E /* EMASCurlConfigurationTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674AB2E62B4D3005FE92E /* EMASCurlConfigurationTest.m */; };
 		94E674AF2E62B7EC005FE92E /* EMASLocalProxy.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 94F806862E52B6E300B6FE7A /* EMASLocalProxy.framework */; };
+		94F3D04D2EB361AA0039304A /* LogViewerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 94F3D04C2EB361AA0039304A /* LogViewerController.m */; };
+		94F3D04E2EB361AA0039304A /* LogManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94F3D04A2EB361AA0039304A /* LogManager.m */; };
 		94F806892E52B6E300B6FE7A /* EMASLocalProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = 94F806882E52B6E300B6FE7A /* EMASLocalProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		94F806A02E52C26100B6FE7A /* EMASLocalHttpProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = 94F8069F2E52C26100B6FE7A /* EMASLocalHttpProxy.m */; };
 		94F806A12E52C26100B6FE7A /* EMASLocalHttpProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = 94F8069E2E52C26100B6FE7A /* EMASLocalHttpProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -169,6 +171,10 @@
 		94E674A62E621E1B005FE92E /* EMASCurlConfigurationManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlConfigurationManager.m; sourceTree = "<group>"; };
 		94E674AB2E62B4D3005FE92E /* EMASCurlConfigurationTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlConfigurationTest.m; sourceTree = "<group>"; };
 		94E674AC2E62B4D3005FE92E /* EMASCurlMultiInstanceTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlMultiInstanceTest.m; sourceTree = "<group>"; };
+		94F3D0492EB361AA0039304A /* LogManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LogManager.h; sourceTree = "<group>"; };
+		94F3D04A2EB361AA0039304A /* LogManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LogManager.m; sourceTree = "<group>"; };
+		94F3D04B2EB361AA0039304A /* LogViewerController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LogViewerController.h; sourceTree = "<group>"; };
+		94F3D04C2EB361AA0039304A /* LogViewerController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LogViewerController.m; sourceTree = "<group>"; };
 		94F806862E52B6E300B6FE7A /* EMASLocalProxy.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EMASLocalProxy.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		94F806882E52B6E300B6FE7A /* EMASLocalProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalProxy.h; sourceTree = "<group>"; };
 		94F8069E2E52C26100B6FE7A /* EMASLocalHttpProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalHttpProxy.h; sourceTree = "<group>"; };
@@ -312,6 +318,10 @@
 				6F3F60332CD0E0890014025B /* SceneDelegate.m */,
 				6F3F60342CD0E0890014025B /* ViewController.h */,
 				6F3F60352CD0E0890014025B /* ViewController.m */,
+				94F3D0492EB361AA0039304A /* LogManager.h */,
+				94F3D04A2EB361AA0039304A /* LogManager.m */,
+				94F3D04B2EB361AA0039304A /* LogViewerController.h */,
+				94F3D04C2EB361AA0039304A /* LogViewerController.m */,
 				9492D6A42D30226200008A84 /* RequestDemoController.h */,
 				9492D6A52D30226200008A84 /* RequestDemoController.m */,
 				94F806C02E53141100B6FE7A /* LocalProxyDemoController.h */,
@@ -620,9 +630,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -700,6 +714,8 @@
 				9492D6A92D30226200008A84 /* WkWebViewDemoController.m in Sources */,
 				6F3F60372CD0E0890014025B /* AppDelegate.m in Sources */,
 				94F806C22E53141100B6FE7A /* LocalProxyDemoController.m in Sources */,
+				94F3D04D2EB361AA0039304A /* LogViewerController.m in Sources */,
+				94F3D04E2EB361AA0039304A /* LogManager.m in Sources */,
 				6F3F60382CD0E0890014025B /* main.m in Sources */,
 				6F3F60392CD0E0890014025B /* SceneDelegate.m in Sources */,
 				6F3F603A2CD0E0890014025B /* ViewController.m in Sources */,
@@ -1010,7 +1026,7 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1045,7 +1061,7 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

@@ -2,6 +2,7 @@
 #import <WebKit/WebKit.h>
 #import <EMASLocalProxy/EMASLocalProxy.h>
 #import <AlicloudHttpDNS/AlicloudHttpDNS.h>
+#import "LogViewerController.h"
 
 @interface WkWebViewDemoController () <UITextFieldDelegate>
 @property (nonatomic, strong) WKWebView *webView;
@@ -61,11 +62,17 @@
     [super viewDidLoad];
     self.title = @"WebView Demo";
 
-    // Add reload button to navigation bar
+    // Add ViewLogs and Reload buttons to navigation bar
+    UIBarButtonItem *viewLogsButton = [[UIBarButtonItem alloc] initWithTitle:@"Logs"
+                                                                       style:UIBarButtonItemStylePlain
+                                                                      target:self
+                                                                      action:@selector(viewLogsButtonTapped)];
+
     UIBarButtonItem *reloadButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh
                                                                                 target:self
                                                                                 action:@selector(reloadWebView)];
-    self.navigationItem.rightBarButtonItem = reloadButton;
+
+    self.navigationItem.rightBarButtonItems = @[reloadButton, viewLogsButton];
 
     // Status Label
     self.statusLabel = [[UILabel alloc] init];
@@ -150,6 +157,13 @@
 
 - (void)reloadWebView {
     [self.webView reload];
+}
+
+- (void)viewLogsButtonTapped {
+    LogViewerController *logViewer = [[LogViewerController alloc] init];
+    UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:logViewer];
+    navController.modalPresentationStyle = UIModalPresentationPageSheet;
+    [self presentViewController:navController animated:YES completion:nil];
 }
 
 - (void)goButtonTapped {

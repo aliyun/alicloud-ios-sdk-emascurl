@@ -7,6 +7,9 @@
 
 #import "AppDelegate.h"
 #import <AlicloudHttpDNS/AlicloudHttpDNS.h>
+#import <EMASCurl/EMASCurl.h>
+#import <EMASLocalProxy/EMASLocalProxy.h>
+#import "LogManager.h"
 
 @interface AppDelegate ()
 
@@ -39,6 +42,20 @@
 
     // 设置网络超时时间
     [httpdns setNetworkingTimeoutInterval:2];
+
+    // 设置EMASCurl日志处理器
+    [EMASCurlProtocol setLogHandler:^(EMASCurlLogLevel level, NSString *component, NSString *message) {
+        [[LogManager sharedInstance] addLogWithLevel:level
+                                           component:component
+                                             message:message];
+    }];
+
+    // 设置EMASLocalProxy日志处理器
+    [EMASLocalHttpProxy setLogHandler:^(EMASLocalHttpProxyLogLevel level, NSString *component, NSString *message) {
+        [[LogManager sharedInstance] addLogWithLevel:level
+                                           component:component
+                                             message:message];
+    }];
 
     return YES;
 }

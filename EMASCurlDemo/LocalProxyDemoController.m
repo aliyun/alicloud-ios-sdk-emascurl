@@ -1,6 +1,7 @@
 #import "LocalProxyDemoController.h"
 #import <EMASLocalProxy/EMASLocalProxy.h>
 #import <AlicloudHttpDNS/AlicloudHttpDNS.h>
+#import "LogViewerController.h"
 
 @interface LocalProxyDemoController () <NSURLSessionDataDelegate>
 @property (nonatomic, strong) UIButton *getButton;
@@ -17,6 +18,13 @@
     [super viewDidLoad];
     self.title = @"Local Proxy Demo";
     self.view.backgroundColor = [UIColor whiteColor];
+
+    // 添加ViewLogs按钮到导航栏右侧
+    UIBarButtonItem *viewLogsButton = [[UIBarButtonItem alloc] initWithTitle:@"Logs"
+                                                                       style:UIBarButtonItemStylePlain
+                                                                      target:self
+                                                                      action:@selector(viewLogsButtonTapped)];
+    self.navigationItem.rightBarButtonItem = viewLogsButton;
 
     // 设置HTTPDNS解析器（全局配置，只需设置一次）
     [self setupDNSResolver];
@@ -273,6 +281,15 @@
     self.resultTextView.text = [self.resultTextView.text stringByAppendingString:redirectInfo];
 
     completionHandler(request);
+}
+
+#pragma mark - ViewLogs
+
+- (void)viewLogsButtonTapped {
+    LogViewerController *logViewer = [[LogViewerController alloc] init];
+    UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:logViewer];
+    navController.modalPresentationStyle = UIModalPresentationPageSheet;
+    [self presentViewController:navController animated:YES completion:nil];
 }
 
 @end

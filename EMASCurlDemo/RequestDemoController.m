@@ -1,6 +1,7 @@
 #import "RequestDemoController.h"
 #import <EMASCurl/EMASCurl.h>
 #import <AlicloudHttpDNS/AlicloudHttpDNS.h>
+#import "LogViewerController.h"
 
 // DNS resolver implementation for HTTPDNS integration
 @interface RequestDemoDNSResolver : NSObject <EMASCurlProtocolDNSResolver>
@@ -44,6 +45,13 @@
     [super viewDidLoad];
     self.title = @"Request Demo";
     self.view.backgroundColor = [UIColor whiteColor];
+
+    // 添加ViewLogs按钮到导航栏右侧
+    UIBarButtonItem *viewLogsButton = [[UIBarButtonItem alloc] initWithTitle:@"Logs"
+                                                                       style:UIBarButtonItemStylePlain
+                                                                      target:self
+                                                                      action:@selector(viewLogsButtonTapped)];
+    self.navigationItem.rightBarButtonItem = viewLogsButton;
 
     [self setupSession];
     [self setupUI];
@@ -304,6 +312,15 @@
 
     // Allow the redirect by passing the new request to the completion handler
     completionHandler(request);
+}
+
+#pragma mark - ViewLogs
+
+- (void)viewLogsButtonTapped {
+    LogViewerController *logViewer = [[LogViewerController alloc] init];
+    UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:logViewer];
+    navController.modalPresentationStyle = UIModalPresentationPageSheet;
+    [self presentViewController:navController animated:YES completion:nil];
 }
 
 @end
