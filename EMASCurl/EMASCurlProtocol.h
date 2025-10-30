@@ -22,6 +22,9 @@ typedef NS_ENUM(NSInteger, EMASCurlLogLevel) {
     EMASCurlLogLevelDebug = 3,    // 调试信息和以上所有，包括libcurl输出
 };
 
+// 自定义日志处理器 Block 类型
+typedef void(^EMASCurlLogHandlerBlock)(EMASCurlLogLevel level, NSString * _Nonnull component, NSString * _Nonnull message);
+
 
 @interface EMASCurlProtocol : NSURLProtocol
 
@@ -60,6 +63,11 @@ typedef NS_ENUM(NSInteger, EMASCurlLogLevel) {
 
 // 获取当前日志级别
 + (EMASCurlLogLevel)currentLogLevel;
+
+// 设置自定义日志处理器（可选）
+// 如果不设置，日志将输出到控制台（NSLog）
+// 传入 nil 可恢复默认行为
++ (void)setLogHandler:(nullable EMASCurlLogHandlerBlock)handler;
 
 #pragma mark - 其他配置方法
 

@@ -44,27 +44,61 @@ static const NSTimeInterval kEMASHealthCheckInterval = 5.0;
 /// 当前日志级别配置
 static EMASLocalHttpProxyLogLevel _currentLogLevel = EMASLocalHttpProxyLogLevelDebug;
 
+/// 自定义日志处理器（静态变量，线程安全访问）
+static EMASLocalHttpProxyLogHandlerBlock _logHandler = nil;
+static dispatch_queue_t _logHandlerQueue = nil;
+
 /// 检查是否应该输出指定级别的日志
 static BOOL _shouldLog(EMASLocalHttpProxyLogLevel level) {
     return _currentLogLevel >= level;
 }
 
-/// 便捷日志宏定义（使用NSLog输出）
+/// 获取当前日志处理器（线程安全）
+static EMASLocalHttpProxyLogHandlerBlock _getCurrentLogHandler(void) {
+    if (!_logHandlerQueue) {
+        return nil;
+    }
+    __block EMASLocalHttpProxyLogHandlerBlock handler = nil;
+    dispatch_sync(_logHandlerQueue, ^{
+        handler = _logHandler;
+    });
+    return handler;
+}
+
+/// 便捷日志宏定义（支持自定义处理器或NSLog）
 #define EMAS_LOCAL_HTTP_PROXY_LOG_INFO(fmt, ...)    do { \
     if (_shouldLog(EMASLocalHttpProxyLogLevelInfo)) { \
-        NSLog(@"[LOCAL-PROXY-INFO] " fmt, ##__VA_ARGS__); \
+        NSString *msg = [NSString stringWithFormat:@"" fmt, ##__VA_ARGS__]; \
+        EMASLocalHttpProxyLogHandlerBlock handler = _getCurrentLogHandler(); \
+        if (handler) { \
+            handler(EMASLocalHttpProxyLogLevelInfo, @"LocalProxy", msg); \
+        } else { \
+            NSLog(@"[LOCAL-PROXY-INFO] %@", msg); \
+        } \
     } \
 } while(0)
 
 #define EMAS_LOCAL_HTTP_PROXY_LOG_ERROR(fmt, ...)   do { \
     if (_shouldLog(EMASLocalHttpProxyLogLevelError)) { \
-        NSLog(@"[LOCAL-PROXY-ERROR] " fmt, ##__VA_ARGS__); \
+        NSString *msg = [NSString stringWithFormat:@"" fmt, ##__VA_ARGS__]; \
+        EMASLocalHttpProxyLogHandlerBlock handler = _getCurrentLogHandler(); \
+        if (handler) { \
+            handler(EMASLocalHttpProxyLogLevelError, @"LocalProxy", msg); \
+        } else { \
+            NSLog(@"[LOCAL-PROXY-ERROR] %@", msg); \
+        } \
     } \
 } while(0)
 
 #define EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG(fmt, ...)   do { \
     if (_shouldLog(EMASLocalHttpProxyLogLevelDebug)) { \
-        NSLog(@"[LOCAL-PROXY-DEBUG] " fmt, ##__VA_ARGS__); \
+        NSString *msg = [NSString stringWithFormat:@"" fmt, ##__VA_ARGS__]; \
+        EMASLocalHttpProxyLogHandlerBlock handler = _getCurrentLogHandler(); \
+        if (handler) { \
+            handler(EMASLocalHttpProxyLogLevelDebug, @"LocalProxy", msg); \
+        } else { \
+            NSLog(@"[LOCAL-PROXY-DEBUG] %@", msg); \
+        } \
     } \
 } while(0)
 
@@ -130,6 +164,12 @@ API_AVAILABLE(ios(17.0))
 #pragma mark - 初始化
 
 + (void)load {
+    // 初始化日志处理器队列
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _logHandlerQueue = dispatch_queue_create("com.aliyun.emas.localproxy.loghandler", DISPATCH_QUEUE_CONCURRENT);
+    });
+
     // 自动启动本地HTTPS代理服务，支持多种网络客户端集成
     EMAS_LOCAL_HTTP_PROXY_LOG_DEBUG("Preparing to start local HTTPS proxy service for network client integration");
     
@@ -1146,6 +1186,15 @@ API_AVAILABLE(ios(17.0))
 
 + (void)setLogLevel:(EMASLocalHttpProxyLogLevel)logLevel {
     _currentLogLevel = logLevel;
+}
+
++ (void)setLogHandler:(EMASLocalHttpProxyLogHandlerBlock)handler {
+    if (!_logHandlerQueue) {
+        _logHandlerQueue = dispatch_queue_create("com.aliyun.emas.localproxy.loghandler", DISPATCH_QUEUE_CONCURRENT);
+    }
+    dispatch_barrier_async(_logHandlerQueue, ^{
+        _logHandler = [handler copy];
+    });
 }
 
 + (void)setDNSResolverBlock:(NSArray<NSString *> *(^)(NSString *hostname))resolverBlock {

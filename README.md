@@ -72,6 +72,7 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
       - [开启调试日志](#开启调试日志)
         - [设置日志级别](#设置日志级别)
         - [组件化日志](#组件化日志)
+        - [设置自定义日志处理器](#设置自定义日志处理器)
       - [设置请求拦截域名白名单和黑名单](#设置请求拦截域名白名单和黑名单)
       - [设置Gzip压缩](#设置gzip压缩)
       - [设置内部重定向支持](#设置内部重定向支持)
@@ -636,6 +637,62 @@ EMASCurl使用组件化的日志记录，每个日志消息都会标明来源组
 [2024-12-27 10:30:15.200] [INFO] [EC-Manager] Transfer completed successfully for URL: https://example.com (HTTP 200)
 ```
 
+##### 设置自定义日志处理器
+
+EMASCurl支持将日志输出到自定义组件，而不仅限于控制台。您可以通过设置自定义日志处理器，将日志重定向到文件、远程服务器或自定义UI界面。
+
+```objc
++ (void)setLogHandler:(nullable EMASCurlLogHandlerBlock)handler;
+```
+
+日志处理器Block定义：
+```objc
+typedef void(^EMASCurlLogHandlerBlock)(EMASCurlLogLevel level, NSString *component, NSString *message);
+```
+
+使用示例：
+
+```objc
+// 示例1：将日志写入文件
+[EMASCurlProtocol setLogHandler:^(EMASCurlLogLevel level, NSString *component, NSString *message) {
+    // 构建日志字符串
+    NSString *levelString = @"INFO";
+    if (level == EMASCurlLogLevelError) {
+        levelString = @"ERROR";
+    } else if (level == EMASCurlLogLevelDebug) {
+        levelString = @"DEBUG";
+    }
+
+    NSString *logEntry = [NSString stringWithFormat:@"[%@] [%@] %@\n", levelString, component, message];
+
+    // 写入日志文件
+    [MyLogger appendToFile:logEntry];
+}];
+
+// 示例2：发送到远程日志服务
+[EMASCurlProtocol setLogHandler:^(EMASCurlLogLevel level, NSString *component, NSString *message) {
+    if (level == EMASCurlLogLevelError) {
+        [MyAnalytics reportError:message component:component];
+    }
+}];
+
+// 示例3：显示在自定义UI
+[EMASCurlProtocol setLogHandler:^(EMASCurlLogLevel level, NSString *component, NSString *message) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [MyDebugConsole appendLog:message level:level component:component];
+    });
+}];
+
+// 恢复默认NSLog行为
+[EMASCurlProtocol setLogHandler:nil];
+```
+
+**注意事项：**
+- 如果不设置自定义处理器，日志将默认输出到控制台（NSLog），保持向后兼容
+- 日志处理器会在日志产生的线程上调用，如需UI操作请切换到主线程
+- 传入 `nil` 可恢复默认 NSLog 行为
+- 自定义处理器会接收到原始的日志级别、组件名称和消息内容，您可以自由格式化输出
+
 #### 设置请求拦截域名白名单和黑名单
 
 EMASCurl允许您设置域名白名单和黑名单来控制哪些请求会被拦截处理：
@@ -953,7 +1010,7 @@ EMASLocalProxy 提供了完善的日志系统，便于开发和调试：
 ```objc
 // 设置日志级别
 typedef NS_ENUM(NSInteger, EMASLocalHttpProxyLogLevel) {
-    EMASLocalHttpProxyLogLevelOff = 0,    // 关闭日志
+    EMASLocalHttpProxyLogLevelNone = 0,   // 关闭日志
     EMASLocalHttpProxyLogLevelError = 1,  // 仅错误日志
     EMASLocalHttpProxyLogLevelInfo = 2,   // 信息和错误日志
     EMASLocalHttpProxyLogLevelDebug = 3   // 所有日志（包括详细调试信息）
@@ -962,6 +1019,36 @@ typedef NS_ENUM(NSInteger, EMASLocalHttpProxyLogLevel) {
 // 开启调试日志
 [EMASLocalHttpProxy setLogLevel:EMASLocalHttpProxyLogLevelDebug];
 ```
+
+#### 自定义日志处理器
+
+EMASLocalProxy支持将日志输出到自定义组件，例如文件、远程服务器或自定义UI界面：
+
+```objc
+// 设置自定义日志处理器
+[EMASLocalHttpProxy setLogHandler:^(EMASLocalHttpProxyLogLevel level, NSString *component, NSString *message) {
+    // 自定义处理逻辑
+    NSString *levelString = @"INFO";
+    if (level == EMASLocalHttpProxyLogLevelError) {
+        levelString = @"ERROR";
+    } else if (level == EMASLocalHttpProxyLogLevelDebug) {
+        levelString = @"DEBUG";
+    }
+
+    NSString *logEntry = [NSString stringWithFormat:@"[%@] [%@] %@", levelString, component, message];
+
+    // 写入文件或发送到远程服务
+    [MyLogger writeLog:logEntry];
+}];
+
+// 恢复默认NSLog行为
+[EMASLocalHttpProxy setLogHandler:nil];
+```
+
+**注意事项：**
+- 如果不设置自定义处理器，日志将默认输出到控制台（NSLog）
+- 日志处理器会在日志产生的线程上调用，如需UI操作请切换到主线程
+- 传入 `nil` 可恢复默认 NSLog 行为
 
 ## License
 

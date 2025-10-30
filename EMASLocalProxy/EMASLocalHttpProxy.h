@@ -31,6 +31,15 @@ typedef NS_ENUM(NSInteger, EMASLocalHttpProxyLogLevel) {
 };
 
 /**
+ *  自定义日志处理器 Block 类型
+ *
+ *  @param level 日志级别
+ *  @param component 组件名称（如 "DNS", "Connection", "Proxy"）
+ *  @param message 日志消息内容
+ */
+typedef void(^EMASLocalHttpProxyLogHandlerBlock)(EMASLocalHttpProxyLogLevel level, NSString * _Nonnull component, NSString * _Nonnull message);
+
+/**
  *  EMAS本地HTTP代理服务
  *
  *  静态工具类，提供统一的API接口用于各种网络客户端的代理配置
@@ -119,6 +128,29 @@ typedef NS_ENUM(NSInteger, EMASLocalHttpProxyLogLevel) {
  *  @endcode
  */
 + (void)setLogLevel:(EMASLocalHttpProxyLogLevel)logLevel;
+
+/**
+ *  设置自定义日志处理器
+ *
+ *  允许用户自定义日志输出目标，例如写入文件、发送到远程服务或显示在UI
+ *  如果不设置自定义处理器，日志默认输出到控制台（NSLog）
+ *
+ *  @param handler 自定义日志处理器，传入 nil 恢复默认 NSLog 行为
+ *
+ *  @note 此方法是线程安全的
+ *  @note handler 会在日志产生的线程上调用，如需UI操作请切换到主线程
+ *
+ *  @code
+ *  // 示例：将日志写入文件
+ *  [EMASLocalHttpProxy setLogHandler:^(EMASLocalHttpProxyLogLevel level, NSString *component, NSString *message) {
+ *      [MyLogger writeToFile:message level:level component:component];
+ *  }];
+ *
+ *  // 恢复默认NSLog行为
+ *  [EMASLocalHttpProxy setLogHandler:nil];
+ *  @endcode
+ */
++ (void)setLogHandler:(nullable EMASLocalHttpProxyLogHandlerBlock)handler;
 
 /**
  *  设置自定义DNS解析器

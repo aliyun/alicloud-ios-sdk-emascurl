@@ -13,7 +13,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-
 @interface EMASCurlLogger : NSObject
 
 // 获取共享实例
@@ -24,6 +23,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 // 获取当前日志级别
 + (EMASCurlLogLevel)currentLogLevel;
+
+// 设置自定义日志处理器
++ (void)setLogHandler:(nullable EMASCurlLogHandlerBlock)handler;
+
+// 获取当前日志处理器
++ (nullable EMASCurlLogHandlerBlock)currentLogHandler;
 
 @end
 

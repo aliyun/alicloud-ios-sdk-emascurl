@@ -1725,6 +1725,10 @@ static int debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, v
     return [EMASCurlLogger currentLogLevel];
 }
 
++ (void)setLogHandler:(nullable EMASCurlLogHandlerBlock)handler {
+    [EMASCurlLogger setLogHandler:handler];
+}
+
 @end
 
 #pragma mark - 调度线程封装与清理

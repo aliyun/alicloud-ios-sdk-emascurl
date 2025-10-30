@@ -10,6 +10,7 @@
 @interface EMASCurlLogger ()
 
 @property (atomic, assign) EMASCurlLogLevel currentLogLevel;
+@property (atomic, copy, nullable) EMASCurlLogHandlerBlock logHandler;
 
 @end
 
@@ -39,6 +40,14 @@
 
 + (EMASCurlLogLevel)currentLogLevel {
     return [EMASCurlLogger sharedLogger].currentLogLevel;
+}
+
++ (void)setLogHandler:(nullable EMASCurlLogHandlerBlock)handler {
+    [EMASCurlLogger sharedLogger].logHandler = handler;
+}
+
++ (nullable EMASCurlLogHandlerBlock)currentLogHandler {
+    return [EMASCurlLogger sharedLogger].logHandler;
 }
 
 + (NSString *)stringForLogLevel:(EMASCurlLogLevel)level {
@@ -71,31 +80,39 @@ void EMASCurlLog(EMASCurlLogLevel level, NSString *component, NSString *format, 
     NSString *message = [[NSString alloc] initWithFormat:format arguments:args];
     va_end(args);
 
-    // 生成时间戳
-    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-    formatter.dateFormat = @"yyyy-MM-dd HH:mm:ss.SSS";
-    NSString *timestamp = [formatter stringFromDate:[NSDate date]];
+    // 检查是否有自定义日志处理器
+    EMASCurlLogHandlerBlock handler = [EMASCurlLogger currentLogHandler];
+    if (handler) {
+        // 使用自定义处理器
+        handler(level, component, message);
+    } else {
+        // 默认使用 NSLog 输出（向后兼容）
+        // 生成时间戳
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        formatter.dateFormat = @"yyyy-MM-dd HH:mm:ss.SSS";
+        NSString *timestamp = [formatter stringFromDate:[NSDate date]];
 
-    // 获取日志级别字符串
-    NSString *levelString;
-    switch (level) {
-        case EMASCurlLogLevelOff:
-            levelString = @"OFF";
-            break;
-        case EMASCurlLogLevelError:
-            levelString = @"ERROR";
-            break;
-        case EMASCurlLogLevelInfo:
-            levelString = @"INFO";
-            break;
-        case EMASCurlLogLevelDebug:
-            levelString = @"DEBUG";
-            break;
-        default:
-            levelString = @"UNKNOWN";
-            break;
+        // 获取日志级别字符串
+        NSString *levelString;
+        switch (level) {
+            case EMASCurlLogLevelOff:
+                levelString = @"OFF";
+                break;
+            case EMASCurlLogLevelError:
+                levelString = @"ERROR";
+                break;
+            case EMASCurlLogLevelInfo:
+                levelString = @"INFO";
+                break;
+            case EMASCurlLogLevelDebug:
+                levelString = @"DEBUG";
+                break;
+            default:
+                levelString = @"UNKNOWN";
+                break;
+        }
+
+        // 输出格式化的日志消息
+        NSLog(@"[%@] [%@] [%@] %@", timestamp, levelString, component, message);
     }
-
-    // 输出格式化的日志消息
-    NSLog(@"[%@] [%@] [%@] %@", timestamp, levelString, component, message);
 }
