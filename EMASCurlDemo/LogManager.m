@@ -75,6 +75,7 @@ NSNotificationName const LogManagerDidUpdateLogsNotification = @"LogManagerDidUp
         NSString *logEntry = [NSString stringWithFormat:@"[%@] [%@] [%@] %@",
                               timestamp, levelString, component, message];
 
+        NSLog(@"%@", logEntry);
         [self.logs addObject:logEntry];
 
         // 发送通知

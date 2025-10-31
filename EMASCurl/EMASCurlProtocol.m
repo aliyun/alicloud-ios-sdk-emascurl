@@ -300,6 +300,9 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     s_responseCache = [EMASCurlResponseCache new];
     s_cacheQueue = dispatch_queue_create("com.alicloud.emascurl.cacheQueue", DISPATCH_QUEUE_SERIAL);
+
+    // 显式引用以触发 EMASCurlProxySetting 的 +initialize，确保尽早建立系统代理监听
+    (void)[EMASCurlProxySetting class];
 }
 
 - (instancetype)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id<NSURLProtocolClient>)client {
