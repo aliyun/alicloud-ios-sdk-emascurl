@@ -101,6 +101,12 @@ static const double kProxyUpdateDebounceIntervalSec = 0.8;
     if (host.length == 0 || port == nil) {
         return nil;
     }
+    // IPv6字面量需要使用方括号包裹，避免与端口分隔符":"冲突
+    if ([host containsString:@":"]) {
+        if (![host hasPrefix:@"["] && ![host hasSuffix:@"]"]) {
+            host = [NSString stringWithFormat:@"[%@]", host];
+        }
+    }
 
     // 非显式支持的类型不返回
     NSString *scheme = @"http";
