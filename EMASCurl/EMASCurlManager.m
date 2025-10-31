@@ -13,7 +13,6 @@
 
 @property (nonatomic, assign) CURL *easy;
 @property (nonatomic, copy) void (^ _Nullable completion)(BOOL, NSError *);
-@property (nonatomic, assign) qos_class_t completionQos;
 
 @end
 
@@ -89,8 +88,6 @@
     EMASCurlRequest *request = [[EMASCurlRequest alloc] init];
     request.easy = easyHandle;
     request.completion = completion;
-    // 记录调用方的QoS，用于后续回调派发，避免高QoS线程等待低QoS队列导致优先级反转
-    request.completionQos = qos_class_self();
 
     [_condition lock];
     [_pendingAddQueue addObject:request];
@@ -107,14 +104,16 @@
     EMAS_LOG_INFO(@"EC-Manager", @"Network thread started");
 
     @autoreleasepool {
-        // 为保险起见在工作线程内再次设置QoS，确保不低于UserInitiated，降低优先级反转概率
-        pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0);
         [_condition lock];
 
         while (YES) {
             if (_requestsByHandle.count == 0 && _pendingAddQueue.count == 0) {
                 EMAS_LOG_DEBUG(@"EC-Manager", @"No pending requests, waiting for new work");
+                // 为避免“高QoS线程等待低QoS线程”导致的优先级反转告警，这里在进入阻塞等待前临时降低QoS；
+                // 被唤醒后立刻恢复到较高QoS以尽快处理请求。
+                pthread_set_qos_class_self_np(QOS_CLASS_UTILITY, 0);
                 [_condition wait];
+                pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0);
             }
 
             [self drainPendingAddQueueLocked];
@@ -158,8 +157,7 @@
 
             void (^completion)(BOOL, NSError *) = request.completion;
             if (completion) {
-                qos_class_t qos = (request.completionQos == QOS_CLASS_UNSPECIFIED) ? QOS_CLASS_DEFAULT : request.completionQos;
-                dispatch_async(dispatch_get_global_queue(qos, 0), ^{
+                dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
                     completion(NO, error);
                 });
             }
@@ -222,8 +220,7 @@
 
             void (^completion)(BOOL, NSError *) = request.completion;
             if (completion) {
-                qos_class_t qos = (request.completionQos == QOS_CLASS_UNSPECIFIED) ? QOS_CLASS_DEFAULT : request.completionQos;
-                dispatch_async(dispatch_get_global_queue(qos, 0), ^{
+                dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
                     completion(succeeded, error);
                 });
             }
