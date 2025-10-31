@@ -17,7 +17,8 @@ static dispatch_queue_t s_proxyQueue;
 static NSDictionary *s_cachedProxySettings;
 static BOOL s_manualProxyEnabled;
 static int s_proxyNotifyToken;
-static dispatch_source_t s_proxyDebounceTimer;
+static dispatch_block_t s_pendingUpdateBlock;
+static const double kProxyUpdateDebounceIntervalSec = 0.8;
 
 // 类初始化时完成一次性初始化与监听启动
 + (void)initialize {
@@ -28,10 +29,10 @@ static dispatch_source_t s_proxyDebounceTimer;
     s_proxyQueue = dispatch_queue_create("com.alicloud.emascurl.proxyQueue", DISPATCH_QUEUE_SERIAL);
     s_cachedProxySettings = nil;
     s_proxyNotifyToken = 0;
-    s_proxyDebounceTimer = NULL;
+    s_pendingUpdateBlock = NULL;
 
     [self startProxyObservation];
-    [self updateProxySettings];
+    [self updateProxySettingsAsyncInQueue];
 }
 
 + (void)setManualProxyServer:(NSString *)proxyServerURL {
@@ -40,6 +41,11 @@ static dispatch_source_t s_proxyDebounceTimer;
         s_manualProxyEnabled = manualEnabled;
         if (manualEnabled) {
             s_cachedProxySettings = nil;
+            // 主动取消未执行的去抖更新，避免在切到手动代理后仍触发系统代理更新
+            if (s_pendingUpdateBlock != NULL) {
+                dispatch_block_cancel(s_pendingUpdateBlock);
+                s_pendingUpdateBlock = NULL;
+            }
         }
     });
 
@@ -48,7 +54,7 @@ static dispatch_source_t s_proxyDebounceTimer;
         EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy enabled: %@", proxyServerURL);
     } else {
         [self startProxyObservation];
-        [self updateProxySettings];
+        [self updateProxySettingsAsyncInQueue];
         EMAS_LOG_INFO(@"EC-Proxy", @"Manual proxy disabled, will use system settings");
     }
 }
@@ -133,25 +139,24 @@ static dispatch_source_t s_proxyDebounceTimer;
                                               dispatch_get_main_queue(),
                                               ^(int notifyToken) {
                                                   (void)notifyToken;
-                                                  // Darwin 通知在蜂窝切换时可能短时间内多次触发；
-                                                  // 在内部串行队列上做一次性定时器去抖，合并为一次更新。
+                                                  // 蜂窝/网络切换可能在短时间触发多次；
+                                                  // 使用可取消的 pending block 去抖：新事件到来时取消旧计划并重排队。
                                                   dispatch_async(s_proxyQueue, ^{
                                                       if (s_manualProxyEnabled) {
                                                           return;
                                                       }
-                                                      if (s_proxyDebounceTimer == NULL) {
-                                                          s_proxyDebounceTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, s_proxyQueue);
-                                                          dispatch_source_set_event_handler(s_proxyDebounceTimer, ^{
-                                                              [EMASCurlProxySetting _updateProxySettingsLocked];
-                                                          });
-                                                          dispatch_resume(s_proxyDebounceTimer);
+                                                      // 取消上一轮未执行的更新
+                                                      if (s_pendingUpdateBlock != NULL) {
+                                                          dispatch_block_cancel(s_pendingUpdateBlock);
+                                                          s_pendingUpdateBlock = NULL;
                                                       }
-                                                      uint64_t delay = 800ull * 1000000ull; // 800ms
-                                                      uint64_t leeway = 100ull * 1000000ull; // 100ms
-                                                      dispatch_source_set_timer(s_proxyDebounceTimer,
-                                                                                dispatch_time(DISPATCH_TIME_NOW, (int64_t)delay),
-                                                                                0,
-                                                                                leeway);
+                                                      // 创建新的可取消任务并按延迟入队
+                                                      dispatch_block_t block = dispatch_block_create(0, ^{
+                                                          [EMASCurlProxySetting _updateProxySettingsLocked];
+                                                      });
+                                                      s_pendingUpdateBlock = block;
+                                                      int64_t nanos = (int64_t)(kProxyUpdateDebounceIntervalSec * (double)NSEC_PER_SEC);
+                                                      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, nanos), s_proxyQueue, block);
                                                   });
                                               });
         if (status != NOTIFY_STATUS_OK) {
@@ -177,13 +182,19 @@ static dispatch_source_t s_proxyDebounceTimer;
         if (token != 0) {
             notify_cancel(token);
         }
-        // 清理去抖定时器，避免悬挂触发
+        // 取消未执行的 pending 更新，避免停止后仍触发
         dispatch_sync(s_proxyQueue, ^{
-            if (s_proxyDebounceTimer != NULL) {
-                dispatch_source_cancel(s_proxyDebounceTimer);
-                s_proxyDebounceTimer = NULL;
+            if (s_pendingUpdateBlock != NULL) {
+                dispatch_block_cancel(s_pendingUpdateBlock);
+                s_pendingUpdateBlock = NULL;
             }
         });
+    });
+}
+
++ (void)updateProxySettingsAsyncInQueue {
+    dispatch_async(s_proxyQueue, ^{
+        [self _updateProxySettingsLocked];
     });
 }
 
@@ -208,12 +219,6 @@ static dispatch_source_t s_proxyDebounceTimer;
     }
 
     s_cachedProxySettings = [proxyDict copy];
-}
-
-+ (void)updateProxySettings {
-    dispatch_sync(s_proxyQueue, ^{
-        [self _updateProxySettingsLocked];
-    });
 }
 
 @end
