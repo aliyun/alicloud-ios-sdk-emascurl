@@ -17,6 +17,7 @@ static dispatch_queue_t s_proxyQueue;
 static NSDictionary *s_cachedProxySettings;
 static BOOL s_manualProxyEnabled;
 static int s_proxyNotifyToken;
+static dispatch_source_t s_proxyDebounceTimer;
 
 // 类初始化时完成一次性初始化与监听启动
 + (void)initialize {
@@ -27,6 +28,7 @@ static int s_proxyNotifyToken;
     s_proxyQueue = dispatch_queue_create("com.alicloud.emascurl.proxyQueue", DISPATCH_QUEUE_SERIAL);
     s_cachedProxySettings = nil;
     s_proxyNotifyToken = 0;
+    s_proxyDebounceTimer = NULL;
 
     [self startProxyObservation];
     [self updateProxySettings];
@@ -131,14 +133,26 @@ static int s_proxyNotifyToken;
                                               dispatch_get_main_queue(),
                                               ^(int notifyToken) {
                                                   (void)notifyToken;
-                                                  __block BOOL manual = NO;
-                                                  dispatch_sync(s_proxyQueue, ^{
-                                                      manual = s_manualProxyEnabled;
+                                                  // Darwin 通知在蜂窝切换时可能短时间内多次触发；
+                                                  // 在内部串行队列上做一次性定时器去抖，合并为一次更新。
+                                                  dispatch_async(s_proxyQueue, ^{
+                                                      if (s_manualProxyEnabled) {
+                                                          return;
+                                                      }
+                                                      if (s_proxyDebounceTimer == NULL) {
+                                                          s_proxyDebounceTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, s_proxyQueue);
+                                                          dispatch_source_set_event_handler(s_proxyDebounceTimer, ^{
+                                                              [EMASCurlProxySetting _updateProxySettingsLocked];
+                                                          });
+                                                          dispatch_resume(s_proxyDebounceTimer);
+                                                      }
+                                                      uint64_t delay = 800ull * 1000000ull; // 800ms
+                                                      uint64_t leeway = 100ull * 1000000ull; // 100ms
+                                                      dispatch_source_set_timer(s_proxyDebounceTimer,
+                                                                                dispatch_time(DISPATCH_TIME_NOW, (int64_t)delay),
+                                                                                0,
+                                                                                leeway);
                                                   });
-                                                  if (manual) {
-                                                      return;
-                                                  }
-                                                  [EMASCurlProxySetting updateProxySettings];
                                               });
         if (status != NOTIFY_STATUS_OK) {
             dispatch_sync(s_proxyQueue, ^{
@@ -163,30 +177,42 @@ static int s_proxyNotifyToken;
         if (token != 0) {
             notify_cancel(token);
         }
+        // 清理去抖定时器，避免悬挂触发
+        dispatch_sync(s_proxyQueue, ^{
+            if (s_proxyDebounceTimer != NULL) {
+                dispatch_source_cancel(s_proxyDebounceTimer);
+                s_proxyDebounceTimer = NULL;
+            }
+        });
     });
+}
+
+// 内部方法要求在 s_proxyQueue 上调用，避免回调与更新之间的互锁
++ (void)_updateProxySettingsLocked {
+    if (s_manualProxyEnabled) {
+        return;
+    }
+
+    EMAS_LOG_INFO(@"EC-Proxy", @"Try to update proxy config.");
+
+    CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
+    if (!proxySettings) {
+        s_cachedProxySettings = nil;
+        return;
+    }
+
+    NSDictionary *proxyDict = CFBridgingRelease(proxySettings);
+    if (proxyDict.count == 0) {
+        s_cachedProxySettings = nil;
+        return;
+    }
+
+    s_cachedProxySettings = [proxyDict copy];
 }
 
 + (void)updateProxySettings {
     dispatch_sync(s_proxyQueue, ^{
-        if (s_manualProxyEnabled) {
-            return;
-        }
-
-        EMAS_LOG_INFO(@"EC-Proxy", @"Try to update proxy config.");
-
-        CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
-        if (!proxySettings) {
-            s_cachedProxySettings = nil;
-            return;
-        }
-
-        NSDictionary *proxyDict = CFBridgingRelease(proxySettings);
-        if (proxyDict.count == 0) {
-            s_cachedProxySettings = nil;
-            return;
-        }
-
-        s_cachedProxySettings = [proxyDict copy];
+        [self _updateProxySettingsLocked];
     });
 }
 
