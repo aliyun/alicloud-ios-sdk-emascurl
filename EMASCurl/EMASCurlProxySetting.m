@@ -7,8 +7,6 @@
 
 #import "EMASCurlProxySetting.h"
 #import "EMASCurlLogger.h"
-#import "EMASCurlConfiguration.h"
-#import "EMASCurlConfigurationManager.h"
 #import <CFNetwork/CFNetwork.h>
 #import <notify.h>
 
@@ -25,23 +23,13 @@ static int s_proxyNotifyToken;
     if (self != [EMASCurlProxySetting class]) {
         return;
     }
-    static BOOL initialized = NO;
-    if (initialized) {
-        return;
-    }
-    initialized = YES;
 
     s_proxyQueue = dispatch_queue_create("com.alicloud.emascurl.proxyQueue", DISPATCH_QUEUE_SERIAL);
     s_cachedProxySettings = nil;
     s_proxyNotifyToken = 0;
 
-    // 读取默认配置，决定是否启动系统代理监听
-    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
-    s_manualProxyEnabled = defaultConfig.manualProxyEnabled;
-    if (!s_manualProxyEnabled) {
-        [self startProxyObservation];
-        [self updateProxySettings];
-    }
+    [self startProxyObservation];
+    [self updateProxySettings];
 }
 
 + (void)setManualProxyServer:(NSString *)proxyServerURL {
@@ -156,14 +144,12 @@ static int s_proxyNotifyToken;
             dispatch_sync(s_proxyQueue, ^{
                 s_proxyNotifyToken = 0;
             });
-            [EMASCurlProxySetting updateProxySettings];
             return;
         }
 
         dispatch_sync(s_proxyQueue, ^{
             s_proxyNotifyToken = token;
         });
-        [EMASCurlProxySetting updateProxySettings];
     });
 }
 
