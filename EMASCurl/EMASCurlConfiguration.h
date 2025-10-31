@@ -157,13 +157,6 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
  */
 @property (nonatomic, copy, nullable) NSString *proxyServer;
 
-/**
- * 启用手动代理配置
- * YES时使用proxyServer；NO时使用系统代理设置
- * 默认值: NO
- */
-@property (nonatomic, assign) BOOL manualProxyEnabled;
-
 #pragma mark - 安全设置
 
 /**

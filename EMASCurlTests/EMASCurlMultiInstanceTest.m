@@ -210,13 +210,11 @@
     [EMASCurlProtocol setManualProxyServer:proxyURL];
 
     defaultConfig = [EMASCurlProtocol defaultConfiguration];
-    XCTAssertTrue(defaultConfig.manualProxyEnabled, @"手动代理应该被启用");
     XCTAssertEqualObjects(defaultConfig.proxyServer, proxyURL, @"代理服务器应该被设置");
 
     // 清除代理
     [EMASCurlProtocol setManualProxyServer:nil];
     defaultConfig = [EMASCurlProtocol defaultConfiguration];
-    XCTAssertFalse(defaultConfig.manualProxyEnabled, @"手动代理应该被禁用");
     XCTAssertNil(defaultConfig.proxyServer, @"代理服务器应该被清除");
 }
 

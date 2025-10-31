@@ -818,15 +818,14 @@ config.domainNameVerificationEnabled = YES; // 开启域名校验 (默认行为)
 ```objc
 EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
 
-// 设置HTTP代理
-config.manualProxyEnabled = YES;
+// 设置HTTP代理（当 proxyServer 非空时，总是使用该代理）
 config.proxyServer = @"http://user:pass@proxy.example.com:8080";
 
 // 或设置SOCKS5代理
 // config.proxyServer = @"socks5://192.168.1.100:1080";
 
-// 禁用手动代理，使用系统代理
-// config.manualProxyEnabled = NO;
+// 清空以回退到系统代理
+// config.proxyServer = nil;
 ```
 
 #### 设置HTTP缓存
@@ -862,8 +861,7 @@ EMASCurlConfiguration 提供了所有网络配置选项的集中管理。以下�
 | `enableBuiltInRedirection` | BOOL | YES | 是否启用内置重定向处理 |
 | **DNS和代理** | | | |
 | `dnsResolver` | Class | nil | 自定义DNS解析器类 |
-| `proxyServer` | NSString | nil | 代理服务器URL |
-| `manualProxyEnabled` | BOOL | NO | 是否启用手动代理 |
+| `proxyServer` | NSString | nil | 代理服务器URL（非空时总是使用该代理） |
 | **安全设置** | | | |
 | `caFilePath` | NSString | nil | CA证书文件路径 |
 | `publicKeyPinningKeyPath` | NSString | nil | 公钥固定文件路径 |

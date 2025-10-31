@@ -45,7 +45,6 @@
     XCTAssertTrue(defaultConfig.cacheEnabled, @"默认应该启用缓存");
 
     // 验证代理设置
-    XCTAssertFalse(defaultConfig.manualProxyEnabled, @"默认不应该启用手动代理");
     XCTAssertNil(defaultConfig.proxyServer, @"默认代理服务器应该为nil");
 
     // 验证DNS设置
@@ -66,7 +65,6 @@
     original.certificateValidationEnabled = NO;
     original.domainNameVerificationEnabled = NO;
     original.cacheEnabled = NO;
-    original.manualProxyEnabled = YES;
     original.proxyServer = @"http://proxy.test.com:8080";
     original.domainWhiteList = @[@"api.example.com", @"cdn.example.com"];
     original.domainBlackList = @[@"tracking.com"];
@@ -84,7 +82,6 @@
     XCTAssertEqual(copy.certificateValidationEnabled, original.certificateValidationEnabled, @"证书验证设置应该相同");
     XCTAssertEqual(copy.domainNameVerificationEnabled, original.domainNameVerificationEnabled, @"域名验证设置应该相同");
     XCTAssertEqual(copy.cacheEnabled, original.cacheEnabled, @"缓存设置应该相同");
-    XCTAssertEqual(copy.manualProxyEnabled, original.manualProxyEnabled, @"手动代理设置应该相同");
     XCTAssertEqualObjects(copy.proxyServer, original.proxyServer, @"代理服务器应该相同");
     XCTAssertEqualObjects(copy.domainWhiteList, original.domainWhiteList, @"域名白名单应该相同");
     XCTAssertEqualObjects(copy.domainBlackList, original.domainBlackList, @"域名黑名单应该相同");

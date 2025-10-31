@@ -272,8 +272,6 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 + (void)setManualProxyServer:(nullable NSString *)proxyServerURL {
     EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
     defaultConfig.proxyServer = proxyServerURL;
-    BOOL manualEnabled = (proxyServerURL != nil && proxyServerURL.length > 0);
-    defaultConfig.manualProxyEnabled = manualEnabled;
     [EMASCurlProxySetting setManualProxyServer:proxyServerURL];
 }
 
@@ -995,7 +993,8 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     }
 
     NSString *proxyServer = nil;
-    if (self.resolvedConfiguration.manualProxyEnabled && self.resolvedConfiguration.proxyServer.length > 0) {
+    if (self.resolvedConfiguration.proxyServer.length > 0) {
+        // 若显式配置了代理地址，则无条件使用该代理
         proxyServer = self.resolvedConfiguration.proxyServer;
     } else {
         proxyServer = [EMASCurlProxySetting proxyServerForURL:self.request.URL];

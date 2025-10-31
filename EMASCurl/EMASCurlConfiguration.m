@@ -37,7 +37,6 @@
     // DNS和代理配置
     _dnsResolver = nil;
     _proxyServer = nil;
-    _manualProxyEnabled = NO;
 
     // 安全设置
     _caFilePath = nil;
@@ -77,7 +76,6 @@
 
     copy.dnsResolver = self.dnsResolver;
     copy.proxyServer = [self.proxyServer copy];
-    copy.manualProxyEnabled = self.manualProxyEnabled;
 
     copy.caFilePath = [self.caFilePath copy];
     copy.publicKeyPinningKeyPath = [self.publicKeyPinningKeyPath copy];
@@ -115,7 +113,6 @@
     if (self.dnsResolver != configuration.dnsResolver) return NO;
     if ((self.proxyServer || configuration.proxyServer) &&
         ![self.proxyServer isEqualToString:configuration.proxyServer]) return NO;
-    if (self.manualProxyEnabled != configuration.manualProxyEnabled) return NO;
 
     if ((self.caFilePath || configuration.caFilePath) &&
         ![self.caFilePath isEqualToString:configuration.caFilePath]) return NO;
@@ -151,7 +148,6 @@
     hash ^= self.enableBuiltInGzip ? 1 : 0;
     hash ^= self.enableBuiltInRedirection ? 2 : 0;
     hash ^= [self.proxyServer hash];
-    hash ^= self.manualProxyEnabled ? 4 : 0;
     hash ^= [self.caFilePath hash];
     hash ^= [self.publicKeyPinningKeyPath hash];
     hash ^= self.certificateValidationEnabled ? 8 : 0;
