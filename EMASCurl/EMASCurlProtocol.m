@@ -285,6 +285,25 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
 #pragma mark * NSURLProtocol overrides
 
+// 使用 +initialize 承担一次性初始化；运行时保证对每个类只调用一次
++ (void)initialize {
+    if (self != [EMASCurlProtocol class]) {
+        return;
+    }
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    // 读取 runtime 中 libcurl 对 HTTP/2 与 HTTP/3 的能力位，供后续配置分支使用
+    curl_version_info_data *version_info = curl_version_info(CURLVERSION_NOW);
+    curlFeatureHttp2 = (version_info->features & CURL_VERSION_HTTP2) ? YES : NO;
+    curlFeatureHttp3 = (version_info->features & CURL_VERSION_HTTP3) ? YES : NO;
+
+    s_enableDebugLog = NO;
+
+    s_responseCache = [EMASCurlResponseCache new];
+    s_cacheQueue = dispatch_queue_create("com.alicloud.emascurl.cacheQueue", DISPATCH_QUEUE_SERIAL);
+}
+
 - (instancetype)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id<NSURLProtocolClient>)client {
     self = [super initWithRequest:request cachedResponse:cachedResponse client:client];
     if (self) {
@@ -309,25 +328,6 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         _cleanedUp = NO;
     }
     return self;
-}
-
-// 在类加载方法中初始化libcurl
-+ (void)load {
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-
-    // 读取runtime libcurl对于http2/3的支持
-    curl_version_info_data *version_info = curl_version_info(CURLVERSION_NOW);
-    curlFeatureHttp2 = (version_info->features & CURL_VERSION_HTTP2) ? YES : NO;
-    curlFeatureHttp3 = (version_info->features & CURL_VERSION_HTTP3) ? YES : NO;
-
-    s_enableDebugLog = NO;
-
-    s_responseCache = [EMASCurlResponseCache new];
-
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        s_cacheQueue = dispatch_queue_create("com.alicloud.emascurl.cacheQueue", DISPATCH_QUEUE_SERIAL);
-    });
 }
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
