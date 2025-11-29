@@ -36,12 +36,17 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
     pthread_mutex_unlock(&s_shareMutexes[data]);
 }
 
+#pragma mark - EMASCurlMetricsData
+
+@implementation EMASCurlMetricsData
+@end
+
 #pragma mark - EMASCurlRequest
 
 @interface EMASCurlRequest : NSObject
 
 @property (nonatomic, assign) CURL *easy;
-@property (nonatomic, copy) void (^ _Nullable completion)(BOOL, NSError *);
+@property (nonatomic, copy) void (^ _Nullable completion)(BOOL, NSError *, EMASCurlMetricsData *);
 
 @end
 
@@ -116,7 +121,7 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
     return self;
 }
 
-- (void)enqueueNewEasyHandle:(CURL *)easyHandle completion:(void (^)(BOOL, NSError *))completion {
+- (void)enqueueNewEasyHandle:(CURL *)easyHandle completion:(void (^)(BOOL, NSError *, EMASCurlMetricsData *))completion {
     curl_easy_setopt(easyHandle, CURLOPT_SHARE, _shareHandle);
 
     EMASCurlRequest *request = [[EMASCurlRequest alloc] init];
@@ -143,7 +148,7 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
         while (YES) {
             if (_requestsByHandle.count == 0 && _pendingAddQueue.count == 0) {
                 EMAS_LOG_DEBUG(@"EC-Manager", @"No pending requests, waiting for new work");
-                // 为避免“高QoS线程等待低QoS线程”导致的优先级反转告警，这里在进入阻塞等待前临时降低QoS；
+                // 为避免"高QoS线程等待低QoS线程"导致的优先级反转告警，这里在进入阻塞等待前临时降低QoS；
                 // 被唤醒后立刻恢复到较高QoS以尽快处理请求。
                 pthread_set_qos_class_self_np(QOS_CLASS_UTILITY, 0);
                 [_condition wait];
@@ -189,10 +194,10 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
 
             curl_easy_cleanup(request.easy);
 
-            void (^completion)(BOOL, NSError *) = request.completion;
+            void (^completion)(BOOL, NSError *, EMASCurlMetricsData *) = request.completion;
             if (completion) {
                 dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
-                    completion(NO, error);
+                    completion(NO, error, nil);
                 });
             }
             continue;
@@ -247,15 +252,61 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
                 error = [NSError errorWithDomain:@"EMASCurlManager" code:msg->data.result userInfo:userInfo];
             }
 
+            // 在 cleanup 前提取 metrics 数据，避免 use-after-free
+            EMASCurlMetricsData *metrics = [[EMASCurlMetricsData alloc] init];
+
+            double nameLookupTime = 0, connectTime = 0, appConnectTime = 0;
+            double preTransferTime = 0, startTransferTime = 0, totalTime = 0;
+            long httpVersion = 0, primaryPort = 0, localPort = 0;
+            long numConnects = 0, requestSize = 0, headerSize = 0, usedProxy = 0;
+            curl_off_t uploadBytes = 0, downloadBytes = 0;
+            char *primaryIP = NULL, *localIP = NULL;
+
+            curl_easy_getinfo(easy, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+            curl_easy_getinfo(easy, CURLINFO_CONNECT_TIME, &connectTime);
+            curl_easy_getinfo(easy, CURLINFO_APPCONNECT_TIME, &appConnectTime);
+            curl_easy_getinfo(easy, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
+            curl_easy_getinfo(easy, CURLINFO_STARTTRANSFER_TIME, &startTransferTime);
+            curl_easy_getinfo(easy, CURLINFO_TOTAL_TIME, &totalTime);
+            curl_easy_getinfo(easy, CURLINFO_HTTP_VERSION, &httpVersion);
+            curl_easy_getinfo(easy, CURLINFO_PRIMARY_IP, &primaryIP);
+            curl_easy_getinfo(easy, CURLINFO_PRIMARY_PORT, &primaryPort);
+            curl_easy_getinfo(easy, CURLINFO_LOCAL_IP, &localIP);
+            curl_easy_getinfo(easy, CURLINFO_LOCAL_PORT, &localPort);
+            curl_easy_getinfo(easy, CURLINFO_NUM_CONNECTS, &numConnects);
+            curl_easy_getinfo(easy, CURLINFO_REQUEST_SIZE, &requestSize);
+            curl_easy_getinfo(easy, CURLINFO_HEADER_SIZE, &headerSize);
+            curl_easy_getinfo(easy, CURLINFO_SIZE_UPLOAD_T, &uploadBytes);
+            curl_easy_getinfo(easy, CURLINFO_SIZE_DOWNLOAD_T, &downloadBytes);
+            curl_easy_getinfo(easy, CURLINFO_USED_PROXY, &usedProxy);
+
+            metrics.nameLookupTime = nameLookupTime;
+            metrics.connectTime = connectTime;
+            metrics.appConnectTime = appConnectTime;
+            metrics.preTransferTime = preTransferTime;
+            metrics.startTransferTime = startTransferTime;
+            metrics.totalTime = totalTime;
+            metrics.httpVersion = httpVersion;
+            metrics.primaryIP = primaryIP ? [NSString stringWithUTF8String:primaryIP] : nil;
+            metrics.primaryPort = primaryPort;
+            metrics.localIP = localIP ? [NSString stringWithUTF8String:localIP] : nil;
+            metrics.localPort = localPort;
+            metrics.numConnects = numConnects;
+            metrics.usedProxy = (usedProxy != 0);
+            metrics.requestSize = requestSize;
+            metrics.headerSize = headerSize;
+            metrics.uploadBytes = uploadBytes;
+            metrics.downloadBytes = downloadBytes;
+
             curl_multi_remove_handle(_multiHandle, easy);
             // easy 句柄必须在从 multi 中移除后再 cleanup，避免并发销毁
             curl_easy_cleanup(easy);
             EMAS_LOG_DEBUG(@"EC-Manager", @"Removed easy handle from multi handle (remaining: %lu)", (unsigned long)_requestsByHandle.count);
 
-            void (^completion)(BOOL, NSError *) = request.completion;
+            void (^completion)(BOOL, NSError *, EMASCurlMetricsData *) = request.completion;
             if (completion) {
                 dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
-                    completion(succeeded, error);
+                    completion(succeeded, error, metrics);
                 });
             }
         }

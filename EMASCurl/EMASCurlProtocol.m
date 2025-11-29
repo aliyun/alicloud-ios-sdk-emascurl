@@ -495,7 +495,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     if (!easyHandle) {
         NSError *error = [NSError errorWithDomain:@"fail to init easy handle." code:-1 userInfo:nil];
         EMAS_LOG_ERROR(@"EC-Protocol", @"Failed to create easy handle for URL: %@", self.request.URL.absoluteString);
-        [self reportNetworkMetric:NO error:error];
+        [self reportEarlyFailure:error];
         [self invokeOnClientThread:^{
             if (![self markClientNotifiedIfNeeded]) {
                 return;
@@ -515,7 +515,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     [self configEasyHandle:easyHandle error:&error];
     if (error) {
         EMAS_LOG_ERROR(@"EC-Protocol", @"Failed to configure easy handle: %@", error.localizedDescription);
-        [self reportNetworkMetric:NO error:error];
+        [self reportEarlyFailure:error];
+        // handle 未添加到 multi，需手动 cleanup 避免泄漏
+        curl_easy_cleanup(easyHandle);
+        self.easyHandle = nil;
         [self invokeOnClientThread:^{
             if (![self markClientNotifiedIfNeeded]) {
                 return;
@@ -526,8 +529,8 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         return;
     }
 
-    [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error) {
-        [self reportNetworkMetric:succeed error:error];
+    [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error, EMASCurlMetricsData *metrics) {
+        [self reportNetworkMetricWithData:metrics success:succeed error:error];
 
         // 如果请求成功且状态码为200，则尝试缓存响应（仅在内存中曾经缓冲成功时）
         if (succeed &&
@@ -588,29 +591,55 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     }];
 }
 
-- (void)reportNetworkMetric:(BOOL)success error:(NSError *)error {
-    if (!self.easyHandle) {
+// 早期错误时通知 observer，metrics 全为 0（无网络活动）
+- (void)reportEarlyFailure:(NSError *)error {
+    EMASCurlTransactionMetricsObserverBlock globalCallback = nil;
+    @synchronized ([EMASCurlProtocol class]) {
+        globalCallback = globalTransactionMetricsObserverBlock;
+    }
+    EMASCurlTransactionMetricsObserverBlock instanceCallback = self.resolvedConfiguration.transactionMetricsObserver;
+
+    // 创建空的 metrics 对象，fetchStartDate 复用请求开始时间
+    EMASCurlTransactionMetrics *emptyMetrics = [[EMASCurlTransactionMetrics alloc] init];
+    emptyMetrics.fetchStartDate = self.fetchStartDate ?: [NSDate date];
+
+    if (globalCallback) {
+        globalCallback(self.request, NO, error, emptyMetrics);
+    }
+    if (instanceCallback) {
+        instanceCallback(self.request, NO, error, emptyMetrics);
+    }
+    if (self.metricsObserverBlock) {
+        self.metricsObserverBlock(self.request, NO, error, 0, 0, 0, 0, 0, 0);
+    }
+}
+
+// 使用 Manager 传入的 metrics 数据，避免访问已释放的 easyHandle
+- (void)reportNetworkMetricWithData:(EMASCurlMetricsData *)metricsData success:(BOOL)success error:(NSError *)error {
+    if (!metricsData) {
+        NSError *fallbackError = error;
+        if (!fallbackError) {
+            fallbackError = [NSError errorWithDomain:@"EMASCurlProtocol"
+                                                code:-1
+                                            userInfo:@{NSLocalizedDescriptionKey: @"Missing metrics data from curl"}];
+        }
+        EMAS_LOG_ERROR(@"EC-Performance", @"Metrics data missing, reporting early failure: %@", fallbackError.localizedDescription);
+        [self reportEarlyFailure:fallbackError];
         return;
     }
 
-    // 获取libcurl性能数据
-    double nameLookupTime = 0;
-    double connectTime = 0;
-    double appConnectTime = 0;
-    double preTransferTime = 0;
-    double startTransferTime = 0;
-    double totalTime = 0;
+    // 从传入的数据对象中提取性能数据
+    double nameLookupTime = metricsData.nameLookupTime;
+    double connectTime = metricsData.connectTime;
+    double appConnectTime = metricsData.appConnectTime;
+    double preTransferTime = metricsData.preTransferTime;
+    double startTransferTime = metricsData.startTransferTime;
+    double totalTime = metricsData.totalTime;
 
+    // 如果有自定义 DNS 解析时间，使用它
     if (self.resolveDomainTimeInterval > 0) {
         nameLookupTime = self.resolveDomainTimeInterval;
-    } else {
-        curl_easy_getinfo(self.easyHandle, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
     }
-    curl_easy_getinfo(self.easyHandle, CURLINFO_CONNECT_TIME, &connectTime);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_APPCONNECT_TIME, &appConnectTime);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_STARTTRANSFER_TIME, &startTransferTime);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_TOTAL_TIME, &totalTime);
 
     // 记录性能指标
     EMAS_LOG_INFO(@"EC-Performance", @"Request completed in %.0fms (DNS: %.0fms, Connect: %.0fms, Transfer: %.0fms)",
@@ -627,18 +656,14 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     if (globalTransactionCallback || instanceTransactionCallback) {
         // 创建综合性能指标对象
-        EMASCurlTransactionMetrics *metrics = [self createTransactionMetricsWithTotalTime:totalTime
-                                                                          nameLookupTime:nameLookupTime
-                                                                             connectTime:connectTime
-                                                                          appConnectTime:appConnectTime
-                                                                         preTransferTime:preTransferTime
-                                                                        startTransferTime:startTransferTime];
+        EMASCurlTransactionMetrics *transactionMetrics = [self createTransactionMetricsWithData:metricsData
+                                                                                 nameLookupTime:nameLookupTime];
 
         if (globalTransactionCallback) {
-            globalTransactionCallback(self.request, success, error, metrics);
+            globalTransactionCallback(self.request, success, error, transactionMetrics);
         }
         if (instanceTransactionCallback) {
-            instanceTransactionCallback(self.request, success, error, metrics);
+            instanceTransactionCallback(self.request, success, error, transactionMetrics);
         }
     }
 
@@ -656,13 +681,16 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     }
 }
 
-- (EMASCurlTransactionMetrics *)createTransactionMetricsWithTotalTime:(double)totalTime
-                                                        nameLookupTime:(double)nameLookupTime
-                                                           connectTime:(double)connectTime
-                                                        appConnectTime:(double)appConnectTime
-                                                       preTransferTime:(double)preTransferTime
-                                                      startTransferTime:(double)startTransferTime {
+// 使用 Manager 传入的 metrics 数据创建 TransactionMetrics，避免访问已释放的 easyHandle
+- (EMASCurlTransactionMetrics *)createTransactionMetricsWithData:(EMASCurlMetricsData *)metricsData
+                                                  nameLookupTime:(double)nameLookupTime {
     EMASCurlTransactionMetrics *metrics = [[EMASCurlTransactionMetrics alloc] init];
+
+    double connectTime = metricsData.connectTime;
+    double appConnectTime = metricsData.appConnectTime;
+    double preTransferTime = metricsData.preTransferTime;
+    double startTransferTime = metricsData.startTransferTime;
+    double totalTime = metricsData.totalTime;
 
     // 计算时间戳（基于fetchStartDate）
     NSTimeInterval baseTime = self.fetchStartDate.timeIntervalSince1970;
@@ -697,21 +725,16 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         metrics.responseEndDate = [NSDate dateWithTimeIntervalSince1970:baseTime + totalTime];
     }
 
-    // 从libcurl获取额外信息
-    [self populateTransactionMetricsFromCurl:metrics];
+    // 从传入的字典中填充额外信息
+    [self populateTransactionMetricsFromData:metricsData metrics:metrics];
 
     return metrics;
 }
 
-- (void)populateTransactionMetricsFromCurl:(EMASCurlTransactionMetrics *)metrics {
-    if (!self.easyHandle) {
-        return;
-    }
-
+// 使用传入的数据填充 metrics，避免访问已释放的 easyHandle
+- (void)populateTransactionMetricsFromData:(EMASCurlMetricsData *)metricsData metrics:(EMASCurlTransactionMetrics *)metrics {
     // 获取HTTP版本信息
-    long httpVersion = 0;
-    curl_easy_getinfo(self.easyHandle, CURLINFO_HTTP_VERSION, &httpVersion);
-    switch (httpVersion) {
+    switch (metricsData.httpVersion) {
         case CURL_HTTP_VERSION_1_0:
             metrics.networkProtocolName = @"http/1.0";
             break;
@@ -730,53 +753,27 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     }
 
     // 获取连接信息
-    long connectCount = 0;
-    curl_easy_getinfo(self.easyHandle, CURLINFO_NUM_CONNECTS, &connectCount);
-    metrics.reusedConnection = (connectCount == 0);
+    metrics.reusedConnection = (metricsData.numConnects == 0);
+    metrics.proxyConnection = metricsData.usedProxy;
 
     // 获取传输字节数
-    long requestHeaderSize = 0;
-    long responseHeaderSize = 0;
-    curl_easy_getinfo(self.easyHandle, CURLINFO_REQUEST_SIZE, &requestHeaderSize);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_HEADER_SIZE, &responseHeaderSize);
-
-    metrics.requestHeaderBytesSent = requestHeaderSize;
-    metrics.responseHeaderBytesReceived = responseHeaderSize;
+    metrics.requestHeaderBytesSent = metricsData.requestSize;
+    metrics.responseHeaderBytesReceived = metricsData.headerSize;
 
     // 获取实际传输的字节数
-    curl_off_t uploadBytes = 0;
-    curl_off_t downloadBytes = 0;
-    curl_easy_getinfo(self.easyHandle, CURLINFO_SIZE_UPLOAD_T, &uploadBytes);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_SIZE_DOWNLOAD_T, &downloadBytes);
-
-    metrics.requestBodyBytesSent = (NSInteger)uploadBytes;
-    metrics.responseBodyBytesReceived = (NSInteger)downloadBytes;
+    metrics.requestBodyBytesSent = metricsData.uploadBytes;
+    metrics.responseBodyBytesReceived = metricsData.downloadBytes;
 
     // 获取网络地址信息
-    char *localIP = NULL;
-    long localPort = 0;
-    char *primaryIP = NULL;
-    long primaryPort = 0;
-
-    curl_easy_getinfo(self.easyHandle, CURLINFO_LOCAL_IP, &localIP);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_LOCAL_PORT, &localPort);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_PRIMARY_IP, &primaryIP);
-    curl_easy_getinfo(self.easyHandle, CURLINFO_PRIMARY_PORT, &primaryPort);
-
-    if (localIP) {
-        metrics.localAddress = [NSString stringWithUTF8String:localIP];
+    if (metricsData.localIP.length > 0) {
+        metrics.localAddress = metricsData.localIP;
     }
-    metrics.localPort = localPort;
+    metrics.localPort = metricsData.localPort;
 
-    if (primaryIP) {
-        metrics.remoteAddress = [NSString stringWithUTF8String:primaryIP];
+    if (metricsData.primaryIP.length > 0) {
+        metrics.remoteAddress = metricsData.primaryIP;
     }
-    metrics.remotePort = primaryPort;
-
-    // 获取代理信息
-    char *proxyUsed = NULL;
-    curl_easy_getinfo(self.easyHandle, CURLINFO_USED_PROXY, &proxyUsed);
-    metrics.proxyConnection = (proxyUsed != NULL);
+    metrics.remotePort = metricsData.primaryPort;
 }
 
 #pragma mark * curl option setup
