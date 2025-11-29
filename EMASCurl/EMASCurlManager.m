@@ -9,6 +9,35 @@
 #import "EMASCurlLogger.h"
 #import <pthread.h>
 
+#pragma mark - Share Handle Locking
+
+// 为 share handle 提供线程安全的锁机制
+static pthread_mutex_t s_shareMutexes[CURL_LOCK_DATA_LAST];
+static dispatch_once_t s_shareMutexOnce;
+
+static void initShareMutexes(void) {
+    dispatch_once(&s_shareMutexOnce, ^{
+        for (int i = 0; i < CURL_LOCK_DATA_LAST; i++) {
+            pthread_mutex_init(&s_shareMutexes[i], NULL);
+        }
+    });
+}
+
+static void shareLockCallback(CURL *handle, curl_lock_data data, curl_lock_access access, void *userptr) {
+    (void)handle;
+    (void)access;
+    (void)userptr;
+    pthread_mutex_lock(&s_shareMutexes[data]);
+}
+
+static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr) {
+    (void)handle;
+    (void)userptr;
+    pthread_mutex_unlock(&s_shareMutexes[data]);
+}
+
+#pragma mark - EMASCurlRequest
+
 @interface EMASCurlRequest : NSObject
 
 @property (nonatomic, assign) CURL *easy;
@@ -62,6 +91,11 @@
             curl_multi_cleanup(_multiHandle);
             return nil;
         }
+
+        // 配置 share handle 的锁回调，确保多线程安全访问共享数据
+        initShareMutexes();
+        curl_share_setopt(_shareHandle, CURLSHOPT_LOCKFUNC, shareLockCallback);
+        curl_share_setopt(_shareHandle, CURLSHOPT_UNLOCKFUNC, shareUnlockCallback);
 
         curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
         curl_share_setopt(_shareHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
