@@ -555,20 +555,21 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         }
 
         [self invokeOnClientThread:^{
-            if (![self markClientNotifiedIfNeeded]) {
-                return;
+            // 仅在尚未通知客户端时发送回调，但无论如何都要执行资源清理
+            if ([self markClientNotifiedIfNeeded]) {
+                if (self.cancelled) {
+                    NSError *cancelErr = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil];
+                    EMAS_LOG_INFO(@"EC-Protocol", @"Request cancelled, notifying client");
+                    [self.client URLProtocol:self didFailWithError:cancelErr];
+                } else if (succeed) {
+                    EMAS_LOG_DEBUG(@"EC-Protocol", @"Request processing completed with status: %ld", (long)self.currentResponse.statusCode);
+                    [self.client URLProtocolDidFinishLoading:self];
+                } else {
+                    EMAS_LOG_ERROR(@"EC-Protocol", @"Request failed: %@", error ? error.localizedDescription : @"Unknown error");
+                    [self.client URLProtocol:self didFailWithError:error];
+                }
             }
-            if (self.cancelled) {
-                NSError *cancelErr = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil];
-                EMAS_LOG_INFO(@"EC-Protocol", @"Request cancelled, notifying client");
-                [self.client URLProtocol:self didFailWithError:cancelErr];
-            } else if (succeed) {
-                EMAS_LOG_DEBUG(@"EC-Protocol", @"Request processing completed with status: %ld", (long)self.currentResponse.statusCode);
-                [self.client URLProtocolDidFinishLoading:self];
-            } else {
-                EMAS_LOG_ERROR(@"EC-Protocol", @"Request failed: %@", error ? error.localizedDescription : @"Unknown error");
-                [self.client URLProtocol:self didFailWithError:error];
-            }
+            // 无论是否通知客户端，都必须清理资源（curl 此时已完成处理）
             [self cleanupIfNeeded];
         }];
     }];
@@ -581,13 +582,14 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     [[EMASCurlManager sharedInstance] wakeup];
 
     // 非阻塞：立即返回。客户端取消通知切回调度线程且保证只发一次
+    // 注意：这里不调用 cleanupIfNeeded，因为 curl 可能仍在访问 requestHeaderFields/resolveList，
+    // 资源清理统一由 Manager 的 completion 回调触发，确保 curl 已完成处理
     [self invokeOnClientThread:^{
         if (![self markClientNotifiedIfNeeded]) {
             return;
         }
         NSError *cancelErr = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil];
         [self.client URLProtocol:self didFailWithError:cancelErr];
-        [self cleanupIfNeeded];
     }];
 }
 
