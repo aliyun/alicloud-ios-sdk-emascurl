@@ -272,51 +272,7 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
                 error = [NSError errorWithDomain:@"EMASCurlManager" code:msg->data.result userInfo:userInfo];
             }
 
-            // 在 cleanup 前提取 metrics 数据，避免 use-after-free
-            EMASCurlMetricsData *metrics = [[EMASCurlMetricsData alloc] init];
-
-            double nameLookupTime = 0, connectTime = 0, appConnectTime = 0;
-            double preTransferTime = 0, startTransferTime = 0, totalTime = 0;
-            long httpVersion = 0, primaryPort = 0, localPort = 0;
-            long numConnects = 0, requestSize = 0, headerSize = 0, usedProxy = 0;
-            curl_off_t uploadBytes = 0, downloadBytes = 0;
-            char *primaryIP = NULL, *localIP = NULL;
-
-            curl_easy_getinfo(easy, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
-            curl_easy_getinfo(easy, CURLINFO_CONNECT_TIME, &connectTime);
-            curl_easy_getinfo(easy, CURLINFO_APPCONNECT_TIME, &appConnectTime);
-            curl_easy_getinfo(easy, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
-            curl_easy_getinfo(easy, CURLINFO_STARTTRANSFER_TIME, &startTransferTime);
-            curl_easy_getinfo(easy, CURLINFO_TOTAL_TIME, &totalTime);
-            curl_easy_getinfo(easy, CURLINFO_HTTP_VERSION, &httpVersion);
-            curl_easy_getinfo(easy, CURLINFO_PRIMARY_IP, &primaryIP);
-            curl_easy_getinfo(easy, CURLINFO_PRIMARY_PORT, &primaryPort);
-            curl_easy_getinfo(easy, CURLINFO_LOCAL_IP, &localIP);
-            curl_easy_getinfo(easy, CURLINFO_LOCAL_PORT, &localPort);
-            curl_easy_getinfo(easy, CURLINFO_NUM_CONNECTS, &numConnects);
-            curl_easy_getinfo(easy, CURLINFO_REQUEST_SIZE, &requestSize);
-            curl_easy_getinfo(easy, CURLINFO_HEADER_SIZE, &headerSize);
-            curl_easy_getinfo(easy, CURLINFO_SIZE_UPLOAD_T, &uploadBytes);
-            curl_easy_getinfo(easy, CURLINFO_SIZE_DOWNLOAD_T, &downloadBytes);
-            curl_easy_getinfo(easy, CURLINFO_USED_PROXY, &usedProxy);
-
-            metrics.nameLookupTime = nameLookupTime;
-            metrics.connectTime = connectTime;
-            metrics.appConnectTime = appConnectTime;
-            metrics.preTransferTime = preTransferTime;
-            metrics.startTransferTime = startTransferTime;
-            metrics.totalTime = totalTime;
-            metrics.httpVersion = httpVersion;
-            metrics.primaryIP = primaryIP ? [NSString stringWithUTF8String:primaryIP] : nil;
-            metrics.primaryPort = primaryPort;
-            metrics.localIP = localIP ? [NSString stringWithUTF8String:localIP] : nil;
-            metrics.localPort = localPort;
-            metrics.numConnects = numConnects;
-            metrics.usedProxy = (usedProxy != 0);
-            metrics.requestSize = requestSize;
-            metrics.headerSize = headerSize;
-            metrics.uploadBytes = uploadBytes;
-            metrics.downloadBytes = downloadBytes;
+            EMASCurlMetricsData *metrics = [self extractMetricsForEasyHandle:easy];
 
             curl_multi_remove_handle(_multiHandle, easy);
             // easy 句柄必须在从 multi 中移除后再 cleanup，避免并发销毁
@@ -331,6 +287,56 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
             }
         }
     }
+}
+
+- (EMASCurlMetricsData *)extractMetricsForEasyHandle:(CURL *)easy {
+    // cleanup 前必须调用，避免访问已释放的 easy 句柄
+    EMASCurlMetricsData *metrics = [[EMASCurlMetricsData alloc] init];
+
+    double nameLookupTime = 0, connectTime = 0, appConnectTime = 0;
+    double preTransferTime = 0, startTransferTime = 0, totalTime = 0;
+    long httpVersion = 0, primaryPort = 0, localPort = 0;
+    long numConnects = 0, requestSize = 0, headerSize = 0, usedProxy = 0;
+    curl_off_t uploadBytes = 0, downloadBytes = 0;
+    char *primaryIP = NULL, *localIP = NULL;
+
+    curl_easy_getinfo(easy, CURLINFO_NAMELOOKUP_TIME, &nameLookupTime);
+    curl_easy_getinfo(easy, CURLINFO_CONNECT_TIME, &connectTime);
+    curl_easy_getinfo(easy, CURLINFO_APPCONNECT_TIME, &appConnectTime);
+    curl_easy_getinfo(easy, CURLINFO_PRETRANSFER_TIME, &preTransferTime);
+    curl_easy_getinfo(easy, CURLINFO_STARTTRANSFER_TIME, &startTransferTime);
+    curl_easy_getinfo(easy, CURLINFO_TOTAL_TIME, &totalTime);
+    curl_easy_getinfo(easy, CURLINFO_HTTP_VERSION, &httpVersion);
+    curl_easy_getinfo(easy, CURLINFO_PRIMARY_IP, &primaryIP);
+    curl_easy_getinfo(easy, CURLINFO_PRIMARY_PORT, &primaryPort);
+    curl_easy_getinfo(easy, CURLINFO_LOCAL_IP, &localIP);
+    curl_easy_getinfo(easy, CURLINFO_LOCAL_PORT, &localPort);
+    curl_easy_getinfo(easy, CURLINFO_NUM_CONNECTS, &numConnects);
+    curl_easy_getinfo(easy, CURLINFO_REQUEST_SIZE, &requestSize);
+    curl_easy_getinfo(easy, CURLINFO_HEADER_SIZE, &headerSize);
+    curl_easy_getinfo(easy, CURLINFO_SIZE_UPLOAD_T, &uploadBytes);
+    curl_easy_getinfo(easy, CURLINFO_SIZE_DOWNLOAD_T, &downloadBytes);
+    curl_easy_getinfo(easy, CURLINFO_USED_PROXY, &usedProxy);
+
+    metrics.nameLookupTime = nameLookupTime;
+    metrics.connectTime = connectTime;
+    metrics.appConnectTime = appConnectTime;
+    metrics.preTransferTime = preTransferTime;
+    metrics.startTransferTime = startTransferTime;
+    metrics.totalTime = totalTime;
+    metrics.httpVersion = httpVersion;
+    metrics.primaryIP = primaryIP ? [NSString stringWithUTF8String:primaryIP] : nil;
+    metrics.primaryPort = primaryPort;
+    metrics.localIP = localIP ? [NSString stringWithUTF8String:localIP] : nil;
+    metrics.localPort = localPort;
+    metrics.numConnects = numConnects;
+    metrics.usedProxy = (usedProxy != 0);
+    metrics.requestSize = requestSize;
+    metrics.headerSize = headerSize;
+    metrics.uploadBytes = uploadBytes;
+    metrics.downloadBytes = downloadBytes;
+
+    return metrics;
 }
 
 - (void)wakeup {
