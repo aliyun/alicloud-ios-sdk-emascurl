@@ -157,7 +157,6 @@ static BOOL s_enableDebugLog;
 
 // 全局缓存相关
 static EMASCurlResponseCache *s_responseCache;
-static dispatch_queue_t s_cacheQueue;
 
 // 全局综合性能指标观察回调
 static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverBlock = nil;
@@ -299,7 +298,6 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     s_enableDebugLog = NO;
 
     s_responseCache = [EMASCurlResponseCache new];
-    s_cacheQueue = dispatch_queue_create("com.alicloud.emascurl.cacheQueue", DISPATCH_QUEUE_SERIAL);
 
     // 显式引用以触发 EMASCurlProxySetting 的 +initialize，确保尽早建立系统代理监听
     (void)[EMASCurlProxySetting class];
@@ -442,17 +440,11 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     self.resolvedConfiguration = [self resolveConfiguration];
 
     // 检查是否启用缓存以及是否是可缓存的请求
-    __block BOOL useCache = NO;
-    __block NSCachedURLResponse *hitCachedResponse = nil;
+    BOOL useCache = NO;
+    NSCachedURLResponse *hitCachedResponse = nil;
 
-    dispatch_sync(s_cacheQueue, ^{
-        if (!self.resolvedConfiguration.cacheEnabled) {
-            return;
-        }
-
-        if (![[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
-            return;
-        }
+    if (self.resolvedConfiguration.cacheEnabled &&
+        [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
 
         // 从我们的缓存逻辑获取响应
         NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:self.request];
@@ -473,7 +465,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
                 EMAS_LOG_DEBUG(@"EC-Cache", @"Cache validation: fresh=%d, requires_revalidation=%d", isFresh, requiresRevalidation);
             }
         }
-    });
+    }
 
     // 如果使用了缓存，则直接返回
     if (useCache) {
@@ -539,19 +531,17 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
             [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"] &&
             self.receivedResponseData != nil) {
 
-            dispatch_sync(s_cacheQueue, ^{
-                NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:self.request.URL
-                                                                              statusCode:self.currentResponse.statusCode
-                                                                             HTTPVersion:self.currentResponse.httpVersion
-                                                                            headerFields:self.currentResponse.headers];
-                if (httpResponse) {
-                    EMAS_LOG_INFO(@"EC-Cache", @"Response cached for URL: %@", self.request.URL.absoluteString);
-                    [s_responseCache cacheResponse:httpResponse
-                                              data:self.receivedResponseData
-                                        forRequest:self.request
-                                   withHTTPVersion:@"HTTP/2"];
-                }
-            });
+            NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:self.request.URL
+                                                                          statusCode:self.currentResponse.statusCode
+                                                                         HTTPVersion:self.currentResponse.httpVersion
+                                                                        headerFields:self.currentResponse.headers];
+            if (httpResponse) {
+                EMAS_LOG_INFO(@"EC-Cache", @"Response cached for URL: %@", self.request.URL.absoluteString);
+                [s_responseCache cacheResponse:httpResponse
+                                          data:self.receivedResponseData
+                                    forRequest:self.request
+                               withHTTPVersion:self.currentResponse.httpVersion];
+            }
         }
 
         [self invokeOnClientThread:^{
@@ -1290,25 +1280,17 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
 
         // 处理304 Not Modified响应
         if (statusCode == 304 && protocol.resolvedConfiguration.cacheEnabled) {
-            // 查找缓存
-            NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:protocol.request];
-            if (cachedResponse) {
-                // 使用缓存的响应数据，但更新头部
-                NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
-                                                                              statusCode:protocol.currentResponse.statusCode
-                                                                             HTTPVersion:protocol.currentResponse.httpVersion
-                                                                            headerFields:protocol.currentResponse.headers];
-                NSCachedURLResponse *updatedResponse = [s_responseCache updateCachedResponseWithHeaders:httpResponse.allHeaderFields
-                                                                                             forRequest:protocol.request];
-                if (updatedResponse) {
-                    [protocol invokeOnClientThread:^{
-                        if (![protocol hasClientNotified]) {
-                            [protocol.client URLProtocol:protocol didReceiveResponse:updatedResponse.response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
-                            [protocol.client URLProtocol:protocol didLoadData:updatedResponse.data];
-                        }
-                    }];
-                    return totalSize;
-                }
+            // 更新缓存并获取更新后的响应
+            NSCachedURLResponse *updatedResponse = [s_responseCache updateCachedResponseWithHeaders:protocol.currentResponse.headers
+                                                                                         forRequest:protocol.request];
+            if (updatedResponse) {
+                [protocol invokeOnClientThread:^{
+                    if (![protocol hasClientNotified]) {
+                        [protocol.client URLProtocol:protocol didReceiveResponse:updatedResponse.response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+                        [protocol.client URLProtocol:protocol didLoadData:updatedResponse.data];
+                    }
+                }];
+                return totalSize;
             }
         }
 
