@@ -142,10 +142,11 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
 - (void)networkThreadEntry {
     EMAS_LOG_INFO(@"EC-Manager", @"Network thread started");
 
-    @autoreleasepool {
-        [_condition lock];
+    [_condition lock];
 
-        while (YES) {
+    while (YES) {
+        @autoreleasepool {
+            // 单轮循环创建独立的 autorelease 池，避免常驻线程的自动释放对象累积
             if (_requestsByHandle.count == 0 && _pendingAddQueue.count == 0) {
                 EMAS_LOG_DEBUG(@"EC-Manager", @"No pending requests, waiting for new work");
                 // 为避免"高QoS线程等待低QoS线程"导致的优先级反转告警，这里在进入阻塞等待前临时降低QoS；
@@ -160,26 +161,41 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
             [self processCurlMessages];
 
             if (_requestsByHandle.count > 0) {
+                long timeoutMs = -1;
+                CURLMcode timeoutCode = curl_multi_timeout(_multiHandle, &timeoutMs);
+                if (timeoutCode != CURLM_OK) {
+                    EMAS_LOG_ERROR(@"EC-Manager", @"curl_multi_timeout failed: %s", curl_multi_strerror(timeoutCode));
+                    timeoutMs = 1000;
+                }
+
+                int waitMs = 0;
+                if (timeoutMs < 0) {
+                    waitMs = 1000;
+                } else if (timeoutMs == 0) {
+                    waitMs = 0;
+                } else {
+                    waitMs = (int)MIN(timeoutMs, 1000);
+                }
+
                 [_condition unlock];
 
-                // 等待网络事件，超时时间为250ms
                 int numfds = 0;
-                CURLMcode result = curl_multi_poll(_multiHandle, NULL, 0, 250, &numfds);
+                CURLMcode result = curl_multi_poll(_multiHandle, NULL, 0, waitMs, &numfds);
                 if (result != CURLM_OK) {
-                    EMAS_LOG_ERROR(@"EC-Manager", @"curl_multi_wait failed: %s", curl_multi_strerror(result));
+                    EMAS_LOG_ERROR(@"EC-Manager", @"curl_multi_poll failed: %s", curl_multi_strerror(result));
                 }
 
                 [_condition lock];
             }
         }
-        // 因为全局都复用同一个manager，不会释放，因此理论上不会退出while循环
-        // [_condition unlock];
     }
-
+    // 因为全局都复用同一个manager，不会释放，因此理论上不会退出while循环
+    // [_condition unlock];
     EMAS_LOG_INFO(@"EC-Manager", @"Network thread stopped");
 }
 
 - (void)drainPendingAddQueueLocked {
+
     while (_pendingAddQueue.count > 0) {
         EMASCurlRequest *request = _pendingAddQueue.firstObject;
         [_pendingAddQueue removeObjectAtIndex:0];
@@ -214,7 +230,11 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
     CURLMsg *msg = NULL;
     int msgsLeft = 0;
 
-    CURLMcode result = curl_multi_perform(_multiHandle, &stillRunning);
+    CURLMcode result = CURLM_OK;
+    do {
+        result = curl_multi_perform(_multiHandle, &stillRunning);
+    } while (result == CURLM_CALL_MULTI_PERFORM);
+
     if (result != CURLM_OK) {
         EMAS_LOG_ERROR(@"EC-Manager", @"curl_multi_perform failed: %s", curl_multi_strerror(result));
         return;
