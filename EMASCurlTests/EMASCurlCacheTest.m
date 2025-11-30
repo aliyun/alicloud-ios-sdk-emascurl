@@ -139,6 +139,52 @@ static NSURLSession *session;
     [EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:nil];
 }
 
+// 测试404响应可被缓存（RFC 7234: 404需要显式Cache-Control或Expires）
+- (void)testCache404ResponseWithCacheControl {
+    [[NSURLCache sharedURLCache] removeAllCachedResponses];
+
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", HTTP11_ENDPOINT, PATH_CACHE_404]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    request.HTTPMethod = @"GET";
+
+    // 第一次请求
+    XCTestExpectation *firstExp = [self expectationWithDescription:@"first 404 request"];
+    NSURLSessionDataTask *task1 = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        XCTAssertNil(error);
+        XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 404);
+        [firstExp fulfill];
+    }];
+    [task1 resume];
+    [self waitForExpectations:@[firstExp] timeout:5.0];
+
+    // 验证响应已被缓存
+    NSCachedURLResponse *cached = [[NSURLCache sharedURLCache] cachedResponseForRequest:request];
+    XCTAssertNotNil(cached, @"404响应应被缓存（带Cache-Control: max-age）");
+}
+
+// 测试410响应可被缓存（RFC 7234: 410默认可缓存）
+- (void)testCache410ResponseWithCacheControl {
+    [[NSURLCache sharedURLCache] removeAllCachedResponses];
+
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", HTTP11_ENDPOINT, PATH_CACHE_410]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    request.HTTPMethod = @"GET";
+
+    // 第一次请求
+    XCTestExpectation *firstExp = [self expectationWithDescription:@"first 410 request"];
+    NSURLSessionDataTask *task1 = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        XCTAssertNil(error);
+        XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 410);
+        [firstExp fulfill];
+    }];
+    [task1 resume];
+    [self waitForExpectations:@[firstExp] timeout:5.0];
+
+    // 验证响应已被缓存
+    NSCachedURLResponse *cached = [[NSURLCache sharedURLCache] cachedResponseForRequest:request];
+    XCTAssertNotNil(cached, @"410响应应被缓存（带Cache-Control: max-age）");
+}
+
 @end
 
 @interface EMASCurlCacheTestHttp2 : EMASCurlCacheTestBase

@@ -480,6 +480,24 @@ def create_app():
             headers={"Cache-Control": "max-age=3600", "Content-Type": "application/json"}
         )
 
+    @app.get("/cache/404")
+    async def cache_404():
+        """Return 404 Not Found with Cache-Control for caching test"""
+        return JSONResponse(
+            content={"error": "not found"},
+            status_code=404,
+            headers={"Cache-Control": "max-age=3600"}
+        )
+
+    @app.get("/cache/410")
+    async def cache_410():
+        """Return 410 Gone with Cache-Control for caching test"""
+        return JSONResponse(
+            content={"error": "gone"},
+            status_code=410,
+            headers={"Cache-Control": "max-age=3600"}
+        )
+
     @app.get("/timeout/request")
     async def timeout_request():
         # Sleep for 2 seconds to simulate a slow response

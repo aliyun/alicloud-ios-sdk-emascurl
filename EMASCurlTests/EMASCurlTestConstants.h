@@ -31,6 +31,8 @@ static NSString *PATH_DOWNLOAD_1MB_DATA_AT_200KBPS_SPEED = @"/download/1MB_data_
 static NSString *PATH_GZIP_RESPONSE = @"/get/gzip_response";
 static NSString *PATH_CACHE_NO_STORE = @"/cache/no_store";
 static NSString *PATH_CACHE_CACHEABLE = @"/cache/cacheable";
+static NSString *PATH_CACHE_404 = @"/cache/404";
+static NSString *PATH_CACHE_410 = @"/cache/410";
 
 static NSString *PATH_UPLOAD_POST_SLOW = @"/upload/post/slow";
 

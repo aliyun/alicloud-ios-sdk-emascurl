@@ -38,6 +38,26 @@ static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 static NSString * _Nonnull const kEMASCurlConfigurationIDKey = @"kEMASCurlConfigurationIDKey";
 static NSString * _Nonnull const kEMASCurlConfigurationHeaderKey = @"X-EMASCurl-Config-ID";
 
+// RFC 7234 可能可缓存的状态码（实际可缓存性由 emas_cachedResponseWithHTTPURLResponse 决定）
+static BOOL isPotentiallyCacheableStatusCode(NSInteger statusCode) {
+    switch (statusCode) {
+        case 200: // OK
+        case 203: // Non-Authoritative Information
+        case 204: // No Content
+        case 206: // Partial Content
+        case 300: // Multiple Choices
+        case 301: // Moved Permanently
+        case 404: // Not Found
+        case 405: // Method Not Allowed
+        case 410: // Gone
+        case 414: // URI Too Long
+        case 501: // Not Implemented
+            return YES;
+        default:
+            return NO;
+    }
+}
+
 // EMASCurlTransactionMetrics实现
 @implementation EMASCurlTransactionMetrics
 @end
@@ -525,9 +545,9 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error, EMASCurlMetricsData *metrics) {
         [self reportNetworkMetricWithData:metrics success:succeed error:error];
 
-        // 如果请求成功且状态码为200，则尝试缓存响应（仅在内存中曾经缓冲成功时）
+        // 如果请求成功且状态码可缓存，则尝试缓存响应（仅在内存中曾经缓冲成功时）
         if (succeed &&
-            self.currentResponse.statusCode == 200 &&
+            isPotentiallyCacheableStatusCode(self.currentResponse.statusCode) &&
             self.resolvedConfiguration.cacheEnabled &&
             [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"] &&
             self.receivedResponseData != nil) {
@@ -1364,7 +1384,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
             // 复杂原因：若无上限，巨大GET响应会导致NSMutableData反复扩容，引发NSMallocException。
             if (protocol.resolvedConfiguration.cacheEnabled &&
                 [[protocol.request.HTTPMethod uppercaseString] isEqualToString:@"GET"] &&
-                statusCode == 200) {
+                isPotentiallyCacheableStatusCode(statusCode)) {
                 // 检查Cache-Control: no-store，遇到则不缓冲
                 NSString *cacheCtl = protocol.currentResponse.headers[@"Cache-Control"] ?: protocol.currentResponse.headers[@"cache-control"];
                 BOOL hasNoStore = NO;
