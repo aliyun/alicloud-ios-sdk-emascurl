@@ -169,7 +169,8 @@
 + (nullable NSCachedURLResponse *)emas_cachedResponseWithHTTPURLResponse:(NSHTTPURLResponse *)response
                                                                     data:(NSData *)data
                                                               requestURL:(NSURL *)requestURL
-                                                             httpVersion:(NSString *)httpVersion {
+                                                             httpVersion:(NSString *)httpVersion
+                                                         originalRequest:(NSURLRequest *)originalRequest {
     if (![self isResponseCacheable:response]) {
         return nil;
     }
@@ -190,6 +191,28 @@
     }
     userInfo[EMASUserInfoKeyOriginalStatusCode] = @(response.statusCode);
 
+    // 存储Vary头和对应的请求头值，用于后续缓存匹配验证
+    NSString *varyHeader = response.allHeaderFields[EMASHTTPHeaderVary];
+    if (EMASCurlValidStr(varyHeader) && ![varyHeader isEqualToString:@"*"]) {
+        userInfo[EMASUserInfoKeyVaryHeader] = varyHeader;
+
+        // 提取并存储Vary指定的请求头值
+        NSMutableDictionary *varyValues = [NSMutableDictionary dictionary];
+        NSArray *varyFields = [varyHeader componentsSeparatedByString:@","];
+        for (NSString *field in varyFields) {
+            NSString *trimmedField = [field stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            if (trimmedField.length == 0) {
+                continue;
+            }
+            NSString *value = [originalRequest valueForHTTPHeaderField:trimmedField];
+            if (value) {
+                varyValues[trimmedField.lowercaseString] = value;
+            } else {
+                varyValues[trimmedField.lowercaseString] = [NSNull null];
+            }
+        }
+        userInfo[EMASUserInfoKeyVaryValues] = varyValues;
+    }
 
     // NSURLCacheStorageAllowed意味着允许缓存，但最终是否缓存以及如何缓存仍由NSURLCache决定
     // (如果它有自己的更严格的规则)。
@@ -322,6 +345,44 @@
                                                     data:self.data // 304响应不包含数据，重用旧数据
                                                 userInfo:updatedUserInfo
                                            storagePolicy:self.storagePolicy]; // 重用旧存储策略
+}
+
+- (BOOL)emas_matchesVaryHeadersForRequest:(NSURLRequest *)request {
+    NSString *varyHeader = self.userInfo[EMASUserInfoKeyVaryHeader];
+    if (!varyHeader) {
+        return YES;
+    }
+
+    NSDictionary *storedVaryValues = self.userInfo[EMASUserInfoKeyVaryValues];
+    if (!storedVaryValues) {
+        return YES;
+    }
+
+    NSArray *varyFields = [varyHeader componentsSeparatedByString:@","];
+    for (NSString *field in varyFields) {
+        NSString *trimmedField = [field stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        if (trimmedField.length == 0) {
+            continue;
+        }
+
+        id storedValue = storedVaryValues[trimmedField.lowercaseString];
+        NSString *requestValue = [request valueForHTTPHeaderField:trimmedField];
+
+        // 比较值（考虑NSNull表示原始请求中该头不存在的情况）
+        if ([storedValue isKindOfClass:[NSNull class]]) {
+            if (requestValue != nil) {
+                return NO;
+            }
+        } else if ([storedValue isKindOfClass:[NSString class]]) {
+            if (requestValue == nil) {
+                return NO;
+            }
+            if (![storedValue isEqualToString:requestValue]) {
+                return NO;
+            }
+        }
+    }
+    return YES;
 }
 
 # pragma mark - Helper Functions

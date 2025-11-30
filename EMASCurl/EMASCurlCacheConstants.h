@@ -22,7 +22,7 @@
 #define EMASHTTPHeaderPragma @"Pragma"
 #define EMASHTTPHeaderExpires @"Expires"
 #define EMASHTTPHeaderDate @"Date"
-#define EMASHTTPHeaderETag @"Etag"
+#define EMASHTTPHeaderETag @"ETag"
 #define EMASHTTPHeaderLastModified @"Last-Modified"
 #define EMASHTTPHeaderAge @"Age"
 #define EMASHTTPHeaderVary @"Vary"
@@ -40,5 +40,7 @@
 #define EMASUserInfoKeyOriginalExpiresHeader @"EMASUserInfoKeyOriginalExpiresHeader"
 #define EMASUserInfoKeyOriginalHTTPVersion @"EMASUserInfoKeyOriginalHTTPVersion"
 #define EMASUserInfoKeyOriginalStatusCode @"EMASUserInfoKeyOriginalStatusCode"
+#define EMASUserInfoKeyVaryHeader @"EMASUserInfoKeyVaryHeader"
+#define EMASUserInfoKeyVaryValues @"EMASUserInfoKeyVaryValues"
 
 #endif /* EMASCurlCacheConstants_h */

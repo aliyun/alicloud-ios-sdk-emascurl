@@ -41,7 +41,8 @@
         NSCachedURLResponse *emasCachedResponse = [NSCachedURLResponse emas_cachedResponseWithHTTPURLResponse:response
                                                                                                         data:data
                                                                                                   requestURL:request.URL
-                                                                                                 httpVersion:httpVersion];
+                                                                                                 httpVersion:httpVersion
+                                                                                             originalRequest:request];
 
         if (emasCachedResponse) {
             EMAS_LOG_DEBUG(@"EC-Cache", @"Storing response in cache for URL: %@", request.URL.absoluteString);
@@ -69,6 +70,13 @@
         // 检查是否是 NSHTTPURLResponse，我们的类别方法依赖这个
         if (![cachedResponse.response isKindOfClass:[NSHTTPURLResponse class]]) {
             [self.urlCache removeCachedResponseForRequest:request];
+            return;
+        }
+
+        // 验证Vary头匹配
+        if (![cachedResponse emas_matchesVaryHeadersForRequest:request]) {
+            // Vary头不匹配，视为缓存未命中（不移除，可能有其他变体适用）
+            EMAS_LOG_DEBUG(@"EC-Cache", @"Vary header mismatch for URL: %@", request.URL.absoluteString);
             return;
         }
 

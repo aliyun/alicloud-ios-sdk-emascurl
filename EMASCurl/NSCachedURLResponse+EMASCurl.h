@@ -45,12 +45,14 @@ NS_ASSUME_NONNULL_BEGIN
  * @param data 响应体数据
  * @param requestURL 原始请求的URL (用于NSCachedURLResponse初始化)
  * @param httpVersion 原始响应的HTTP版本 (例如 "HTTP/1.1")
+ * @param originalRequest 原始请求对象，用于提取Vary头指定的请求头值
  * @return 一个新的NSCachedURLResponse实例，如果可缓存；否则为nil。
  */
 + (nullable NSCachedURLResponse *)emas_cachedResponseWithHTTPURLResponse:(NSHTTPURLResponse *)response
                                                                     data:(NSData *)data
                                                               requestURL:(NSURL *)requestURL
-                                                             httpVersion:(NSString *)httpVersion;
+                                                             httpVersion:(NSString *)httpVersion
+                                                         originalRequest:(NSURLRequest *)originalRequest;
 
 /**
  * 指示此特定缓存条目是否包含Cache-Control: must-revalidate指令。
@@ -63,6 +65,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)emas_requiresRevalidation;
 
+/**
+ * 检查此缓存响应的Vary头是否与给定请求匹配。
+ * 根据RFC 7234，如果响应包含Vary头，则只有当请求的对应头值与缓存时的值相同时，
+ * 才能使用该缓存响应。
+ *
+ * @param request 要验证的请求
+ * @return 如果Vary头匹配或不存在Vary头，返回YES；否则返回NO。
+ */
+- (BOOL)emas_matchesVaryHeadersForRequest:(NSURLRequest *)request;
 
 @end
 
