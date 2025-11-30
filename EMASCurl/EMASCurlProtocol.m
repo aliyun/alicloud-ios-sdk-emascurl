@@ -545,22 +545,15 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error, EMASCurlMetricsData *metrics) {
         [self reportNetworkMetricWithData:metrics success:succeed error:error];
 
-        // 检测是否发生了重定向
-        long redirectCount = 0;
-        if (self.easyHandle) {
-            curl_easy_getinfo(self.easyHandle, CURLINFO_REDIRECT_COUNT, &redirectCount);
-        }
+        // 从 metrics 获取重定向信息（在 Manager 中 curl_easy_cleanup 之前已提取）
+        long redirectCount = metrics.redirectCount;
 
         // 如果发生重定向，获取最终URL
         NSURL *effectiveURL = self.request.URL;
-        if (redirectCount > 0 && self.easyHandle) {
-            char *effectiveURLStr = NULL;
-            curl_easy_getinfo(self.easyHandle, CURLINFO_EFFECTIVE_URL, &effectiveURLStr);
-            if (effectiveURLStr) {
-                NSURL *parsedURL = [NSURL URLWithString:[NSString stringWithUTF8String:effectiveURLStr]];
-                if (parsedURL) {
-                    effectiveURL = parsedURL;
-                }
+        if (redirectCount > 0 && metrics.effectiveURL) {
+            NSURL *parsedURL = [NSURL URLWithString:metrics.effectiveURL];
+            if (parsedURL) {
+                effectiveURL = parsedURL;
             }
         }
 

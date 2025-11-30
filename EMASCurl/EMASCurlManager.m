@@ -318,6 +318,12 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
     curl_easy_getinfo(easy, CURLINFO_SIZE_DOWNLOAD_T, &downloadBytes);
     curl_easy_getinfo(easy, CURLINFO_USED_PROXY, &usedProxy);
 
+    // 重定向信息 - 必须在 curl_easy_cleanup 之前提取
+    long redirectCount = 0;
+    char *effectiveURLStr = NULL;
+    curl_easy_getinfo(easy, CURLINFO_REDIRECT_COUNT, &redirectCount);
+    curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &effectiveURLStr);
+
     metrics.nameLookupTime = nameLookupTime;
     metrics.connectTime = connectTime;
     metrics.appConnectTime = appConnectTime;
@@ -335,6 +341,8 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
     metrics.headerSize = headerSize;
     metrics.uploadBytes = uploadBytes;
     metrics.downloadBytes = downloadBytes;
+    metrics.redirectCount = redirectCount;
+    metrics.effectiveURL = effectiveURLStr ? @(effectiveURLStr) : nil;
 
     return metrics;
 }

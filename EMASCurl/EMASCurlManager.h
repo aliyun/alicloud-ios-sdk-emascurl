@@ -35,6 +35,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) long long uploadBytes;
 @property (nonatomic, assign) long long downloadBytes;
 
+// 重定向信息
+@property (nonatomic, assign) long redirectCount;
+@property (nonatomic, copy, nullable) NSString *effectiveURL;
+
 @end
 
 @interface EMASCurlManager : NSObject
