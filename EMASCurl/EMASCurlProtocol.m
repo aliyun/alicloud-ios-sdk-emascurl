@@ -545,6 +545,25 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     [[EMASCurlManager sharedInstance] enqueueNewEasyHandle:easyHandle completion:^(BOOL succeed, NSError *error, EMASCurlMetricsData *metrics) {
         [self reportNetworkMetricWithData:metrics success:succeed error:error];
 
+        // 检测是否发生了重定向
+        long redirectCount = 0;
+        if (self.easyHandle) {
+            curl_easy_getinfo(self.easyHandle, CURLINFO_REDIRECT_COUNT, &redirectCount);
+        }
+
+        // 如果发生重定向，获取最终URL
+        NSURL *effectiveURL = self.request.URL;
+        if (redirectCount > 0 && self.easyHandle) {
+            char *effectiveURLStr = NULL;
+            curl_easy_getinfo(self.easyHandle, CURLINFO_EFFECTIVE_URL, &effectiveURLStr);
+            if (effectiveURLStr) {
+                NSURL *parsedURL = [NSURL URLWithString:[NSString stringWithUTF8String:effectiveURLStr]];
+                if (parsedURL) {
+                    effectiveURL = parsedURL;
+                }
+            }
+        }
+
         // 如果请求成功且状态码可缓存，则尝试缓存响应（仅在内存中曾经缓冲成功时）
         if (succeed &&
             isPotentiallyCacheableStatusCode(self.currentResponse.statusCode) &&
@@ -552,15 +571,25 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
             [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"] &&
             self.receivedResponseData != nil) {
 
-            NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:self.request.URL
+            NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:effectiveURL
                                                                           statusCode:self.currentResponse.statusCode
                                                                          HTTPVersion:self.currentResponse.httpVersion
                                                                         headerFields:self.currentResponse.headers];
             if (httpResponse) {
-                EMAS_LOG_INFO(@"EC-Cache", @"Response cached for URL: %@", self.request.URL.absoluteString);
+                NSURLRequest *cacheKeyRequest = self.request;
+                if (redirectCount > 0) {
+                    // 重定向场景：使用最终URL作为缓存键
+                    NSMutableURLRequest *redirectedRequest = [self.request mutableCopy];
+                    [redirectedRequest setURL:effectiveURL];
+                    cacheKeyRequest = redirectedRequest;
+                    EMAS_LOG_INFO(@"EC-Cache", @"Response cached for redirected URL: %@ (original: %@)",
+                                  effectiveURL.absoluteString, self.request.URL.absoluteString);
+                } else {
+                    EMAS_LOG_INFO(@"EC-Cache", @"Response cached for URL: %@", self.request.URL.absoluteString);
+                }
                 [s_responseCache cacheResponse:httpResponse
                                           data:self.receivedResponseData
-                                    forRequest:self.request
+                                    forRequest:cacheKeyRequest
                                withHTTPVersion:self.currentResponse.httpVersion];
             }
         }
