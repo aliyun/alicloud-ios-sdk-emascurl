@@ -88,6 +88,57 @@ static NSURLSession *session;
     [self waitForExpectations:@[exp] timeout:5.0];
 }
 
+- (void)testCacheHitReportsMetrics {
+    [[NSURLCache sharedURLCache] removeAllCachedResponses];
+
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", HTTP11_ENDPOINT, PATH_CACHE_CACHEABLE]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    request.HTTPMethod = @"GET";
+
+    __block BOOL metricsCallbackInvoked = NO;
+    __block BOOL isCacheHitMetrics = NO;
+
+    // 设置全局指标观察者
+    [EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:^(NSURLRequest * _Nonnull req, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
+        metricsCallbackInvoked = YES;
+        // 缓存命中时，所有网络时间戳应为nil（除了fetchStartDate和responseEndDate）
+        if (metrics.domainLookupStartDate == nil && metrics.connectStartDate == nil) {
+            isCacheHitMetrics = YES;
+        }
+    }];
+
+    // 第一次请求：填充缓存
+    XCTestExpectation *firstRequestExp = [self expectationWithDescription:@"first request"];
+    NSURLSessionDataTask *task1 = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        XCTAssertNil(error);
+        XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 200);
+        [firstRequestExp fulfill];
+    }];
+    [task1 resume];
+    [self waitForExpectations:@[firstRequestExp] timeout:5.0];
+
+    // 重置标志
+    metricsCallbackInvoked = NO;
+    isCacheHitMetrics = NO;
+
+    // 第二次请求：应命中缓存
+    XCTestExpectation *secondRequestExp = [self expectationWithDescription:@"second request cache hit"];
+    NSURLSessionDataTask *task2 = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        XCTAssertNil(error);
+        XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 200);
+        [secondRequestExp fulfill];
+    }];
+    [task2 resume];
+    [self waitForExpectations:@[secondRequestExp] timeout:5.0];
+
+    // 验证缓存命中时指标回调被调用
+    XCTAssertTrue(metricsCallbackInvoked, @"缓存命中时应调用指标回调");
+    XCTAssertTrue(isCacheHitMetrics, @"缓存命中的指标应无网络时间戳");
+
+    // 清理
+    [EMASCurlProtocol setGlobalTransactionMetricsObserverBlock:nil];
+}
+
 @end
 
 @interface EMASCurlCacheTestHttp2 : EMASCurlCacheTestBase

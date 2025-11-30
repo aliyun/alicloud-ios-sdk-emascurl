@@ -469,6 +469,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 如果使用了缓存，则直接返回
     if (useCache) {
+        [self reportCacheHitMetrics];
         [self invokeOnClientThread:^{
             if (![self markClientNotifiedIfNeeded]) {
                 return;
@@ -603,6 +604,31 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     }
     if (self.metricsObserverBlock) {
         self.metricsObserverBlock(self.request, NO, error, 0, 0, 0, 0, 0, 0);
+    }
+}
+
+// 缓存命中时通知 observer，所有网络时间为 0
+- (void)reportCacheHitMetrics {
+    EMASCurlTransactionMetricsObserverBlock globalCallback = nil;
+    @synchronized ([EMASCurlProtocol class]) {
+        globalCallback = globalTransactionMetricsObserverBlock;
+    }
+    EMASCurlTransactionMetricsObserverBlock instanceCallback = self.resolvedConfiguration.transactionMetricsObserver;
+
+    // 创建缓存命中的 metrics 对象
+    EMASCurlTransactionMetrics *cacheMetrics = [[EMASCurlTransactionMetrics alloc] init];
+    cacheMetrics.fetchStartDate = self.fetchStartDate ?: [NSDate date];
+    cacheMetrics.responseEndDate = [NSDate date];
+    // 所有网络时间保持nil/0，表示无网络活动
+
+    if (globalCallback) {
+        globalCallback(self.request, YES, nil, cacheMetrics);
+    }
+    if (instanceCallback) {
+        instanceCallback(self.request, YES, nil, cacheMetrics);
+    }
+    if (self.metricsObserverBlock) {
+        self.metricsObserverBlock(self.request, YES, nil, 0, 0, 0, 0, 0, 0);
     }
 }
 

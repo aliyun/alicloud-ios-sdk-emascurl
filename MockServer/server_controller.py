@@ -471,6 +471,15 @@ def create_app():
             headers={"Cache-Control": "no-store", "Content-Type": "application/json"}
         )
 
+    @app.get("/cache/cacheable")
+    async def cache_cacheable(body: Optional[Any] = Body(None)):
+        """Return a small JSON with Cache-Control: max-age=3600 to test cacheable responses"""
+        payload = {"message": "cacheable"}
+        return JSONResponse(
+            content=payload,
+            headers={"Cache-Control": "max-age=3600", "Content-Type": "application/json"}
+        )
+
     @app.get("/timeout/request")
     async def timeout_request():
         # Sleep for 2 seconds to simulate a slow response
