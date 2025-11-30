@@ -46,4 +46,16 @@ static NSString *PATH_UPLOAD_POST_CHUNKED = @"/upload/post/chunked";
 
 static NSString *PATH_TIMEOUT_REQUEST = @"/timeout/request";
 
+// Redirect test paths
+static NSString *PATH_REDIRECT_301 = @"/redirect/301";
+static NSString *PATH_REDIRECT_307 = @"/redirect/307";
+static NSString *PATH_REDIRECT_307_POST = @"/redirect/307/post";
+static NSString *PATH_REDIRECT_SET_COOKIE = @"/redirect/set_cookie";
+static NSString *PATH_REDIRECT_CACHEABLE = @"/redirect/cacheable";
+
+// Slow response paths for cancellation testing
+static NSString *PATH_SLOW_HEADERS = @"/slow/headers";
+static NSString *PATH_SLOW_BODY = @"/slow/body";
+static NSString *PATH_SLOW_LONG_BODY = @"/slow/long_body";
+
 #endif /* EMASCurlTestConstants_h */

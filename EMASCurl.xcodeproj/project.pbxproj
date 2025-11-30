@@ -45,6 +45,10 @@
 		949789052D4FE2DB0042BE44 /* EMASCurlCookieTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 949789042D4FE2DB0042BE44 /* EMASCurlCookieTest.m */; };
 		94C5B5DA2D071D86006BC856 /* EMASCurlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 94C5B5D82D071D86006BC856 /* EMASCurlManager.h */; };
 		94C5B5DB2D071D86006BC856 /* EMASCurlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C5B5D92D071D86006BC856 /* EMASCurlManager.m */; };
+		94C877EE2EDBF6B5002CC896 /* EMASCurlCancellationTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C877EA2EDBF6B4002CC896 /* EMASCurlCancellationTest.m */; };
+		94C877EF2EDBF6B5002CC896 /* EMASCurlRedirectTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C877EC2EDBF6B4002CC896 /* EMASCurlRedirectTest.m */; };
+		94C877F02EDBF6B5002CC896 /* EMASCurlSSLValidationTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C877ED2EDBF6B4002CC896 /* EMASCurlSSLValidationTest.m */; };
+		94C877F12EDBF6B5002CC896 /* EMASCurlDomainFilterTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94C877EB2EDBF6B4002CC896 /* EMASCurlDomainFilterTest.m */; };
 		94E674122E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674112E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m */; };
 		94E674152E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674132E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m */; };
 		94E674A22E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 94E674A12E5FE034005FE92E /* EMASLocalHttpProxyConnectionReuseTest.m */; };
@@ -163,6 +167,10 @@
 		94978EB22D57FFCC0042BE44 /* libcurl-HTTP2.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "libcurl-HTTP2.xcframework"; path = "precompiled/libcurl-HTTP2.xcframework"; sourceTree = "<group>"; };
 		94C5B5D82D071D86006BC856 /* EMASCurlManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlManager.h; sourceTree = "<group>"; };
 		94C5B5D92D071D86006BC856 /* EMASCurlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlManager.m; sourceTree = "<group>"; };
+		94C877EA2EDBF6B4002CC896 /* EMASCurlCancellationTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlCancellationTest.m; sourceTree = "<group>"; };
+		94C877EB2EDBF6B4002CC896 /* EMASCurlDomainFilterTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlDomainFilterTest.m; sourceTree = "<group>"; };
+		94C877EC2EDBF6B4002CC896 /* EMASCurlRedirectTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlRedirectTest.m; sourceTree = "<group>"; };
+		94C877ED2EDBF6B4002CC896 /* EMASCurlSSLValidationTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlSSLValidationTest.m; sourceTree = "<group>"; };
 		94E674112E5C35D8005FE92E /* EMASLocalHttpProxyUploadTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASLocalHttpProxyUploadTest.m; sourceTree = "<group>"; };
 		94E674132E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASLocalHttpProxyHalfCloseTest.m; sourceTree = "<group>"; };
 		94E674142E5C35E5005FE92E /* EMASLocalProxyTestConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASLocalProxyTestConstants.h; sourceTree = "<group>"; };
@@ -300,6 +308,10 @@
 				949539142D0FC531001FE850 /* EMASCurlSimpleTest.m */,
 				949538D72D0F372B001FE850 /* EMASCurlDownloadTest.m */,
 				949539162D1020B7001FE850 /* EMASCurlUploadTest.m */,
+				94C877EA2EDBF6B4002CC896 /* EMASCurlCancellationTest.m */,
+				94C877EB2EDBF6B4002CC896 /* EMASCurlDomainFilterTest.m */,
+				94C877EC2EDBF6B4002CC896 /* EMASCurlRedirectTest.m */,
+				94C877ED2EDBF6B4002CC896 /* EMASCurlSSLValidationTest.m */,
 				949539182D116EB8001FE850 /* EMASCurlMetricObserverTest.m */,
 				9495391A2D1194DD001FE850 /* EMASCurlDNSResolverTest.m */,
 				94953A962D1BEBE8001FE850 /* EMASCurlTimeoutTest.m */,
@@ -710,6 +722,10 @@
 				9495391B2D1194DD001FE850 /* EMASCurlDNSResolverTest.m in Sources */,
 				94E674152E5C35E5005FE92E /* EMASLocalHttpProxyHalfCloseTest.m in Sources */,
 				94953A972D1BEBE8001FE850 /* EMASCurlTimeoutTest.m in Sources */,
+				94C877EE2EDBF6B5002CC896 /* EMASCurlCancellationTest.m in Sources */,
+				94C877EF2EDBF6B5002CC896 /* EMASCurlRedirectTest.m in Sources */,
+				94C877F02EDBF6B5002CC896 /* EMASCurlSSLValidationTest.m in Sources */,
+				94C877F12EDBF6B5002CC896 /* EMASCurlDomainFilterTest.m in Sources */,
 				949539152D0FC531001FE850 /* EMASCurlSimpleTest.m in Sources */,
 				946DB1AA2EA7F33900DC89E2 /* EMASCurlProtocolThreadingTest.m in Sources */,
 				949539192D116EB8001FE850 /* EMASCurlMetricObserverTest.m in Sources */,

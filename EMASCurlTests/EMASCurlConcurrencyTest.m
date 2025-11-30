@@ -11,9 +11,9 @@
 #import <EMASCurl/EMASCurl.h>
 #import "EMASCurlTestConstants.h"
 
-static NSURLSession *session;
-
 @interface EMASCurlConcurrentTestBase : XCTestCase <NSURLSessionDataDelegate>
+
+@property (nonatomic, strong) NSURLSession *session;
 
 @property (nonatomic, strong) NSMutableArray<NSURLSessionDataTask *> *activeTasks;
 @property (nonatomic, strong) NSMutableArray<NSNumber *> *completedRequestsCount;
@@ -73,7 +73,7 @@ static NSURLSession *session;
         self.totalRequestsSent++;
     }
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         // 线程安全地更新计数器
         @synchronized(self) {
@@ -435,7 +435,7 @@ static NSURLSession *session;
             self.totalRequestsSent++;
         }
 
-        NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+        NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                                     completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
             // 线程安全地更新计数器和结果
             @synchronized(self) {
@@ -542,7 +542,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlConcurrentTestHttp11
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
 
     // 创建 EMASCurl 配置
@@ -551,7 +552,7 @@ static NSURLSession *session;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testConcurrentDownloads {
@@ -584,7 +585,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlConcurrentTestHttp2
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setLogLevel:EMASCurlLogLevelInfo];
 
     // 创建 EMASCurl 配置
@@ -599,7 +601,7 @@ static NSURLSession *session;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testConcurrentDownloads {

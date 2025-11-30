@@ -85,12 +85,11 @@
 
 @interface EMASCurlUploadTestBase : XCTestCase
 
+@property (nonatomic, strong) NSURLSession *session;
 @property (nonatomic, strong) NSMutableArray<NSNumber *> *progressValues;
 @property (nonatomic, copy) void (^completionBlock)(NSData *data, NSURLResponse *response, NSError *error);
 
 @end
-
-static NSURLSession *session;
 
 @implementation EMASCurlUploadTestBase
 
@@ -153,7 +152,7 @@ static NSURLSession *session;
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSURLSessionUploadTask *task = [session uploadTaskWithRequest:request fromFile:fileURL completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+    NSURLSessionUploadTask *task = [self.session uploadTaskWithRequest:request fromFile:fileURL completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
         [[NSFileManager defaultManager] removeItemAtPath:formDataPath error:nil];
 
         XCTAssertNil(error, @"Upload failed with error: %@", error);
@@ -200,7 +199,7 @@ static NSURLSession *session;
         [strongSelf.progressValues addObject:@(progress)];
     }];
 
-    NSURLSessionUploadTask *task = [session uploadTaskWithRequest:request fromFile:fileURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+    NSURLSessionUploadTask *task = [self.session uploadTaskWithRequest:request fromFile:fileURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         [[NSFileManager defaultManager] removeItemAtPath:formDataPath error:nil];
 
         XCTAssertNil(error, @"Upload failed with error: %@", error);
@@ -267,7 +266,7 @@ static NSURLSession *session;
         }
     }];
 
-    NSURLSessionUploadTask *task = [session uploadTaskWithRequest:request fromFile:fileURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+    NSURLSessionUploadTask *task = [self.session uploadTaskWithRequest:request fromFile:fileURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         [[NSFileManager defaultManager] removeItemAtPath:formDataPath error:nil];
 
         XCTAssertNotNil(error, @"Expected error due to cancellation");
@@ -296,7 +295,7 @@ static NSURLSession *session;
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error, @"Upload failed with error: %@", error);
         XCTAssertNotNil(response, @"No response received");
@@ -335,7 +334,7 @@ static NSURLSession *session;
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error, @"PATCH upload failed with error: %@", error);
         XCTAssertNotNil(response, @"No response received");
@@ -383,7 +382,7 @@ static NSURLSession *session;
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error, @"DELETE upload failed with error: %@", error);
         XCTAssertNotNil(response, @"No response received");
@@ -420,7 +419,7 @@ static NSURLSession *session;
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         if (error) {
             NSLog(@"Chunked upload error: %@", error);
@@ -493,7 +492,7 @@ static NSURLSession *session;
         }
     }];
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error, @"Chunked upload with progress failed with error: %@", error);
         XCTAssertNotNil(response, @"No response received");
@@ -540,7 +539,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlUploadTestHttp11
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setDebugLogEnabled:YES];
 
     // 创建 EMASCurl 配置
@@ -549,7 +549,7 @@ static NSURLSession *session;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testUploadData {
@@ -597,7 +597,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlUploadTestHttp2
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setDebugLogEnabled:YES];
 
     // 创建 EMASCurl 配置
@@ -612,7 +613,7 @@ static NSURLSession *session;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testUploadData {

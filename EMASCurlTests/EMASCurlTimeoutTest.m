@@ -10,14 +10,13 @@
 #import <EMASCurl/EMASCurl.h>
 #import "EMASCurlTestConstants.h"
 
-static NSURLSession *session;
-
 @interface EMASCurlTimeoutTest : XCTestCase
+@property (nonatomic, strong) NSURLSession *session;
 @end
 
 @implementation EMASCurlTimeoutTest
 
-+ (void)setUp {
+- (void)setUp {
     [super setUp];
     [EMASCurlProtocol setDebugLogEnabled:YES];
 
@@ -29,7 +28,7 @@ static NSURLSession *session;
     config.HTTPShouldUsePipelining = YES;
     config.HTTPShouldSetCookies = YES;
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testConnectTimeout {
@@ -40,7 +39,7 @@ static NSURLSession *session;
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
     __block NSError *receivedError = nil;
 
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:request
                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         receivedError = error;
         dispatch_semaphore_signal(semaphore);
@@ -62,7 +61,7 @@ static NSURLSession *session;
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
     __block NSError *receivedError = nil;
 
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:request
                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         receivedError = error;
         dispatch_semaphore_signal(semaphore);

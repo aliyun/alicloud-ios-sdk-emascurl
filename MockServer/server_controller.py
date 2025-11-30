@@ -426,6 +426,33 @@ def create_app():
             headers={"X-Original-Path": "/redirect"}
         )
 
+    @app.get("/redirect/301")
+    async def redirect_301():
+        """Redirect to /echo with 301 status code"""
+        return RedirectResponse(url="/echo", status_code=301)
+
+    @app.get("/redirect/307")
+    async def redirect_307():
+        """Redirect to /echo with 307 status code"""
+        return RedirectResponse(url="/echo", status_code=307)
+
+    @app.api_route("/redirect/307/post", methods=["POST", "PUT", "DELETE", "PATCH"])
+    async def redirect_307_post():
+        """307 redirect that preserves HTTP method"""
+        return RedirectResponse(url="/echo", status_code=307)
+
+    @app.get("/redirect/set_cookie")
+    async def redirect_set_cookie():
+        """Set cookie and redirect to verify endpoint"""
+        response = RedirectResponse(url="/cookie/verify", status_code=302)
+        response.set_cookie("redirect_cookie", "value123", max_age=3600)
+        return response
+
+    @app.get("/redirect/cacheable")
+    async def redirect_cacheable():
+        """301 redirect to a cacheable endpoint for testing cache key with final URL"""
+        return RedirectResponse(url="/cache/cacheable", status_code=301)
+
     @app.get("/redirect_to")
     async def redirect_to(from_url: str = None):
         """
@@ -503,6 +530,30 @@ def create_app():
         # Sleep for 2 seconds to simulate a slow response
         await asyncio.sleep(2)
         return {"message": "Response after delay"}
+
+    @app.get("/slow/headers")
+    async def slow_headers():
+        """Delay before sending response headers"""
+        await asyncio.sleep(3)
+        return {"message": "delayed headers"}
+
+    @app.get("/slow/body")
+    async def slow_body():
+        """Send headers quickly, delay body data"""
+        async def generate():
+            yield b"start\n"
+            await asyncio.sleep(3)
+            yield b"end\n"
+        return StreamingResponse(generate(), media_type="text/plain")
+
+    @app.get("/slow/long_body")
+    async def slow_long_body():
+        """Stream body data slowly over 10 seconds"""
+        async def generate():
+            for i in range(10):
+                yield f"chunk {i}\n".encode()
+                await asyncio.sleep(1)
+        return StreamingResponse(generate(), media_type="text/plain")
 
     @app.post("/half_close_test")
     async def half_close_test(request: Request):

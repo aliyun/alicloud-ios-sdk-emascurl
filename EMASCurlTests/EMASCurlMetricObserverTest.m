@@ -10,10 +10,8 @@
 #import <EMASCurl/EMASCurl.h>
 #import "EMASCurlTestConstants.h"
 
-static NSURLSession *session;
-
 @interface EMASCurlMetricsTestBase : XCTestCase
-
+@property (nonatomic, strong) NSURLSession *session;
 @end
 
 @implementation EMASCurlMetricsTestBase
@@ -139,7 +137,7 @@ static NSURLSession *session;
         totalTimeConsumed = [NSNumber numberWithDouble:totalTime * 1000]; // Convert to milliseconds
     }];
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error, @"Download failed with error: %@", error);
         XCTAssertNotNil(response, @"No response received");
@@ -178,7 +176,7 @@ static NSURLSession *session;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testDownloadDataWithMetrics {
@@ -208,7 +206,7 @@ static NSURLSession *session;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testDownloadDataWithMetrics {
@@ -246,7 +244,7 @@ static NSURLSession *session;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)tearDown {
@@ -280,7 +278,7 @@ static NSURLSession *session;
               nameLookUpTimeMS, connectTimeMs, totalTimeMs);
     }];
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertTrue(metricsReceived, @"Metrics callback should have been received");
         dispatch_semaphore_signal(semaphore);

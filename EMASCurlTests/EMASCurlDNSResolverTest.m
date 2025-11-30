@@ -9,8 +9,6 @@
 #import <EMASCurl/EMASCurl.h>
 #import "EMASCurlTestConstants.h"
 
-static NSURLSession *session;
-
 @interface TestDNSResolver : NSObject <EMASCurlProtocolDNSResolver>
 @end
 
@@ -41,6 +39,7 @@ static NSURLSession *session;
 @end
 
 @interface EMASCurlDNSResolverTestBase : XCTestCase
+@property (nonatomic, strong) NSURLSession *session;
 @property (nonatomic, strong) NSMutableData *receivedData;
 @end
 
@@ -65,7 +64,7 @@ static NSURLSession *session;
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error, @"Download failed with error: %@", error);
         XCTAssertNotNil(response, @"No response received");
@@ -93,7 +92,7 @@ static NSURLSession *session;
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNotNil(error, @"Expected an error for invalid domain");
         XCTAssertNil(data, @"Should not receive any data");
@@ -112,7 +111,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlDNSResolverTestHttp11
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setDebugLogEnabled:YES];
 
     // 创建 EMASCurl 配置
@@ -123,7 +123,7 @@ static NSURLSession *session;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config];
+    self.session = [NSURLSession sessionWithConfiguration:config];
 }
 
 - (void)testCustomDNSResolution {

@@ -10,10 +10,8 @@
 #import <EMASCurl/EMASCurl.h>
 #import "EMASCurlTestConstants.h"
 
-static NSURLSession *session;
-
 @interface EMASCurlSimpleTestBase : XCTestCase
-
+@property (nonatomic, strong) NSURLSession *session;
 @end
 
 @implementation EMASCurlSimpleTestBase
@@ -47,7 +45,7 @@ static NSURLSession *session;
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:request
                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error, @"Request failed with error: %@", error);
         XCTAssertNotNil(response, @"No response received");
@@ -289,7 +287,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlSimpleTestHttp11
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setDebugLogEnabled:YES];
 
     // 创建 EMASCurl 配置
@@ -300,7 +299,7 @@ static NSURLSession *session;
     config.HTTPShouldUsePipelining = YES;  // 启用重定向跟随
     config.HTTPShouldSetCookies = YES;
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testHeadRequest {
@@ -354,7 +353,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlSimpleTestHttp2
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setDebugLogEnabled:YES];
 
     // 创建 EMASCurl 配置
@@ -371,7 +371,7 @@ static NSURLSession *session;
     config.HTTPShouldUsePipelining = YES;  // 启用重定向跟随
     config.HTTPShouldSetCookies = YES;
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testHeadRequest {

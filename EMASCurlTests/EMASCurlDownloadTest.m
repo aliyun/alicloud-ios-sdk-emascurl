@@ -10,10 +10,9 @@
 #import <EMASCurl/EMASCurl.h>
 #import "EMASCurlTestConstants.h"
 
-static NSURLSession *session;
-
 @interface EMASCurlDownloadTestBase : XCTestCase <NSURLSessionDataDelegate>
 
+@property (nonatomic, strong) NSURLSession *session;
 @property (nonatomic, assign) int64_t totalBytesReceived;
 @property (nonatomic, assign) int64_t expectedTotalBytes;
 @property (nonatomic, strong) NSMutableArray<NSNumber *> *progressValues;
@@ -38,7 +37,7 @@ static NSURLSession *session;
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithRequest:request
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error, @"Download failed with error: %@", error);
         XCTAssertNotNil(response, @"No response received");
@@ -95,7 +94,7 @@ static NSURLSession *session;
         [strongSelf.progressValues addObject:@(progress)];
     };
 
-    NSURLSession *progressSession = [NSURLSession sessionWithConfiguration:[session configuration] delegate:self delegateQueue:nil];
+    NSURLSession *progressSession = [NSURLSession sessionWithConfiguration:[self.session configuration] delegate:self delegateQueue:nil];
     NSURLSessionDataTask *dataTask = [progressSession dataTaskWithRequest:request];
     [dataTask resume];
 
@@ -113,7 +112,7 @@ static NSURLSession *session;
     self.progressValues = [NSMutableArray array];
     self.receivedData = [NSMutableData data];
 
-    NSURLSession *progressSession = [NSURLSession sessionWithConfiguration:[session configuration] delegate:self delegateQueue:nil];
+    NSURLSession *progressSession = [NSURLSession sessionWithConfiguration:[self.session configuration] delegate:self delegateQueue:nil];
     NSURLSessionDataTask *dataTask = [progressSession dataTaskWithRequest:request];
 
     __weak typeof(self) weakSelf = self;
@@ -169,7 +168,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlDownloadTestHttp11
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setDebugLogEnabled:YES];
 
     // 创建 EMASCurl 配置
@@ -178,7 +178,7 @@ static NSURLSession *session;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testDownloadBinaryData {
@@ -206,7 +206,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlDownloadTestHttp2
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setLogLevel:EMASCurlLogLevelError];
 
     // 创建 EMASCurl 配置
@@ -221,7 +222,7 @@ static NSURLSession *session;
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testDownloadBinaryData {

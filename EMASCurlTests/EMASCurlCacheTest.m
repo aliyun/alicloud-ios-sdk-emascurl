@@ -9,9 +9,8 @@
 #import <EMASCurl/EMASCurl.h>
 #import "EMASCurlTestConstants.h"
 
-static NSURLSession *session;
-
 @interface EMASCurlCacheTestBase : XCTestCase
+@property (nonatomic, strong) NSURLSession *session;
 @end
 @implementation EMASCurlCacheTestBase
 
@@ -28,7 +27,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlCacheTestHttp11
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setDebugLogEnabled:NO];
 
     EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
@@ -38,7 +38,7 @@ static NSURLSession *session;
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     config.HTTPShouldSetCookies = YES;
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testLargeBodyDoesNotCacheWhenExceedingThreshold {
@@ -50,7 +50,7 @@ static NSURLSession *session;
 
     XCTestExpectation *exp = [self expectationWithDescription:@"large body fetched"];
 
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:request
                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error);
         NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
@@ -73,7 +73,7 @@ static NSURLSession *session;
 
     XCTestExpectation *exp = [self expectationWithDescription:@"no-store fetched"];
 
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:request
                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error);
         NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
@@ -109,7 +109,7 @@ static NSURLSession *session;
 
     // 第一次请求：填充缓存
     XCTestExpectation *firstRequestExp = [self expectationWithDescription:@"first request"];
-    NSURLSessionDataTask *task1 = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+    NSURLSessionDataTask *task1 = [self.session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error);
         XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 200);
         [firstRequestExp fulfill];
@@ -123,7 +123,7 @@ static NSURLSession *session;
 
     // 第二次请求：应命中缓存
     XCTestExpectation *secondRequestExp = [self expectationWithDescription:@"second request cache hit"];
-    NSURLSessionDataTask *task2 = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+    NSURLSessionDataTask *task2 = [self.session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error);
         XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 200);
         [secondRequestExp fulfill];
@@ -149,7 +149,7 @@ static NSURLSession *session;
 
     // 第一次请求
     XCTestExpectation *firstExp = [self expectationWithDescription:@"first 404 request"];
-    NSURLSessionDataTask *task1 = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+    NSURLSessionDataTask *task1 = [self.session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error);
         XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 404);
         [firstExp fulfill];
@@ -172,7 +172,7 @@ static NSURLSession *session;
 
     // 第一次请求
     XCTestExpectation *firstExp = [self expectationWithDescription:@"first 410 request"];
-    NSURLSessionDataTask *task1 = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+    NSURLSessionDataTask *task1 = [self.session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error);
         XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 410);
         [firstExp fulfill];
@@ -192,7 +192,8 @@ static NSURLSession *session;
 
 @implementation EMASCurlCacheTestHttp2
 
-+ (void)setUp {
+- (void)setUp {
+    [super setUp];
     [EMASCurlProtocol setDebugLogEnabled:NO];
 
     EMASCurlConfiguration *curlConfig = [EMASCurlConfiguration defaultConfiguration];
@@ -206,7 +207,7 @@ static NSURLSession *session;
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
     config.HTTPShouldSetCookies = YES;
     [EMASCurlProtocol installIntoSessionConfiguration:config withConfiguration:curlConfig];
-    session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
+    self.session = [NSURLSession sessionWithConfiguration:config delegate:nil delegateQueue:nil];
 }
 
 - (void)testLargeBodyDoesNotCacheWhenExceedingThreshold {
@@ -218,7 +219,7 @@ static NSURLSession *session;
 
     XCTestExpectation *exp = [self expectationWithDescription:@"large body fetched h2"];
 
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:request
                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error);
         NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
@@ -240,7 +241,7 @@ static NSURLSession *session;
 
     XCTestExpectation *exp = [self expectationWithDescription:@"no-store fetched h2"];
 
-    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:request
                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         XCTAssertNil(error);
         NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
