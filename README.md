@@ -121,7 +121,7 @@ target 'yourAppTarget' do
 end
 ```
 
-当前最新版本：1.4.2
+当前最新版本：1.4.3
 
 在您的Terminal中进入`Podfile`所在目录，执行以下命令安装依赖：
 
