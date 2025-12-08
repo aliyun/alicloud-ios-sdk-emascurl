@@ -44,10 +44,6 @@ NSNotificationName const LogManagerDidUpdateLogsNotification = @"LogManagerDidUp
               component:(NSString *)component
                 message:(NSString *)message {
     dispatch_async(self.logQueue, ^{
-        if (level == 0 || level > 2) {
-            return;
-        }
-
         // 格式化时间戳
         NSString *timestamp = [self.dateFormatter stringFromDate:[NSDate date]];
 
