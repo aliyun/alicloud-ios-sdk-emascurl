@@ -198,6 +198,18 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
  */
 @property (nonatomic, copy, nullable) NSArray<NSString *> *domainBlackList;
 
+#pragma mark - URL路径过滤
+
+/**
+ * URL路径黑名单 - 不拦截匹配这些路径的请求
+ * 支持三种模式：
+ * 1. 完全匹配: @"/sample/shouldnotintercept.do"
+ * 2. 单级通配符: @"/sample/\*" - 匹配前缀及一个路径段（包含空段）
+ * 3. 多级通配符: @"/sample/\*\*" - 匹配前缀及所有子路径
+ * 默认值: nil (无路径黑名单)
+ */
+@property (nonatomic, copy, nullable) NSArray<NSString *> *urlPathBlackList;
+
 #pragma mark - 缓存设置
 
 /**

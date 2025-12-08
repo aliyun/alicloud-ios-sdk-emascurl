@@ -48,6 +48,9 @@
     _domainWhiteList = nil;
     _domainBlackList = nil;
 
+    // URL路径过滤
+    _urlPathBlackList = nil;
+
     // 缓存设置
     _cacheEnabled = YES; // Will be set to shared instance when needed
     _maximumCacheableBodyBytes = 5 * 1024 * 1024; // 5 MiB 默认阈值，防止大响应占用过多内存
@@ -84,6 +87,7 @@
 
     copy.domainWhiteList = [self.domainWhiteList copy];
     copy.domainBlackList = [self.domainBlackList copy];
+    copy.urlPathBlackList = [self.urlPathBlackList copy];
 
     copy.cacheEnabled = self.cacheEnabled;
     copy.maximumCacheableBodyBytes = self.maximumCacheableBodyBytes;
@@ -125,6 +129,8 @@
         ![self.domainWhiteList isEqualToArray:configuration.domainWhiteList]) return NO;
     if ((self.domainBlackList || configuration.domainBlackList) &&
         ![self.domainBlackList isEqualToArray:configuration.domainBlackList]) return NO;
+    if ((self.urlPathBlackList || configuration.urlPathBlackList) &&
+        ![self.urlPathBlackList isEqualToArray:configuration.urlPathBlackList]) return NO;
 
     if (self.cacheEnabled != configuration.cacheEnabled) return NO;
     if (self.maximumCacheableBodyBytes != configuration.maximumCacheableBodyBytes) return NO;
@@ -154,6 +160,7 @@
     hash ^= self.domainNameVerificationEnabled ? 16 : 0;
     hash ^= [self.domainWhiteList hash];
     hash ^= [self.domainBlackList hash];
+    hash ^= [self.urlPathBlackList hash];
     hash ^= self.cacheEnabled ? 32 : 0;
     hash ^= self.maximumCacheableBodyBytes;
     return hash;

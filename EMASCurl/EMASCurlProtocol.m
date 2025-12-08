@@ -58,6 +58,44 @@ static BOOL isPotentiallyCacheableStatusCode(NSInteger statusCode) {
     }
 }
 
+/**
+ * 检查请求路径是否匹配黑名单模式
+ * @param requestPath 请求的URL路径
+ * @param pattern 黑名单模式
+ * @return 匹配返回YES
+ */
+static BOOL emas_pathMatchesPattern(NSString *requestPath, NSString *pattern) {
+    if (!requestPath || !pattern) {
+        return NO;
+    }
+
+    // 多级通配符: "/sample/**"
+    if ([pattern hasSuffix:@"/**"]) {
+        NSString *prefix = [pattern substringToIndex:pattern.length - 3];
+        // 匹配前缀本身或前缀加任意后续路径
+        return [requestPath isEqualToString:prefix] ||
+               [requestPath hasPrefix:[prefix stringByAppendingString:@"/"]];
+    }
+
+    // 单级通配符: "/sample/*"
+    if ([pattern hasSuffix:@"/*"]) {
+        NSString *prefix = [pattern substringToIndex:pattern.length - 2];
+        // 匹配前缀本身（无尾斜杠）
+        if ([requestPath isEqualToString:prefix]) {
+            return YES;
+        }
+        // 匹配 prefix/ 开头，且之后不能再有 /
+        if ([requestPath hasPrefix:[prefix stringByAppendingString:@"/"]]) {
+            NSString *remaining = [requestPath substringFromIndex:prefix.length + 1];
+            return ![remaining containsString:@"/"];
+        }
+        return NO;
+    }
+
+    // 完全匹配
+    return [requestPath isEqualToString:pattern];
+}
+
 // EMASCurlTransactionMetrics实现
 @implementation EMASCurlTransactionMetrics
 @end
@@ -273,6 +311,11 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     defaultConfig.domainBlackList = domainBlackList;
 }
 
++ (void)setHijackUrlPathBlackList:(nullable NSArray<NSString *> *)urlPathBlackList {
+    EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
+    defaultConfig.urlPathBlackList = urlPathBlackList;
+}
+
 + (void)setPublicKeyPinningKeyPath:(nullable NSString *)publicKeyPath {
     EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
     defaultConfig.publicKeyPinningKeyPath = publicKeyPath;
@@ -389,6 +432,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     NSArray<NSString *> *domainBlackList = config.domainBlackList;
     NSArray<NSString *> *domainWhiteList = config.domainWhiteList;
 
+    // 域名黑名单检查
     if (domainBlackList && domainBlackList.count > 0) {
         for (NSString *blacklistDomain in domainBlackList) {
             if ([host hasSuffix:blacklistDomain]) {
@@ -397,15 +441,33 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
             }
         }
     }
+
+    // 域名白名单检查（重构：记录结果而非直接返回，以便后续路径检查能执行）
     if (domainWhiteList && domainWhiteList.count > 0) {
+        BOOL passedDomainWhitelist = NO;
         for (NSString *whitelistDomain in domainWhiteList) {
             if ([host hasSuffix:whitelistDomain]) {
-                EMAS_LOG_DEBUG(@"EC-Request", @"Request filtered by domain whitelist: %@", host);
-                return YES;
+                passedDomainWhitelist = YES;
+                EMAS_LOG_DEBUG(@"EC-Request", @"Request matched domain whitelist: %@", host);
+                break;
             }
         }
-        EMAS_LOG_DEBUG(@"EC-Request", @"Request rejected: not in domain whitelist: %@", host);
-        return NO;
+        if (!passedDomainWhitelist) {
+            EMAS_LOG_DEBUG(@"EC-Request", @"Request rejected: not in domain whitelist: %@", host);
+            return NO;
+        }
+    }
+
+    // URL路径黑名单检查
+    NSString *urlPath = request.URL.path;
+    NSArray<NSString *> *pathBlackList = config.urlPathBlackList;
+    if (pathBlackList && pathBlackList.count > 0 && urlPath.length > 0) {
+        for (NSString *pathPattern in pathBlackList) {
+            if (emas_pathMatchesPattern(urlPath, pathPattern)) {
+                EMAS_LOG_DEBUG(@"EC-Request", @"Request rejected by path blacklist: %@ (pattern: %@)", urlPath, pathPattern);
+                return NO;
+            }
+        }
     }
 
     NSString *userAgent = [request valueForHTTPHeaderField:@"User-Agent"];

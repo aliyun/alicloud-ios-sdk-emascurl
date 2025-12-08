@@ -106,6 +106,15 @@ typedef void(^EMASCurlLogHandlerBlock)(EMASCurlLogLevel level, NSString * _Nonnu
 // 传入nil时，清除黑名单
 + (void)setHijackDomainBlackList:(nullable NSArray<NSString *> *)domainBlackList;
 
+// 设置拦截URL路径黑名单
+// 不拦截黑名单中匹配的路径
+// 支持三种模式：
+// 1. 完全匹配: @"/sample/shouldnotintercept.do"
+// 2. 单级通配符: @"/sample/\*" - 匹配前缀及一个路径段（包含空段）
+// 3. 多级通配符: @"/sample/\*\*" - 匹配前缀及所有子路径
+// 传入nil时，清除路径黑名单
++ (void)setHijackUrlPathBlackList:(nullable NSArray<NSString *> *)urlPathBlackList;
+
 // 设置用于公钥固定(Public Key Pinning)的公钥文件路径。
 // libcurl 会使用此文件中的公钥信息来验证服务器证书链中的公钥。
 // 传入nil时，清除公钥固定设置。
