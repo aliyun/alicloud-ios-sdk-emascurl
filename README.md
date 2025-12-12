@@ -74,6 +74,7 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
         - [组件化日志](#组件化日志)
         - [设置自定义日志处理器](#设置自定义日志处理器)
       - [设置请求拦截域名白名单和黑名单](#设置请求拦截域名白名单和黑名单)
+      - [设置URL路径黑名单](#设置url路径黑名单)
       - [设置Gzip压缩](#设置gzip压缩)
       - [设置内部重定向支持](#设置内部重定向支持)
       - [设置公钥固定 (Public Key Pinning)](#设置公钥固定-public-key-pinning)
@@ -716,6 +717,43 @@ NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSes
 [EMASCurlProtocol installIntoSessionConfiguration:sessionConfig withConfiguration:config];
 ```
 
+#### 设置URL路径黑名单
+
+EMASCurl允许您设置URL路径黑名单来控制哪些请求不会被拦截处理。路径黑名单支持三种匹配模式：
+
+1. **完全匹配**: `/sample/shouldnotintercept.do` - 精确匹配指定路径
+2. **单级通配符**: `/sample/*` - 匹配前缀及一个路径段（包含空段）
+3. **多级通配符**: `/sample/**` - 匹配前缀及所有子路径
+
+**检查顺序**：域名黑名单 → 域名白名单 → 路径黑名单
+
+例如：
+
+```objc
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+
+// 不拦截这些路径的请求
+config.urlPathBlackList = @[
+    @"/api/v1/tracking",           // 完全匹配
+    @"/analytics/*",               // 匹配 /analytics/event, /analytics/page 等
+    @"/third-party/**"             // 匹配 /third-party/sdk/init, /third-party/a/b/c 等
+];
+
+// 应用配置
+NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
+[EMASCurlProtocol installIntoSessionConfiguration:sessionConfig withConfiguration:config];
+```
+
+也可以使用全局设置方式：
+
+```objc
+// 全局设置路径黑名单
+[EMASCurlProtocol setHijackUrlPathBlackList:@[@"/api/v1/tracking", @"/analytics/**"]];
+
+// 清除路径黑名单
+[EMASCurlProtocol setHijackUrlPathBlackList:nil];
+```
+
 #### 设置Gzip压缩
 
 EMASCurl默认开启内部Gzip压缩。开启后，请求的header中会自动添加`Accept-Encoding: deflate, gzip`，并自动解压响应内容。若关闭，则需要自行处理请求/响应中的gzip字段。
@@ -870,6 +908,8 @@ EMASCurlConfiguration 提供了所有网络配置选项的集中管理。以下�
 | **域名过滤** | | | |
 | `domainWhiteList` | NSArray | nil | 域名白名单 |
 | `domainBlackList` | NSArray | nil | 域名黑名单 |
+| **URL路径过滤** | | | |
+| `urlPathBlackList` | NSArray | nil | URL路径黑名单（支持通配符） |
 | **缓存** | | | |
 | `cacheEnabled` | BOOL | YES | 是否启用HTTP缓存 |
 | **性能监控** | | | |
@@ -896,6 +936,9 @@ config.domainNameVerificationEnabled = YES;
 // 域名过滤
 config.domainWhiteList = @[@"api.example.com"];
 config.domainBlackList = @[@"tracking.example.com"];
+
+// URL路径过滤
+config.urlPathBlackList = @[@"/api/v1/analytics/**"];
 
 // 缓存
 config.cacheEnabled = YES;
