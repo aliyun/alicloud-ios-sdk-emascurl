@@ -7,7 +7,7 @@ target 'EMASCurlDemo' do
   use_frameworks!
 
   pod 'AlicloudHTTPDNS', '3.2.1'
-  pod 'EMASCurl', :path => './EMASCurlHttp2.podspec'
+  pod 'EMASCurl', :path => './EMASCurl.podspec'
   pod 'EMASLocalProxy', :path => './EMASLocalProxy.podspec'
 end
 

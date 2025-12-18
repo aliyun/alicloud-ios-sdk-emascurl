@@ -13,3 +13,6 @@ rm -rf Build && mkdir Build
 ruby ref_libcurl_xcframework.rb -t http2
 sh build_xcode_xcframework.sh $FRAMEWORK_ID $FRAMEWORK_NAME $BUILD_CONFIG $BUILD_DIR "http2"
 
+ruby ref_libcurl_xcframework.rb -t http3
+ruby ref_EMASCAResource_bundle.rb 
+sh build_xcode_xcframework.sh $FRAMEWORK_ID $FRAMEWORK_NAME $BUILD_CONFIG $BUILD_DIR "http3"
