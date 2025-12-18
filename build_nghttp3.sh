@@ -8,7 +8,7 @@ OUT_DIR="$ROOT_DIR/out/nghttp3"
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
 
-DEPLOYMENT_TARGET=12.0
+DEPLOYMENT_TARGET=10.0
 
 combinations=(
   "ARCH=arm64   SDK=iphoneos"

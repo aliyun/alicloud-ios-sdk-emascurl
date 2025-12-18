@@ -9,7 +9,7 @@ OUT_DIR="$OUT_BASE/curl2"
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
 
-DEPLOYMENT_TARGET=12.0
+DEPLOYMENT_TARGET=10.0
 
 combinations=(
   "ARCH=arm64   SDK=iphoneos"
@@ -43,8 +43,8 @@ for combination in "${combinations[@]}"; do
     \
     -DBUILD_SHARED_LIBS=OFF \
     -DBUILD_TESTING=OFF \
-    -DBUILD_CURL_EXE=OFF \        # 新增：不构建 curl 命令行工具
-    -DBUILD_LIBCURL=ON \          # 新增：只构建 libcurl
+    -DBUILD_CURL_EXE=OFF \
+    -DBUILD_LIBCURL=ON \
     -DCURL_DISABLE_LDAP=ON \
     -DCURL_ZLIB=OFF \
     -DCURL_USE_LIBPSL=OFF \

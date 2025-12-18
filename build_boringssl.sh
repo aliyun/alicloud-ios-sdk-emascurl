@@ -12,7 +12,7 @@ fi
 
 mkdir "$installPath"
 
-DEPLOYMENT_TARGET=12.0
+DEPLOYMENT_TARGET=10.0
 
 combinations=(
     "ARCH=arm64 SDK=iphoneos"
