@@ -29,9 +29,6 @@
     // 设置HTTPDNS解析器（全局配置，只需设置一次）
     [self setupDNSResolver];
 
-    // 设置代理日志级别
-    [EMASLocalHttpProxy setLogLevel:EMASLocalHttpProxyLogLevelInfo];
-
     // 立即创建标准session以支持即时的网络请求
     [self createStandardSession];
 
