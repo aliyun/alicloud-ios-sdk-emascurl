@@ -4,11 +4,9 @@
 
 @interface Http3DemoController () <NSURLSessionDataDelegate>
 @property (nonatomic, strong) UIButton *getButton;
-@property (nonatomic, strong) UIButton *uploadButton;
-@property (nonatomic, strong) UIButton *cacheButton;
-@property (nonatomic, strong) UIButton *timeoutButton;
 @property (nonatomic, strong) UITextView *resultTextView;
 @property (nonatomic, strong) NSURLSession *session;
+@property (nonatomic, copy) NSString *lastProtocolName;
 @end
 
 @implementation Http3DemoController
@@ -39,7 +37,10 @@
     curlConfig.cacheEnabled = YES;
     curlConfig.enableBuiltInRedirection = NO;
 
+    __weak typeof(self) weakSelf = self;
     curlConfig.transactionMetricsObserver = ^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
+        weakSelf.lastProtocolName = metrics.networkProtocolName;
+        
         NSLog(@"HTTP/3 性能指标 [%@]:\n"
               "成功: %d\n"
               "错误: %@\n"
@@ -102,24 +103,6 @@
     [self.getButton addTarget:self action:@selector(getButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:self.getButton];
 
-    self.uploadButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.uploadButton setTitle:@"Upload Request" forState:UIControlStateNormal];
-    self.uploadButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.uploadButton addTarget:self action:@selector(uploadButtonTapped) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:self.uploadButton];
-
-    self.cacheButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.cacheButton setTitle:@"Sequential Requests (Test Connection Reuse)" forState:UIControlStateNormal];
-    self.cacheButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.cacheButton addTarget:self action:@selector(cacheButtonTapped) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:self.cacheButton];
-
-    self.timeoutButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.timeoutButton setTitle:@"Connection Timeout (Invalid Port)" forState:UIControlStateNormal];
-    self.timeoutButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.timeoutButton addTarget:self action:@selector(timeoutButtonTapped) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:self.timeoutButton];
-
     self.resultTextView = [[UITextView alloc] init];
     self.resultTextView.editable = NO;
     self.resultTextView.layer.borderColor = [UIColor lightGrayColor].CGColor;
@@ -135,22 +118,7 @@
         [self.getButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
         [self.getButton.heightAnchor constraintEqualToConstant:44],
 
-        [self.uploadButton.topAnchor constraintEqualToAnchor:self.getButton.bottomAnchor constant:12],
-        [self.uploadButton.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:20],
-        [self.uploadButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
-        [self.uploadButton.heightAnchor constraintEqualToConstant:44],
-
-        [self.cacheButton.topAnchor constraintEqualToAnchor:self.uploadButton.bottomAnchor constant:12],
-        [self.cacheButton.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:20],
-        [self.cacheButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
-        [self.cacheButton.heightAnchor constraintEqualToConstant:44],
-
-        [self.timeoutButton.topAnchor constraintEqualToAnchor:self.cacheButton.bottomAnchor constant:12],
-        [self.timeoutButton.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:20],
-        [self.timeoutButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
-        [self.timeoutButton.heightAnchor constraintEqualToConstant:44],
-
-        [self.resultTextView.topAnchor constraintEqualToAnchor:self.timeoutButton.bottomAnchor constant:20],
+        [self.resultTextView.topAnchor constraintEqualToAnchor:self.getButton.bottomAnchor constant:20],
         [self.resultTextView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:20],
         [self.resultTextView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
         [self.resultTextView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-20]
@@ -161,66 +129,27 @@
     NSString *urlString = @"https://cloudflare-quic.com/";
     NSURL *url = [NSURL URLWithString:urlString];
 
-    self.resultTextView.text = [NSString stringWithFormat:@"=== HTTP/3 GET Request ===\nURL: %@\n\n=== Response ===\n", urlString];
+    self.lastProtocolName = nil;
+    self.resultTextView.text = [NSString stringWithFormat:@"请求中...\nURL: %@\n", urlString];
     NSURLSessionDataTask *task = [self.session dataTaskWithURL:url];
     [task resume];
 }
 
-- (void)uploadButtonTapped {
-    NSString *urlString = @"https://cloudflare-quic.com/";
-    NSURL *url = [NSURL URLWithString:urlString];
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
-    request.HTTPMethod = @"POST";
-
-    NSString *sampleText = @"Hello, HTTP/3 test upload!";
-    NSData *uploadData = [sampleText dataUsingEncoding:NSUTF8StringEncoding];
-
-    self.resultTextView.text = [NSString stringWithFormat:@"=== HTTP/3 Upload Request ===\nURL: %@\nMethod: POST\nData: %@\n\n=== Response ===\n", urlString, sampleText];
-    NSURLSessionUploadTask *uploadTask = [self.session uploadTaskWithRequest:request fromData:uploadData];
-    [uploadTask resume];
-}
-
-- (void)cacheButtonTapped {
-    NSString *urlString = @"https://cloudflare-quic.com/";
-    NSURL *url = [NSURL URLWithString:urlString];
-
-    self.resultTextView.text = @"=== Sequential Requests (Test Connection Reuse) ===\n\n";
-
-    __block int completedCount = 0;
-    for (int i = 1; i <= 3; i++) {
-        NSURLSessionDataTask *task = [self.session dataTaskWithURL:url
-                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-            NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-            dispatch_async(dispatch_get_main_queue(), ^{
-                completedCount++;
-                self.resultTextView.text = [self.resultTextView.text stringByAppendingFormat:@"Request #%d: Status %ld\n", completedCount, (long)httpResponse.statusCode];
-                if (completedCount == 3) {
-                    self.resultTextView.text = [self.resultTextView.text stringByAppendingString:@"\n=== All Requests Completed ===\n(Check logs for connection reuse info)"];
-                }
-            });
-        }];
-        [task resume];
+- (NSString *)protocolExplanation:(NSString *)protocol {
+    if ([protocol isEqualToString:@"http/3"]) {
+        return @"✅ 使用 HTTP/3 (QUIC) 协议";
+    } else if ([protocol isEqualToString:@"http/2"]) {
+        return @"⚠️ 使用 HTTP/2 协议\n原因: 目标服务器不支持HTTP/3，或EMASCurl未使用HTTP3版本";
+    } else if ([protocol isEqualToString:@"http/1.1"]) {
+        return @"⚠️ 使用 HTTP/1.1 协议\n原因: 目标服务器不支持HTTP/3和HTTP/2，或EMASCurl未使用HTTP3版本";
+    } else {
+        return [NSString stringWithFormat:@"❓ 使用 %@ 协议", protocol ?: @"未知"];
     }
-}
-
-- (void)timeoutButtonTapped {
-    // 请求一个不存在的端口，测试连接超时
-    NSString *urlString = @"https://cloudflare-quic.com:12345/";
-    NSURL *url = [NSURL URLWithString:urlString];
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
-    request.timeoutInterval = 3;
-
-    self.resultTextView.text = @"=== Connection Timeout Test ===\nURL: https://cloudflare-quic.com:12345/\nTimeout: 3s\n\n";
-
-    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:request];
-    [task resume];
 }
 
 #pragma mark - NSURLSessionDataDelegate
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler {
-    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-    NSLog(@">>> HTTP/3 %@ didRecievedResponse - %lu", dataTask.currentRequest.URL.absoluteString, (unsigned long)httpResponse.statusCode);
     completionHandler(NSURLSessionResponseAllow);
 }
 
@@ -235,10 +164,19 @@
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
     dispatch_async(dispatch_get_main_queue(), ^{
+        NSString *protocolInfo = [self protocolExplanation:self.lastProtocolName];
+        NSString *header = [NSString stringWithFormat:@"=== 协议信息 ===\n%@\n\n=== 请求结果 ===\n", protocolInfo];
+        
         if (error) {
-            self.resultTextView.text = [self.resultTextView.text stringByAppendingFormat:@"\n=== Error ===\n%@", error.localizedDescription];
+            self.resultTextView.text = [header stringByAppendingFormat:@"❌ 请求失败: %@", error.localizedDescription];
         } else {
-            self.resultTextView.text = [self.resultTextView.text stringByAppendingString:@"\n=== Request Completed Successfully ===\n"];
+            NSString *currentText = self.resultTextView.text;
+            // 移除 "请求中..." 前缀
+            NSRange range = [currentText rangeOfString:@"请求中...\n"];
+            if (range.location != NSNotFound) {
+                currentText = [currentText substringFromIndex:range.location + range.length];
+            }
+            self.resultTextView.text = [header stringByAppendingString:currentText];
         }
     });
 }
