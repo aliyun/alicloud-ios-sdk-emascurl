@@ -110,11 +110,10 @@ static const double kProxyUpdateDebounceIntervalSec = 0.8;
 
     // 非显式支持的类型不返回
     NSString *scheme = @"http";
-    if ([type isEqualToString:(NSString *)kCFProxyTypeHTTPS]) {
-        scheme = @"https";
-    } else if ([type isEqualToString:(NSString *)kCFProxyTypeSOCKS]) {
+    if ([type isEqualToString:(NSString *)kCFProxyTypeSOCKS]) {
         scheme = @"socks5";
-    } else if (![type isEqualToString:(NSString *)kCFProxyTypeHTTP]) {
+    } else if (![type isEqualToString:(NSString *)kCFProxyTypeHTTP] &&
+               ![type isEqualToString:(NSString *)kCFProxyTypeHTTPS]) {
         return nil;
     }
 
