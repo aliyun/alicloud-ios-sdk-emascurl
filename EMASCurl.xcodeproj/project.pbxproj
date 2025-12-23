@@ -69,6 +69,7 @@
 		94F806C22E53141100B6FE7A /* LocalProxyDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 94F806C12E53141100B6FE7A /* LocalProxyDemoController.m */; };
 		95A1B2C32E8A000100000003 /* EMASCurlProxySetting.m in Sources */ = {isa = PBXBuildFile; fileRef = 95A1B2C32E8A000100000002 /* EMASCurlProxySetting.m */; };
 		9ED156F40066301702A9AC72 /* libcurl-HTTP2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7550AA13D3ADD72163B2F6 /* libcurl-HTTP2.xcframework */; };
+		D297EE0A2EFA962500399343 /* Http3DemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = D297EE092EFA962500399343 /* Http3DemoController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -197,6 +198,8 @@
 		95A1B2C32E8A000100000001 /* EMASCurlProxySetting.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EMASCurlProxySetting.h; sourceTree = "<group>"; };
 		95A1B2C32E8A000100000002 /* EMASCurlProxySetting.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EMASCurlProxySetting.m; sourceTree = "<group>"; };
 		A5A30212360843BC1B87256D /* Pods-EMASCurlDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EMASCurlDemo.release.xcconfig"; path = "Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo.release.xcconfig"; sourceTree = "<group>"; };
+		D297EE082EFA962500399343 /* Http3DemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Http3DemoController.h; sourceTree = "<group>"; };
+		D297EE092EFA962500399343 /* Http3DemoController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Http3DemoController.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -347,6 +350,8 @@
 				94F3D04C2EB361AA0039304A /* LogViewerController.m */,
 				9492D6A42D30226200008A84 /* RequestDemoController.h */,
 				9492D6A52D30226200008A84 /* RequestDemoController.m */,
+				D297EE082EFA962500399343 /* Http3DemoController.h */,
+				D297EE092EFA962500399343 /* Http3DemoController.m */,
 				94F806C02E53141100B6FE7A /* LocalProxyDemoController.h */,
 				94F806C12E53141100B6FE7A /* LocalProxyDemoController.m */,
 				9492D6A62D30226200008A84 /* WkWebViewDemoController.h */,
@@ -654,9 +659,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EMASCurlDemo/Pods-EMASCurlDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -736,6 +745,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D297EE0A2EFA962500399343 /* Http3DemoController.m in Sources */,
 				9492D6A82D30226200008A84 /* RequestDemoController.m in Sources */,
 				9492D6A92D30226200008A84 /* WkWebViewDemoController.m in Sources */,
 				6F3F60372CD0E0890014025B /* AppDelegate.m in Sources */,
