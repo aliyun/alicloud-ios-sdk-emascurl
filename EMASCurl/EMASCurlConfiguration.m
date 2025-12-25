@@ -37,6 +37,7 @@
     // DNS和代理配置
     _dnsResolver = nil;
     _proxyServer = nil;
+    _disabledWhenUsingSystemProxy = NO;
 
     // 安全设置
     _caFilePath = nil;
@@ -79,6 +80,7 @@
 
     copy.dnsResolver = self.dnsResolver;
     copy.proxyServer = [self.proxyServer copy];
+    copy.disabledWhenUsingSystemProxy = self.disabledWhenUsingSystemProxy;
 
     copy.caFilePath = [self.caFilePath copy];
     copy.publicKeyPinningKeyPath = [self.publicKeyPinningKeyPath copy];
@@ -117,6 +119,7 @@
     if (self.dnsResolver != configuration.dnsResolver) return NO;
     if ((self.proxyServer || configuration.proxyServer) &&
         ![self.proxyServer isEqualToString:configuration.proxyServer]) return NO;
+    if (self.disabledWhenUsingSystemProxy != configuration.disabledWhenUsingSystemProxy) return NO;
 
     if ((self.caFilePath || configuration.caFilePath) &&
         ![self.caFilePath isEqualToString:configuration.caFilePath]) return NO;

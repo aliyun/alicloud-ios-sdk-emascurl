@@ -160,6 +160,8 @@ static BOOL emas_pathMatchesPattern(NSString *requestPath, NSString *pattern) {
 
 @property (nonatomic, assign) double resolveDomainTimeInterval;
 
+@property (nonatomic, assign) BOOL usedCustomDNSResolverResult;
+
 @property (nonatomic, strong) NSMutableData *receivedResponseData;
 
 @property (nonatomic, strong) EMASCurlConfiguration *resolvedConfiguration;
@@ -375,6 +377,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         _totalBytesExpected = 0;
         _currentResponse = [CurlHTTPResponse new];
         _resolveDomainTimeInterval = -1;
+        _usedCustomDNSResolverResult = NO;
 
         // 初始化时间记录
         _fetchStartDate = [NSDate date];
@@ -475,6 +478,15 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         // 不拦截来自Httpdns SDK的请求
         EMAS_LOG_DEBUG(@"EC-Request", @"Rejected HttpdnsSDK request");
         return NO;
+    }
+
+    // 检查是否在系统代理时禁用EMASCurl（手动配置代理时不生效）
+    if (config.disabledWhenUsingSystemProxy && config.proxyServer.length == 0) {
+        NSString *systemProxy = [EMASCurlProxySetting proxyServerForURL:request.URL];
+        if (systemProxy.length > 0) {
+            EMAS_LOG_INFO(@"EC-Request", @"Skipping EMASCurl due to system proxy detected: %@", systemProxy);
+            return NO;
+        }
     }
 
     EMAS_LOG_DEBUG(@"EC-Request", @"Request accepted for processing: %@", request.URL.absoluteString);
@@ -850,6 +862,9 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     // 从传入的字典中填充额外信息
     [self populateTransactionMetricsFromData:metricsData metrics:metrics];
 
+    // 自定义DNS解析信息
+    metrics.usedCustomDNSResolverResult = self.usedCustomDNSResolverResult;
+
     return metrics;
 }
 
@@ -1128,6 +1143,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
         if ([self preResolveDomain:easyHandle]) {
             self.resolveDomainTimeInterval = [[NSDate date] timeIntervalSince1970] - startTime;
+            self.usedCustomDNSResolverResult = YES;
         }
     }
 
