@@ -62,6 +62,7 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
         - [拦截`sharedSession`](#拦截sharedsession)
       - [与HTTPDNS配合使用](#与httpdns配合使用)
       - [选择HTTP版本](#选择http版本)
+      - [设置全局拦截开关](#设置全局拦截开关)
       - [设置CA证书文件路径](#设置ca证书文件路径)
       - [设置Cookie存储](#设置cookie存储)
       - [设置连接超时](#设置连接超时)
@@ -81,6 +82,7 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
       - [设置证书校验](#设置证书校验)
       - [设置域名校验](#设置域名校验)
       - [设置手动代理服务器](#设置手动代理服务器)
+      - [设置系统代理检测](#设置系统代理检测)
       - [设置HTTP缓存](#设置http缓存)
   - [EMASLocalProxy - 统一代理方案](#emaslocalproxy---统一代理方案)
     - [已知限制](#已知限制)
@@ -439,6 +441,21 @@ config.httpVersion = HTTP1;  // 使用HTTP/1.1
 
 **HTTP1**: 使用HTTP1.1
 **HTTP2**: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
+
+#### 设置全局拦截开关
+
+设置是否启用请求拦截，可在运行时动态控制。关闭后所有请求直接走系统原生网络。
+
+```objc
+// 关闭拦截
+[EMASCurlProtocol setRequestInterceptEnabled:NO];
+
+// 开启拦截（默认）
+[EMASCurlProtocol setRequestInterceptEnabled:YES];
+
+// 查询当前状态
+BOOL enabled = [EMASCurlProtocol isRequestInterceptEnabled];
+```
 
 #### 设置CA证书文件路径
 

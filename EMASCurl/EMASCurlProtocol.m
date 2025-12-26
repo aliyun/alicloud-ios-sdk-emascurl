@@ -215,6 +215,9 @@ static BOOL curlFeatureHttp3;
 // 全局日志设置
 static BOOL s_enableDebugLog;
 
+// 全局请求拦截开关
+static BOOL s_requestInterceptEnabled = YES;
+
 // 全局缓存相关
 static EMASCurlResponseCache *s_responseCache;
 
@@ -345,6 +348,19 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     defaultConfig.cacheEnabled = enabled;
 }
 
++ (void)setRequestInterceptEnabled:(BOOL)requestInterceptEnabled {
+    s_requestInterceptEnabled = requestInterceptEnabled;
+    if (requestInterceptEnabled) {
+        EMAS_LOG_INFO(@"EC-Protocol", @"Request intercept enabled");
+    } else {
+        EMAS_LOG_INFO(@"EC-Protocol", @"Request intercept disabled");
+    }
+}
+
++ (BOOL)isRequestInterceptEnabled {
+    return s_requestInterceptEnabled;
+}
+
 #pragma mark * NSURLProtocol overrides
 
 // 使用 +initialize 承担一次性初始化；运行时保证对每个类只调用一次
@@ -396,6 +412,11 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 }
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
+    // 全局拦截开关检查
+    if (!s_requestInterceptEnabled) {
+        return NO;
+    }
+
     if ([[request.URL absoluteString] isEqual:@"about:blank"]) {
         EMAS_LOG_DEBUG(@"EC-Request", @"Rejected blank URL request");
         return NO;
