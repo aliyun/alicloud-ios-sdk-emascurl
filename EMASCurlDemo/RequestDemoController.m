@@ -73,6 +73,9 @@
     // 设置HTTPDNS解析器
     curlConfig.dnsResolver = [RequestDemoDNSResolver class];
 
+    // 检测到系统代理时禁用EMASCurl
+    curlConfig.disabledWhenUsingSystemProxy = NO;
+
     // 设置综合性能指标回调 - 基本等价于URLSessionTaskTransactionMetrics
     curlConfig.transactionMetricsObserver = ^(NSURLRequest * _Nonnull request, BOOL success, NSError * _Nullable error, EMASCurlTransactionMetrics * _Nonnull metrics) {
         NSLog(@"综合性能指标 [%@]:\n"
@@ -97,7 +100,8 @@
               "本地地址: %@:%ld\n"
               "远程地址: %@:%ld\n"
               "TLS协议版本: %@\n"
-              "TLS密码套件: %@\n",
+              "TLS密码套件: %@\n"
+              "使用自定义DNS解析: %@\n",
               request.URL.absoluteString,
               success, error,
               metrics.fetchStartDate,
@@ -119,7 +123,8 @@
               metrics.localAddress ?: @"未知", (long)metrics.localPort,
               metrics.remoteAddress ?: @"未知", (long)metrics.remotePort,
               metrics.tlsProtocolVersion ?: @"未使用",
-              metrics.tlsCipherSuite ?: @"未使用");
+              metrics.tlsCipherSuite ?: @"未使用",
+              metrics.usedCustomDNSResolverResult ? @"是" : @"否");
     };
 
     // 设置日志级别（仍使用全局设置，因为日志是全局的）

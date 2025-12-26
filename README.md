@@ -544,6 +544,9 @@ EMASCurl提供基本等价于`URLSessionTaskTransactionMetrics`的完整性能�
 @property (nonatomic, copy, nullable) NSString *tlsProtocolVersion;
 @property (nonatomic, copy, nullable) NSString *tlsCipherSuite;
 
+// 自定义DNS信息
+@property (nonatomic, assign) BOOL usedCustomDNSResolverResult;
+
 @end
 ```
 
@@ -570,6 +573,7 @@ config.transactionMetricsObserver = ^(NSURLRequest * _Nonnull request, BOOL succ
     NSLog(@"请求头字节: %ld, 响应头字节: %ld", (long)metrics.requestHeaderBytesSent, (long)metrics.responseHeaderBytesReceived);
     NSLog(@"地址: %@:%ld -> %@:%ld", metrics.localAddress, (long)metrics.localPort, metrics.remoteAddress, (long)metrics.remotePort);
     NSLog(@"TLS: %@ (%@)", metrics.tlsProtocolVersion, metrics.tlsCipherSuite);
+    NSLog(@"使用自定义DNS解析: %@", metrics.usedCustomDNSResolverResult ? @"是" : @"否");
 };
 
 // 应用配置到session
@@ -866,6 +870,23 @@ config.proxyServer = @"http://user:pass@proxy.example.com:8080";
 // config.proxyServer = nil;
 ```
 
+#### 设置系统代理检测
+
+设置是否在检测到系统代理时禁用EMASCurl。启用后，当检测到系统代理时，EMASCurl会跳过处理，让请求走系统原生网络库。
+
+**注意事项：**
+- 仅对系统代理设置生效，TUN/VPN模式的代理不受影响
+- 当手动配置了`proxyServer`时，此配置会被忽略（手动代理优先）
+
+例如：
+
+```objc
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+
+// 检测到系统代理时禁用EMASCurl（默认为NO）
+config.disabledWhenUsingSystemProxy = YES;
+```
+
 #### 设置HTTP缓存
 
 设置是否启用HTTP缓存。EMASCurl默认启用HTTP缓存。
@@ -900,6 +921,7 @@ EMASCurlConfiguration 提供了所有网络配置选项的集中管理。以下�
 | **DNS和代理** | | | |
 | `dnsResolver` | Class | nil | 自定义DNS解析器类 |
 | `proxyServer` | NSString | nil | 代理服务器URL（非空时总是使用该代理） |
+| `disabledWhenUsingSystemProxy` | BOOL | NO | 检测到系统代理时是否禁用EMASCurl |
 | **安全设置** | | | |
 | `caFilePath` | NSString | nil | CA证书文件路径 |
 | `publicKeyPinningKeyPath` | NSString | nil | 公钥固定文件路径 |
