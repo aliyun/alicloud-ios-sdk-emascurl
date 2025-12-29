@@ -349,7 +349,9 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 }
 
 + (void)setRequestInterceptEnabled:(BOOL)requestInterceptEnabled {
-    s_requestInterceptEnabled = requestInterceptEnabled;
+    @synchronized (self) {
+        s_requestInterceptEnabled = requestInterceptEnabled;
+    }
     if (requestInterceptEnabled) {
         EMAS_LOG_INFO(@"EC-Protocol", @"Request intercept enabled");
     } else {
@@ -358,7 +360,9 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 }
 
 + (BOOL)isRequestInterceptEnabled {
-    return s_requestInterceptEnabled;
+    @synchronized (self) {
+        return s_requestInterceptEnabled;
+    }
 }
 
 #pragma mark * NSURLProtocol overrides
@@ -413,7 +417,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
     // 全局拦截开关检查
-    if (!s_requestInterceptEnabled) {
+    if (![self isRequestInterceptEnabled]) {
         return NO;
     }
 
