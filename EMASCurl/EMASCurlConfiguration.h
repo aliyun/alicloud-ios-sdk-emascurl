@@ -91,6 +91,9 @@ typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
 @property (nonatomic, copy, nullable) NSString *tlsProtocolVersion;
 @property (nonatomic, copy, nullable) NSString *tlsCipherSuite;
 
+// 自定义DNS信息
+@property (nonatomic, assign) BOOL usedCustomDNSResolverResult;
+
 @end
 
 
@@ -156,6 +159,12 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
  * 默认值: nil
  */
 @property (nonatomic, copy, nullable) NSString *proxyServer;
+
+/**
+ * 检测到系统代理时禁用EMASCurl，仅对系统代理生效，手动配置proxyServer时忽略此配置
+ * 默认值: NO
+ */
+@property (nonatomic, assign) BOOL disabledWhenUsingSystemProxy;
 
 #pragma mark - 安全设置
 

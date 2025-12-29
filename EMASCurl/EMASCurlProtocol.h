@@ -155,6 +155,15 @@ typedef void(^EMASCurlLogHandlerBlock)(EMASCurlLogLevel level, NSString * _Nonnu
 // 设置是否启用HTTP缓存，默认启用
 + (void)setCacheEnabled:(BOOL)enabled;
 
+#pragma mark - 全局拦截开关
+
+// 设置是否启用请求拦截，默认启用
+// 关闭后，所有请求将不再被EMASCurl拦截，直接走系统原生网络
++ (void)setRequestInterceptEnabled:(BOOL)requestInterceptEnabled;
+
+// 获取当前请求拦截是否启用
++ (BOOL)isRequestInterceptEnabled;
+
 @end
 
 #pragma mark - Multi-Instance Configuration Support

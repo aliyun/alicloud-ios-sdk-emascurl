@@ -160,6 +160,8 @@ static BOOL emas_pathMatchesPattern(NSString *requestPath, NSString *pattern) {
 
 @property (nonatomic, assign) double resolveDomainTimeInterval;
 
+@property (nonatomic, assign) BOOL usedCustomDNSResolverResult;
+
 @property (nonatomic, strong) NSMutableData *receivedResponseData;
 
 @property (nonatomic, strong) EMASCurlConfiguration *resolvedConfiguration;
@@ -212,6 +214,9 @@ static BOOL curlFeatureHttp3;
 
 // 全局日志设置
 static BOOL s_enableDebugLog;
+
+// 全局请求拦截开关
+static BOOL s_requestInterceptEnabled = YES;
 
 // 全局缓存相关
 static EMASCurlResponseCache *s_responseCache;
@@ -343,6 +348,23 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     defaultConfig.cacheEnabled = enabled;
 }
 
++ (void)setRequestInterceptEnabled:(BOOL)requestInterceptEnabled {
+    @synchronized (self) {
+        s_requestInterceptEnabled = requestInterceptEnabled;
+    }
+    if (requestInterceptEnabled) {
+        EMAS_LOG_INFO(@"EC-Protocol", @"Request intercept enabled");
+    } else {
+        EMAS_LOG_INFO(@"EC-Protocol", @"Request intercept disabled");
+    }
+}
+
++ (BOOL)isRequestInterceptEnabled {
+    @synchronized (self) {
+        return s_requestInterceptEnabled;
+    }
+}
+
 #pragma mark * NSURLProtocol overrides
 
 // 使用 +initialize 承担一次性初始化；运行时保证对每个类只调用一次
@@ -375,6 +397,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         _totalBytesExpected = 0;
         _currentResponse = [CurlHTTPResponse new];
         _resolveDomainTimeInterval = -1;
+        _usedCustomDNSResolverResult = NO;
 
         // 初始化时间记录
         _fetchStartDate = [NSDate date];
@@ -393,6 +416,11 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 }
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
+    // 全局拦截开关检查
+    if (![self isRequestInterceptEnabled]) {
+        return NO;
+    }
+
     if ([[request.URL absoluteString] isEqual:@"about:blank"]) {
         EMAS_LOG_DEBUG(@"EC-Request", @"Rejected blank URL request");
         return NO;
@@ -475,6 +503,15 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         // 不拦截来自Httpdns SDK的请求
         EMAS_LOG_DEBUG(@"EC-Request", @"Rejected HttpdnsSDK request");
         return NO;
+    }
+
+    // 检查是否在系统代理时禁用EMASCurl（手动配置代理时不生效）
+    if (config.disabledWhenUsingSystemProxy && config.proxyServer.length == 0) {
+        NSString *systemProxy = [EMASCurlProxySetting proxyServerForURL:request.URL];
+        if (systemProxy.length > 0) {
+            EMAS_LOG_INFO(@"EC-Request", @"Skipping EMASCurl due to system proxy detected: %@", systemProxy);
+            return NO;
+        }
     }
 
     EMAS_LOG_DEBUG(@"EC-Request", @"Request accepted for processing: %@", request.URL.absoluteString);
@@ -850,6 +887,9 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     // 从传入的字典中填充额外信息
     [self populateTransactionMetricsFromData:metricsData metrics:metrics];
 
+    // 自定义DNS解析信息
+    metrics.usedCustomDNSResolverResult = self.usedCustomDNSResolverResult;
+
     return metrics;
 }
 
@@ -1128,6 +1168,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
         if ([self preResolveDomain:easyHandle]) {
             self.resolveDomainTimeInterval = [[NSDate date] timeIntervalSince1970] - startTime;
+            self.usedCustomDNSResolverResult = YES;
         }
     }
 

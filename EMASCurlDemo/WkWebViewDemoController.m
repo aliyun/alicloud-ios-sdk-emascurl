@@ -44,7 +44,6 @@
     }];
 
     // Configure proxy logging and install into WebView configuration
-    [EMASLocalHttpProxy setLogLevel:EMASLocalHttpProxyLogLevelInfo];
     BOOL success = [EMASLocalHttpProxy installIntoWebViewConfiguration:configuration];
 
     if (success) {

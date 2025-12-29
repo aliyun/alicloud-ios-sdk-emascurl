@@ -57,6 +57,8 @@
                                              message:message];
     }];
 
+    [EMASLocalHttpProxy setLogLevel:EMASLocalHttpProxyLogLevelInfo];
+
     return YES;
 }
 

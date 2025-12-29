@@ -62,6 +62,7 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
         - [拦截`sharedSession`](#拦截sharedsession)
       - [与HTTPDNS配合使用](#与httpdns配合使用)
       - [选择HTTP版本](#选择http版本)
+      - [设置全局拦截开关](#设置全局拦截开关)
       - [设置CA证书文件路径](#设置ca证书文件路径)
       - [设置Cookie存储](#设置cookie存储)
       - [设置连接超时](#设置连接超时)
@@ -81,6 +82,7 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
       - [设置证书校验](#设置证书校验)
       - [设置域名校验](#设置域名校验)
       - [设置手动代理服务器](#设置手动代理服务器)
+      - [设置系统代理检测](#设置系统代理检测)
       - [设置HTTP缓存](#设置http缓存)
   - [EMASLocalProxy - 统一代理方案](#emaslocalproxy---统一代理方案)
     - [已知限制](#已知限制)
@@ -440,6 +442,21 @@ config.httpVersion = HTTP1;  // 使用HTTP/1.1
 **HTTP1**: 使用HTTP1.1
 **HTTP2**: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
 
+#### 设置全局拦截开关
+
+设置是否启用请求拦截，可在运行时动态控制。关闭后所有请求直接走系统原生网络。
+
+```objc
+// 关闭拦截
+[EMASCurlProtocol setRequestInterceptEnabled:NO];
+
+// 开启拦截（默认）
+[EMASCurlProtocol setRequestInterceptEnabled:YES];
+
+// 查询当前状态
+BOOL enabled = [EMASCurlProtocol isRequestInterceptEnabled];
+```
+
 #### 设置CA证书文件路径
 
 如果您的服务器使用自签名证书，您需要在配置中设置CA证书文件的路径，以确保EMASCurl能够正确验证SSL/TLS连接。
@@ -544,6 +561,9 @@ EMASCurl提供基本等价于`URLSessionTaskTransactionMetrics`的完整性能�
 @property (nonatomic, copy, nullable) NSString *tlsProtocolVersion;
 @property (nonatomic, copy, nullable) NSString *tlsCipherSuite;
 
+// 自定义DNS信息
+@property (nonatomic, assign) BOOL usedCustomDNSResolverResult;
+
 @end
 ```
 
@@ -570,6 +590,7 @@ config.transactionMetricsObserver = ^(NSURLRequest * _Nonnull request, BOOL succ
     NSLog(@"请求头字节: %ld, 响应头字节: %ld", (long)metrics.requestHeaderBytesSent, (long)metrics.responseHeaderBytesReceived);
     NSLog(@"地址: %@:%ld -> %@:%ld", metrics.localAddress, (long)metrics.localPort, metrics.remoteAddress, (long)metrics.remotePort);
     NSLog(@"TLS: %@ (%@)", metrics.tlsProtocolVersion, metrics.tlsCipherSuite);
+    NSLog(@"使用自定义DNS解析: %@", metrics.usedCustomDNSResolverResult ? @"是" : @"否");
 };
 
 // 应用配置到session
@@ -866,6 +887,23 @@ config.proxyServer = @"http://user:pass@proxy.example.com:8080";
 // config.proxyServer = nil;
 ```
 
+#### 设置系统代理检测
+
+设置是否在检测到系统代理时禁用EMASCurl。启用后，当检测到系统代理时，EMASCurl会跳过处理，让请求走系统原生网络库。
+
+**注意事项：**
+- 仅对系统代理设置生效，TUN/VPN模式的代理不受影响
+- 当手动配置了`proxyServer`时，此配置会被忽略（手动代理优先）
+
+例如：
+
+```objc
+EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
+
+// 检测到系统代理时禁用EMASCurl（默认为NO）
+config.disabledWhenUsingSystemProxy = YES;
+```
+
 #### 设置HTTP缓存
 
 设置是否启用HTTP缓存。EMASCurl默认启用HTTP缓存。
@@ -900,6 +938,7 @@ EMASCurlConfiguration 提供了所有网络配置选项的集中管理。以下�
 | **DNS和代理** | | | |
 | `dnsResolver` | Class | nil | 自定义DNS解析器类 |
 | `proxyServer` | NSString | nil | 代理服务器URL（非空时总是使用该代理） |
+| `disabledWhenUsingSystemProxy` | BOOL | NO | 检测到系统代理时是否禁用EMASCurl |
 | **安全设置** | | | |
 | `caFilePath` | NSString | nil | CA证书文件路径 |
 | `publicKeyPinningKeyPath` | NSString | nil | 公钥固定文件路径 |
