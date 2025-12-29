@@ -103,7 +103,8 @@ EMASCurl是阿里云EMAS团队提供的基于[libcurl](https://github.com/curl/c
 
 - **广泛兼容**：支持iOS 10.0+系统版本
 - **协议拦截**：通过NSURLProtocol拦截网络请求
-- **HTTP/2支持**：基于libcurl的HTTP/2实现
+- **HTTP/2支持**：基于libcurl的HTTP/2实现（默认）
+- **HTTP/3支持**：可选的HTTP/3(QUIC)支持，基于OpenSSL+nghttp3+ngtcp2
 - **丰富功能**：提供缓存、性能监控、SSL配置等功能
 - **HTTPDNS集成**：与阿里云HTTPDNS服务深度集成
 - **精细控制**：提供详细的网络请求控制选项
@@ -120,11 +121,19 @@ source 'https://github.com/aliyun/aliyun-specs.git'
 target 'yourAppTarget' do
     use_framework!
 
+    # HTTP/2 版本（默认）
     pod 'EMASCurl', 'x.x.x'
+
+    # 或者 HTTP/3 版本
+    # pod 'EMASCurl/HTTP3', 'x.x.x'
 end
 ```
 
 当前最新版本：1.4.4
+
+**版本选择说明：**
+- `EMASCurl` 或 `EMASCurl/HTTP2`：默认HTTP/2版本
+- `EMASCurl/HTTP3`：HTTP/3(QUIC)版本
 
 在您的Terminal中进入`Podfile`所在目录，执行以下命令安装依赖：
 
@@ -211,18 +220,40 @@ git submodule update --init --recursive --progress
 
 所依赖的子模块版本信息如下：
 
+**HTTP/2 版本依赖：**
+
 | 依赖仓库         | 版本        |
 |:-----------------|:------------|
 | curl             | curl-8_10_1 |
-| nghttp2         | v1.64.0     |
+| nghttp2          | v1.64.0     |
+
+**HTTP/3 版本依赖：**
+
+| 依赖仓库         | 版本        |
+|:-----------------|:------------|
+| curl             | curl-8_17_0 |
+| nghttp2          | v1.64.0     |
+| openssl          | openssl-3.5.0 |
+| nghttp3          | v1.13.1     |
+| ngtcp2           | v1.18.0     |
 
 #### 构建libcurl.xcframework
 
+**构建 HTTP/2 版本：**
+
 ```shell
-./build_libcurl_xcframework.sh
+./build_libcurl_http2.sh
 ```
 
 运行完脚本后，在`out`文件夹下会生成**libcurl-HTTP2.xcframework**。
+
+**构建 HTTP/3 版本：**
+
+```shell
+./build_libcurl_http3.sh
+```
+
+运行完脚本后，在`out`文件夹下会生成**libcurl-HTTP3.xcframework**。
 
 #### 构建EMASCurl xcframework
 
@@ -230,7 +261,9 @@ git submodule update --init --recursive --progress
 pod install --repo-update
 ./build_emascurl_xcframework.sh
 ```
-运行完脚本后，在`Build/http2/emascurl`文件夹下会生成**EMASCurl.xcframework**，本框架目前支持HTTP1、HTTP2。
+运行完脚本后，会生成两个版本的框架：
+- `Build/http2/emascurl/EMASCurl.xcframework` - HTTP/2版本
+- `Build/http3/emascurl/EMASCurl.xcframework` - HTTP/3版本
 
 ### 集成EMASCurl
 
@@ -437,10 +470,13 @@ EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
 // 默认已经是HTTP2，无需设置
 // 如需使用HTTP/1.1：
 config.httpVersion = HTTP1;  // 使用HTTP/1.1
+// 如需使用HTTP/3（需要引入HTTP3 subspec）：
+// config.httpVersion = HTTP3;  // 使用HTTP/3
 ```
 
 **HTTP1**: 使用HTTP1.1
 **HTTP2**: 首先尝试使用HTTP2，如果与服务器的HTTP2协商失败，则会退回到HTTP1.1
+**HTTP3**: 使用HTTP/3(QUIC)协议，需要引入`EMASCurl/HTTP3` subspec，如果服务器不支持则会退回到HTTP/2或HTTP/1.1
 
 #### 设置全局拦截开关
 
@@ -469,6 +505,8 @@ NSString *caFilePath = [[NSBundle mainBundle] pathForResource:@"my_ca" ofType:@"
 EMASCurlConfiguration *config = [EMASCurlConfiguration defaultConfiguration];
 config.caFilePath = caFilePath;
 ```
+
+**注意**：使用HTTP/3版本时，如遇到证书校验问题，可从 [curl官网](https://curl.se/docs/caextract.html) 下载最新CA证书并通过此接口配置。
 
 #### 设置Cookie存储
 
@@ -931,7 +969,7 @@ EMASCurlConfiguration 提供了所有网络配置选项的集中管理。以下�
 | 属性 | 类型 | 默认值 | 说明 |
 |:---|:---|:---|:---|
 | **核心网络设置** | | | |
-| `httpVersion` | HTTPVersion | HTTP2 | HTTP协议版本（HTTP1/HTTP2） |
+| `httpVersion` | HTTPVersion | HTTP2 | HTTP协议版本（HTTP1/HTTP2/HTTP3） |
 | `connectTimeoutInterval` | NSTimeInterval | 2.5 | 连接超时时间（秒） |
 | `enableBuiltInGzip` | BOOL | YES | 是否启用内置gzip压缩 |
 | `enableBuiltInRedirection` | BOOL | YES | 是否启用内置重定向处理 |

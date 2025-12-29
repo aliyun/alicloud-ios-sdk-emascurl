@@ -1113,8 +1113,8 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 - (void)configEasyHandle:(CURL *)easyHandle error:(NSError **)error {
     // 假如是quic这个framework，由于使用的boringssl无法访问苹果native CA，需要从Bundle中读取CA
     if (curlFeatureHttp3) {
-        NSBundle *mainBundle = [NSBundle mainBundle];
-        NSURL *bundleURL = [mainBundle URLForResource:@"EMASCAResource" withExtension:@"bundle"];
+        NSBundle *frameworkBundle = [NSBundle bundleForClass:[self class]];
+        NSURL *bundleURL = [frameworkBundle URLForResource:@"EMASCAResource" withExtension:@"bundle"];
         if (!bundleURL) {
             *error = [NSError errorWithDomain:@"fail to load CA certificate." code:-3 userInfo:nil];
             return;
