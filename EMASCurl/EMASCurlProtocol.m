@@ -1224,10 +1224,12 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     }
     curl_easy_setopt(easyHandle, CURLOPT_CONNECTTIMEOUT_MS, (long)(connectTimeout * 1000));
 
-    // 设置请求超时时间
+    // 设置请求超时时间（空闲超时模式）
+    // 使用 LOW_SPEED_LIMIT + LOW_SPEED_TIME 模拟空闲超时
     NSTimeInterval requestTimeoutInterval = self.request.timeoutInterval;
-    if (requestTimeoutInterval) {
-        curl_easy_setopt(easyHandle, CURLOPT_TIMEOUT, requestTimeoutInterval);
+    if (requestTimeoutInterval > 0) {
+        curl_easy_setopt(easyHandle, CURLOPT_LOW_SPEED_LIMIT, 1L);
+        curl_easy_setopt(easyHandle, CURLOPT_LOW_SPEED_TIME, (long)requestTimeoutInterval);
     }
 
     // 开启重定向
