@@ -135,6 +135,8 @@ end
 - `EMASCurl` 或 `EMASCurl/HTTP2`：默认HTTP/2版本
 - `EMASCurl/HTTP3`：HTTP/3(QUIC)版本
 
+**注意**：HTTP/3 版本需额外集成 QUIC 协议栈，集成后打包到 IPA 的体积增量约为 3.3 MB；HTTP/2 版本体积增量约为 0.4 MB。请根据实际需求选择引入版本。
+
 在您的Terminal中进入`Podfile`所在目录，执行以下命令安装依赖：
 
 
