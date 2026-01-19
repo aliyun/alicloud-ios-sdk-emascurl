@@ -1181,7 +1181,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     if (proxyServer.length > 0) {
         curl_easy_setopt(easyHandle, CURLOPT_PROXY, [proxyServer UTF8String]);
-        EMAS_LOG_DEBUG(@"EC-Proxy", @"Using proxy: %@", proxyServer);
+        EMAS_LOG_INFO(@"EC-Proxy", @"Using proxy: %@", proxyServer);
     } else {
         EMAS_LOG_DEBUG(@"EC-Proxy", @"No proxy configured");
     }

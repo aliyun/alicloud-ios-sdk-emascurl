@@ -29,7 +29,7 @@
 
 - (void)setupDefaults {
     // 核心网络设置
-    _httpVersion = HTTP1;
+    _httpVersion = HTTP2;
     _connectTimeoutInterval = 2.5;
     _enableBuiltInGzip = YES;
     _enableBuiltInRedirection = YES;
