@@ -88,6 +88,9 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
             return nil;
         }
 
+        // // 限制单连接的最大并发 stream 数
+        curl_multi_setopt(_multiHandle, CURLMOPT_MAX_CONCURRENT_STREAMS, 32);
+
         // cookie手动管理，所以这里不共享
         // 如果有需求，需要做实例隔离，整个架构要重新设计
         _shareHandle = curl_share_init();
@@ -261,7 +264,7 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
             curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, &responseCode);
 
             if (succeeded) {
-                EMAS_LOG_INFO(@"EC-Manager", @"Transfer completed successfully for URL: %@ (HTTP %ld)", url, responseCode);
+                EMAS_LOG_DEBUG(@"EC-Manager", @"Transfer completed successfully for URL: %@ (HTTP %ld)", url, responseCode);
             } else {
                 EMAS_LOG_ERROR(@"EC-Manager", @"Transfer failed for URL: %@ - %s", url, curl_easy_strerror(msg->data.result));
 
