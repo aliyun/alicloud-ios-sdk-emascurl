@@ -264,7 +264,7 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
             curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, &responseCode);
 
             if (succeeded) {
-                EMAS_LOG_INFO(@"EC-Manager", @"Transfer completed successfully for URL: %@ (HTTP %ld)", url, responseCode);
+                EMAS_LOG_DEBUG(@"EC-Manager", @"Transfer completed successfully for URL: %@ (HTTP %ld)", url, responseCode);
             } else {
                 EMAS_LOG_ERROR(@"EC-Manager", @"Transfer failed for URL: %@ - %s", url, curl_easy_strerror(msg->data.result));
 

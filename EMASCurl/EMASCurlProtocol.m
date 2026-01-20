@@ -801,8 +801,9 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     }
 
     // 记录性能指标
-    EMAS_LOG_INFO(@"EC-Performance", @"Request completed in %.0fms (DNS: %.0fms, Connect: %.0fms, Transfer: %.0fms)",
-                  totalTime * 1000, nameLookupTime * 1000, connectTime * 1000, startTransferTime * 1000);
+    EMAS_LOG_INFO(@"EC-Performance", @"Request completed in %.0fms (DNS: %.0fms, Connect: %.0fms, Transfer: %.0fms) for URL: %@ (HTTP %ld)",
+                  totalTime * 1000, nameLookupTime * 1000, connectTime * 1000, startTransferTime * 1000, 
+                  self.request.URL.absoluteString, (long)self.currentResponse.statusCode);
 
     // 检查是否有全局综合性能指标回调
     EMASCurlTransactionMetricsObserverBlock globalTransactionCallback = nil;
