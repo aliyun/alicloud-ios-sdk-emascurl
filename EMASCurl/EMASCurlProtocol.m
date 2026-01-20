@@ -978,7 +978,6 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         case HTTP2:
             if (curlFeatureHttp2) {
                 curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
-                curl_easy_setopt(easyHandle, CURLOPT_PIPEWAIT, 1L);
             } else {
                 curl_easy_setopt(easyHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
             }
