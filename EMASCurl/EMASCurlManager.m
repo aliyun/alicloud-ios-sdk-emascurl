@@ -361,4 +361,12 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
     [_condition unlock];
 }
 
+- (void)setMaxConcurrentStreams:(NSInteger)maxStreams {
+    if (maxStreams < 1) {
+        maxStreams = 32;
+    }
+    curl_multi_setopt(_multiHandle, CURLMOPT_MAX_CONCURRENT_STREAMS, (long)maxStreams);
+    EMAS_LOG_INFO(@"EC-Manager", @"Set max concurrent streams to %ld", (long)maxStreams);
+}
+
 @end

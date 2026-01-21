@@ -155,6 +155,13 @@ typedef void(^EMASCurlLogHandlerBlock)(EMASCurlLogLevel level, NSString * _Nonnu
 // 设置是否启用HTTP缓存，默认启用
 + (void)setCacheEnabled:(BOOL)enabled;
 
+#pragma mark - 多路复用设置
+
+// 设置单连接最大并发流数
+// 控制单个连接上允许的最大并发请求数
+// 较低的值会促使建立更多连接，减少单连接上的流排队等待
++ (void)setMaxConcurrentStreams:(NSInteger)maxStreams;
+
 #pragma mark - 全局拦截开关
 
 // 设置是否启用请求拦截，默认启用

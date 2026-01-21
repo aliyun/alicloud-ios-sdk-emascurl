@@ -348,6 +348,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     defaultConfig.cacheEnabled = enabled;
 }
 
++ (void)setMaxConcurrentStreams:(NSInteger)maxStreams {
+    [[EMASCurlManager sharedInstance] setMaxConcurrentStreams:maxStreams];
+}
+
 + (void)setRequestInterceptEnabled:(BOOL)requestInterceptEnabled {
     @synchronized (self) {
         s_requestInterceptEnabled = requestInterceptEnabled;

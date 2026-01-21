@@ -50,6 +50,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 唤醒 multi 事件循环，常用于取消请求后尽快进入回调
 - (void)wakeup;
 
+/// 设置单连接最大并发流数
+/// @param maxStreams 最大并发流数，默认 32
+- (void)setMaxConcurrentStreams:(NSInteger)maxStreams;
+
 @end
 
 NS_ASSUME_NONNULL_END
