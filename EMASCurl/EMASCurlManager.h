@@ -52,7 +52,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 设置单连接最大并发流数
 /// @param maxStreams 最大并发流数，默认 32
-- (void)setMaxConcurrentStreams:(NSInteger)maxStreams;
+- (void)setMaxConcurrentStreamsPerConnection:(NSInteger)maxStreams;
 
 @end
 

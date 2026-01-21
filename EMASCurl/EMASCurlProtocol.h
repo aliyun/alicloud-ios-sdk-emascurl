@@ -160,7 +160,7 @@ typedef void(^EMASCurlLogHandlerBlock)(EMASCurlLogLevel level, NSString * _Nonnu
 // 设置单连接最大并发流数
 // 控制单个连接上允许的最大并发请求数
 // 较低的值会促使建立更多连接，减少单连接上的流排队等待
-+ (void)setMaxConcurrentStreams:(NSInteger)maxStreams;
++ (void)setMaxConcurrentStreamsPerConnection:(NSInteger)maxStreams;
 
 #pragma mark - 全局拦截开关
 
