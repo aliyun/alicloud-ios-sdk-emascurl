@@ -290,7 +290,7 @@
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"PUT";
 
-    NSData *testData = [self generateTestData:1024 * 1024];
+    NSData *testData = [self generateTestData:512 * 1024];
     [request setHTTPBody:testData];
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
