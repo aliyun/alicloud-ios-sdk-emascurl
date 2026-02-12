@@ -41,6 +41,42 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
 @implementation EMASCurlMetricsData
 @end
 
+static NSString * const EMASCurlErrorCodeKey = @"EMASCurlErrorCodeKey";
+
+#pragma mark - CURLcode to NSURLError Conversion
+
+// 将 CURLcode 转换为 NSURLErrorDomain 的错误码
+// 返回 NSNotFound 表示无法映射，保持原样
+static NSInteger convertCurlCodeToNSURLErrorCode(CURLcode curlCode) {
+    switch (curlCode) {
+        case CURLE_UNSUPPORTED_PROTOCOL:      return NSURLErrorUnsupportedURL;                  // 1 → -1002
+        case CURLE_URL_MALFORMAT:             return NSURLErrorBadURL;                           // 3 → -1000
+        case CURLE_COULDNT_RESOLVE_PROXY:     return NSURLErrorDNSLookupFailed;                  // 5 → -1006
+        case CURLE_COULDNT_RESOLVE_HOST:      return NSURLErrorDNSLookupFailed;                  // 6 → -1006
+        case CURLE_COULDNT_CONNECT:           return NSURLErrorCannotConnectToHost;              // 7 → -1004
+        case CURLE_WEIRD_SERVER_REPLY:        return NSURLErrorBadServerResponse;                // 8 → -1011
+        case CURLE_HTTP2:                     return NSURLErrorBadServerResponse;                // 16 → -1011
+        case CURLE_PARTIAL_FILE:              return NSURLErrorNetworkConnectionLost;            // 18 → -1005
+        case CURLE_OPERATION_TIMEDOUT:        return NSURLErrorTimedOut;                         // 28 → -1001
+        case CURLE_SSL_CONNECT_ERROR:         return NSURLErrorSecureConnectionFailed;           // 35 → -1200
+        case CURLE_ABORTED_BY_CALLBACK:       return NSURLErrorCancelled;                        // 42 → -999
+        case CURLE_TOO_MANY_REDIRECTS:        return NSURLErrorHTTPTooManyRedirects;             // 47 → -1007
+        case CURLE_GOT_NOTHING:               return NSURLErrorZeroByteResource;                 // 52 → -1014
+        case CURLE_SEND_ERROR:                return NSURLErrorNetworkConnectionLost;            // 55 → -1005
+        case CURLE_RECV_ERROR:                return NSURLErrorNetworkConnectionLost;            // 56 → -1005
+        case CURLE_SSL_CERTPROBLEM:           return NSURLErrorClientCertificateRejected;        // 58 → -1205
+        case CURLE_PEER_FAILED_VERIFICATION:  return NSURLErrorServerCertificateUntrusted;       // 60 → -1202
+        case CURLE_BAD_CONTENT_ENCODING:      return NSURLErrorCannotDecodeContentData;          // 61 → -1016
+        case CURLE_FILESIZE_EXCEEDED:         return NSURLErrorDataLengthExceedsMaximum;         // 63 → -1103
+        case CURLE_LOGIN_DENIED:              return NSURLErrorUserAuthenticationRequired;        // 67 → -1013
+        case CURLE_SSL_PINNEDPUBKEYNOTMATCH:  return NSURLErrorServerCertificateUntrusted;       // 90 → -1202
+        case CURLE_SSL_INVALIDCERTSTATUS:     return NSURLErrorServerCertificateUntrusted;       // 91 → -1202
+        case CURLE_HTTP2_STREAM:              return NSURLErrorBadServerResponse;                // 92 → -1011
+        case CURLE_HTTP3:                     return NSURLErrorBadServerResponse;                // 95 → -1011
+        default:                              return NSNotFound;
+    }
+}
+
 #pragma mark - EMASCurlRequest
 
 @interface EMASCurlRequest : NSObject
@@ -270,9 +306,15 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
 
                 NSDictionary *userInfo = @{
                     NSLocalizedDescriptionKey: @(curl_easy_strerror(msg->data.result)),
-                    NSURLErrorFailingURLStringErrorKey: url
+                    NSURLErrorFailingURLStringErrorKey: url,
+                    EMASCurlErrorCodeKey: @(msg->data.result)
                 };
-                error = [NSError errorWithDomain:@"EMASCurlManager" code:msg->data.result userInfo:userInfo];
+                NSInteger nsErrorCode = convertCurlCodeToNSURLErrorCode(msg->data.result);
+                if (nsErrorCode != NSNotFound) {
+                    error = [NSError errorWithDomain:NSURLErrorDomain code:nsErrorCode userInfo:userInfo];
+                } else {
+                    error = [NSError errorWithDomain:@"EMASCurlManager" code:msg->data.result userInfo:userInfo];
+                }
             }
 
             EMASCurlMetricsData *metrics = [self extractMetricsForEasyHandle:easy];
@@ -359,6 +401,14 @@ static void shareUnlockCallback(CURL *handle, curl_lock_data data, void *userptr
     [_condition lock];
     [_condition signal];
     [_condition unlock];
+}
+
+- (void)setMaxConcurrentStreamsPerConnection:(NSInteger)maxStreams {
+    if (maxStreams < 1) {
+        maxStreams = 32;
+    }
+    curl_multi_setopt(_multiHandle, CURLMOPT_MAX_CONCURRENT_STREAMS, (long)maxStreams);
+    EMAS_LOG_INFO(@"EC-Manager", @"Set max concurrent streams per connection to %ld", (long)maxStreams);
 }
 
 @end

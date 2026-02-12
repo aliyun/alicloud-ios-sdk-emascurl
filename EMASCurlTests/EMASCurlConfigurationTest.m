@@ -32,7 +32,7 @@
     EMASCurlConfiguration *defaultConfig = [EMASCurlConfiguration defaultConfiguration];
 
     // 验证核心网络设置
-    XCTAssertEqual(defaultConfig.httpVersion, HTTP1, @"默认HTTP版本应该是HTTP1");
+    XCTAssertEqual(defaultConfig.httpVersion, HTTP2, @"默认HTTP版本应该是HTTP2");
     XCTAssertEqual(defaultConfig.connectTimeoutInterval, 2.5, @"默认连接超时应该是2.5秒");
     XCTAssertTrue(defaultConfig.enableBuiltInGzip, @"默认应该启用gzip");
     XCTAssertTrue(defaultConfig.enableBuiltInRedirection, @"默认应该启用重定向");

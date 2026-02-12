@@ -33,6 +33,7 @@ static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlM
 
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
 static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
+static NSString * _Nonnull const kEMASCurlRequestInterceptEnabledKey = @"kEMASCurlRequestInterceptEnabledKey";
 
 // Multi-instance configuration support
 static NSString * _Nonnull const kEMASCurlConfigurationIDKey = @"kEMASCurlConfigurationIDKey";
@@ -165,6 +166,9 @@ static BOOL emas_pathMatchesPattern(NSString *requestPath, NSString *pattern) {
 @property (nonatomic, strong) NSMutableData *receivedResponseData;
 
 @property (nonatomic, strong) EMASCurlConfiguration *resolvedConfiguration;
+
+// 请求快照，用于隔离外部对原始 request 的修改
+@property (nonatomic, strong) NSURLRequest *frozenRequest;
 
 // 缓存缓冲控制
 @property (nonatomic, assign) BOOL shouldBufferBodyForCache;
@@ -300,6 +304,15 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     [NSURLProtocol setProperty:@(timeoutInterval) forKey:kEMASCurlConnectTimeoutIntervalKey inRequest:request];
 }
 
++ (void)setRequestInterceptEnabled:(BOOL)enabled forRequest:(NSMutableURLRequest *)request {
+    [NSURLProtocol setProperty:@(enabled) forKey:kEMASCurlRequestInterceptEnabledKey inRequest:request];
+}
+
++ (BOOL)isRequestInterceptEnabledForRequest:(NSURLRequest *)request {
+    NSNumber *value = [NSURLProtocol propertyForKey:kEMASCurlRequestInterceptEnabledKey inRequest:request];
+    return value == nil || [value boolValue];
+}
+
 + (void)setConnectTimeoutInterval:(NSTimeInterval)timeoutInterval {
     EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
     defaultConfig.connectTimeoutInterval = timeoutInterval;
@@ -346,6 +359,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     // 更新默认配置
     EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
     defaultConfig.cacheEnabled = enabled;
+}
+
++ (void)setMaxConcurrentStreamsPerConnection:(NSInteger)maxStreams {
+    [[EMASCurlManager sharedInstance] setMaxConcurrentStreamsPerConnection:maxStreams];
 }
 
 + (void)setRequestInterceptEnabled:(BOOL)requestInterceptEnabled {
@@ -421,6 +438,11 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         return NO;
     }
 
+    // 检查单个请求的拦截设置
+    if (![self isRequestInterceptEnabledForRequest:request]) {
+        return NO;
+    }
+
     if ([[request.URL absoluteString] isEqual:@"about:blank"]) {
         EMAS_LOG_DEBUG(@"EC-Request", @"Rejected blank URL request");
         return NO;
@@ -447,7 +469,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 尝试获取请求特定的配置
     EMASCurlConfiguration *config = nil;
-    NSString *configID = [request valueForHTTPHeaderField:kEMASCurlConfigurationHeaderKey];
+    NSString *configID = [NSURLProtocol propertyForKey:kEMASCurlConfigurationIDKey inRequest:request];
+    if (!configID) {
+        configID = [request valueForHTTPHeaderField:kEMASCurlConfigurationHeaderKey];
+    }
     if (configID) {
         config = [[EMASCurlConfigurationManager sharedManager] configurationForID:configID];
     }
@@ -549,7 +574,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 }
 
 - (void)startLoading {
-    EMAS_LOG_INFO(@"EC-Protocol", @"Starting request for URL: %@", self.request.URL.absoluteString);
+    // 创建请求快照，隔离外部修改
+    self.frozenRequest = [self.request copy];
+    
+    EMAS_LOG_INFO(@"EC-Protocol", @"Starting request for URL: %@", self.frozenRequest.URL.absoluteString);
 
     // 记录客户端调度线程与常用RunLoop模式
     self.clientThread = [NSThread currentThread];
@@ -563,20 +591,20 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     NSCachedURLResponse *hitCachedResponse = nil;
 
     if (self.resolvedConfiguration.cacheEnabled &&
-        [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
+        [[self.frozenRequest.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
 
         // 从我们的缓存逻辑获取响应
-        NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:self.request];
+        NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:self.frozenRequest];
 
         if (cachedResponse) {
-            BOOL isFresh = [cachedResponse emas_isResponseStillFreshForRequest:self.request];
+            BOOL isFresh = [cachedResponse emas_isResponseStillFreshForRequest:self.frozenRequest];
             BOOL requiresRevalidation = [cachedResponse emas_requiresRevalidation];
 
             if (isFresh && !requiresRevalidation) {
                 // 响应是新鲜的，且不需要因为 no-cache 等指令而重新验证
                 useCache = YES; // 标记已使用缓存
                 hitCachedResponse = cachedResponse;
-                EMAS_LOG_INFO(@"EC-Cache", @"Cache hit for request: %@", self.request.URL.absoluteString);
+                EMAS_LOG_INFO(@"EC-Cache", @"Cache hit for request: %@", self.frozenRequest.URL.absoluteString);
             } else {
                 // 响应是陈旧的，或者新鲜但需要重新验证 (no-cache)。
                 // 条件请求头将在后续步骤中添加 (如果 cachedResponse 有 ETag/Last-Modified)。
@@ -606,7 +634,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     self.easyHandle = easyHandle;
     if (!easyHandle) {
         NSError *error = [NSError errorWithDomain:@"fail to init easy handle." code:-1 userInfo:nil];
-        EMAS_LOG_ERROR(@"EC-Protocol", @"Failed to create easy handle for URL: %@", self.request.URL.absoluteString);
+        EMAS_LOG_ERROR(@"EC-Protocol", @"Failed to create easy handle for URL: %@", self.frozenRequest.URL.absoluteString);
         [self reportEarlyFailure:error];
         [self invokeOnClientThread:^{
             if (![self markClientNotifiedIfNeeded]) {
@@ -618,7 +646,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         return;
     }
 
-    EMAS_LOG_DEBUG(@"EC-Protocol", @"Easy handle created successfully for URL: %@", self.request.URL.absoluteString);
+    EMAS_LOG_DEBUG(@"EC-Protocol", @"Easy handle created successfully for URL: %@", self.frozenRequest.URL.absoluteString);
 
     [self populateRequestHeader:easyHandle];
     [self populateRequestBody:easyHandle];
@@ -648,7 +676,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         long redirectCount = metrics.redirectCount;
 
         // 如果发生重定向，获取最终URL
-        NSURL *effectiveURL = self.request.URL;
+        NSURL *effectiveURL = self.frozenRequest.URL;
         if (redirectCount > 0 && metrics.effectiveURL) {
             NSURL *parsedURL = [NSURL URLWithString:metrics.effectiveURL];
             if (parsedURL) {
@@ -660,7 +688,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         if (succeed &&
             isPotentiallyCacheableStatusCode(self.currentResponse.statusCode) &&
             self.resolvedConfiguration.cacheEnabled &&
-            [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"] &&
+            [[self.frozenRequest.HTTPMethod uppercaseString] isEqualToString:@"GET"] &&
             self.receivedResponseData != nil) {
 
             NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:effectiveURL
@@ -668,16 +696,16 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
                                                                          HTTPVersion:self.currentResponse.httpVersion
                                                                         headerFields:self.currentResponse.headers];
             if (httpResponse) {
-                NSURLRequest *cacheKeyRequest = self.request;
+                NSURLRequest *cacheKeyRequest = self.frozenRequest;
                 if (redirectCount > 0) {
                     // 重定向场景：使用最终URL作为缓存键
-                    NSMutableURLRequest *redirectedRequest = [self.request mutableCopy];
+                    NSMutableURLRequest *redirectedRequest = [self.frozenRequest mutableCopy];
                     [redirectedRequest setURL:effectiveURL];
                     cacheKeyRequest = redirectedRequest;
                     EMAS_LOG_INFO(@"EC-Cache", @"Response cached for redirected URL: %@ (original: %@)",
-                                  effectiveURL.absoluteString, self.request.URL.absoluteString);
+                                  effectiveURL.absoluteString, self.frozenRequest.URL.absoluteString);
                 } else {
-                    EMAS_LOG_INFO(@"EC-Cache", @"Response cached for URL: %@", self.request.URL.absoluteString);
+                    EMAS_LOG_INFO(@"EC-Cache", @"Response cached for URL: %@", self.frozenRequest.URL.absoluteString);
                 }
                 [s_responseCache cacheResponse:httpResponse
                                           data:self.receivedResponseData
@@ -697,7 +725,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
                     EMAS_LOG_DEBUG(@"EC-Protocol", @"Request processing completed with status: %ld", (long)self.currentResponse.statusCode);
                     [self.client URLProtocolDidFinishLoading:self];
                 } else {
-                    EMAS_LOG_ERROR(@"EC-Protocol", @"Request failed: %@", error ? error.localizedDescription : @"Unknown error");
+                    EMAS_LOG_ERROR(@"EC-Protocol", @"Request failed: %@ (NSURLError=%ld, CURLcode=%@)",
+                                  error ? error.localizedDescription : @"Unknown error",
+                                  (long)error.code,
+                                  error.userInfo[@"EMASCurlErrorCodeKey"] ?: @"none");
                     [self.client URLProtocol:self didFailWithError:error];
                 }
             }
@@ -738,13 +769,13 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     emptyMetrics.fetchStartDate = self.fetchStartDate ?: [NSDate date];
 
     if (globalCallback) {
-        globalCallback(self.request, NO, error, emptyMetrics);
+        globalCallback(self.frozenRequest, NO, error, emptyMetrics);
     }
     if (instanceCallback) {
-        instanceCallback(self.request, NO, error, emptyMetrics);
+        instanceCallback(self.frozenRequest, NO, error, emptyMetrics);
     }
     if (self.metricsObserverBlock) {
-        self.metricsObserverBlock(self.request, NO, error, 0, 0, 0, 0, 0, 0);
+        self.metricsObserverBlock(self.frozenRequest, NO, error, 0, 0, 0, 0, 0, 0);
     }
 }
 
@@ -763,13 +794,13 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     // 所有网络时间保持nil/0，表示无网络活动
 
     if (globalCallback) {
-        globalCallback(self.request, YES, nil, cacheMetrics);
+        globalCallback(self.frozenRequest, YES, nil, cacheMetrics);
     }
     if (instanceCallback) {
-        instanceCallback(self.request, YES, nil, cacheMetrics);
+        instanceCallback(self.frozenRequest, YES, nil, cacheMetrics);
     }
     if (self.metricsObserverBlock) {
-        self.metricsObserverBlock(self.request, YES, nil, 0, 0, 0, 0, 0, 0);
+        self.metricsObserverBlock(self.frozenRequest, YES, nil, 0, 0, 0, 0, 0, 0);
     }
 }
 
@@ -803,7 +834,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     // 记录性能指标
     EMAS_LOG_INFO(@"EC-Performance", @"Request completed in %.0fms (DNS: %.0fms, Connect: %.0fms, Transfer: %.0fms) for URL: %@ (HTTP %ld)",
                   totalTime * 1000, nameLookupTime * 1000, connectTime * 1000, startTransferTime * 1000, 
-                  self.request.URL.absoluteString, (long)self.currentResponse.statusCode);
+                  self.frozenRequest.URL.absoluteString, (long)self.currentResponse.statusCode);
 
     // 检查是否有全局综合性能指标回调
     EMASCurlTransactionMetricsObserverBlock globalTransactionCallback = nil;
@@ -820,16 +851,16 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
                                                                                  nameLookupTime:nameLookupTime];
 
         if (globalTransactionCallback) {
-            globalTransactionCallback(self.request, success, error, transactionMetrics);
+            globalTransactionCallback(self.frozenRequest, success, error, transactionMetrics);
         }
         if (instanceTransactionCallback) {
-            instanceTransactionCallback(self.request, success, error, transactionMetrics);
+            instanceTransactionCallback(self.frozenRequest, success, error, transactionMetrics);
         }
     }
 
     // 检查简单性能指标回调（向下兼容）
     if (self.metricsObserverBlock) {
-        self.metricsObserverBlock(self.request,
+        self.metricsObserverBlock(self.frozenRequest,
                       success,
                       error,
                       nameLookupTime * 1000,
@@ -942,7 +973,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 #pragma mark * curl option setup
 
 - (void)populateRequestHeader:(CURL *)easyHandle {
-    NSURLRequest *request = self.request;
+    NSURLRequest *request = self.frozenRequest;
 
     // 配置HTTP METHOD
     if ([HTTP_METHOD_GET isEqualToString:request.HTTPMethod]) {
@@ -1020,15 +1051,15 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     }
 
     // 只对GET请求添加缓存相关条件头
-    if (self.resolvedConfiguration.cacheEnabled && [[self.request.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
+    if (self.resolvedConfiguration.cacheEnabled && [[self.frozenRequest.HTTPMethod uppercaseString] isEqualToString:@"GET"]) {
         // 再次从缓存获取，看是否有可用于条件GET的项
         // 注意：这里的 request 应该是用于网络请求的 NSMutableURLRequest
-        // 而 s_responseCache.cachedResponseForRequest 需要原始的 self.request (或其副本) 作为键
-        NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:self.request];
+        // 而 s_responseCache.cachedResponseForRequest 需要 frozenRequest 作为键
+        NSCachedURLResponse *cachedResponse = [s_responseCache cachedResponseForRequest:self.frozenRequest];
 
         // cachedResponseForRequest 返回的要么是nil，要么是新鲜/可验证的
         if (cachedResponse) {
-            BOOL isFresh = [cachedResponse emas_isResponseStillFreshForRequest:self.request]; // 再次检查，考虑请求头
+            BOOL isFresh = [cachedResponse emas_isResponseStillFreshForRequest:self.frozenRequest]; // 再次检查，考虑请求头
             BOOL requiresRevalidation = [cachedResponse emas_requiresRevalidation];
 
             // 只有当响应不是新鲜的，或者它新鲜但服务器要求重新验证(no-cache)时，才添加条件头
@@ -1056,7 +1087,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 }
 
 - (void)populateRequestBody:(CURL *)easyHandle {
-    NSURLRequest *request = self.request;
+    NSURLRequest *request = self.frozenRequest;
 
     if (!request.HTTPBodyStream) {
         if ([HTTP_METHOD_PUT isEqualToString:request.HTTPMethod]) {
@@ -1150,7 +1181,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 设置公钥固定
     if (self.resolvedConfiguration.publicKeyPinningKeyPath) {
-        EMAS_LOG_INFO(@"EC-SSL", @"Using public key pinning for host: %@", self.request.URL.host);
+        EMAS_LOG_INFO(@"EC-SSL", @"Using public key pinning for host: %@", self.frozenRequest.URL.host);
         curl_easy_setopt(easyHandle, CURLOPT_PINNEDPUBLICKEY, [self.resolvedConfiguration.publicKeyPinningKeyPath UTF8String]);
     }
 
@@ -1159,7 +1190,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
         // 若显式配置了代理地址，则无条件使用该代理
         proxyServer = self.resolvedConfiguration.proxyServer;
     } else {
-        proxyServer = [EMASCurlProxySetting proxyServerForURL:self.request.URL];
+        proxyServer = [EMASCurlProxySetting proxyServerForURL:self.frozenRequest.URL];
     }
 
     // 无代理时才需要提前解析域名
@@ -1174,7 +1205,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 设置cookie
     EMASCurlCookieStorage *cookieStorage = [EMASCurlCookieStorage sharedStorage];
-    NSString *cookieString = [cookieStorage cookieStringForURL:self.request.URL];
+    NSString *cookieString = [cookieStorage cookieStringForURL:self.frozenRequest.URL];
     if (cookieString) {
         curl_easy_setopt(easyHandle, CURLOPT_COOKIE, [cookieString UTF8String]);
     }
@@ -1226,7 +1257,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 设置请求超时时间（空闲超时模式）
     // 使用 LOW_SPEED_LIMIT + LOW_SPEED_TIME 模拟空闲超时
-    NSTimeInterval requestTimeoutInterval = self.request.timeoutInterval;
+    NSTimeInterval requestTimeoutInterval = self.frozenRequest.timeoutInterval;
     if (requestTimeoutInterval > 0) {
         curl_easy_setopt(easyHandle, CURLOPT_LOW_SPEED_LIMIT, 1L);
         curl_easy_setopt(easyHandle, CURLOPT_LOW_SPEED_TIME, (long)requestTimeoutInterval);
@@ -1244,7 +1275,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 }
 
 - (BOOL)preResolveDomain:(CURL *)easyHandle {
-    NSURL *url = self.request.URL;
+    NSURL *url = self.frozenRequest.URL;
     if (!url || !url.host) {
         return NO;
     }
@@ -1432,7 +1463,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
             // 设置cookie
             if ([key caseInsensitiveCompare:@"set-cookie"] == NSOrderedSame) {
                 EMASCurlCookieStorage *cookieStorage = [EMASCurlCookieStorage sharedStorage];
-                [cookieStorage setCookieWithString:value forURL:protocol.request.URL];
+                [cookieStorage setCookieWithString:value forURL:protocol.frozenRequest.URL];
                 EMAS_LOG_DEBUG(@"EC-Response", @"Cookie set: %@", value);
             }
 
@@ -1455,7 +1486,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         if (statusCode == 304 && protocol.resolvedConfiguration.cacheEnabled) {
             // 更新缓存并获取更新后的响应
             NSCachedURLResponse *updatedResponse = [s_responseCache updateCachedResponseWithHeaders:protocol.currentResponse.headers
-                                                                                         forRequest:protocol.request];
+                                                                                         forRequest:protocol.frozenRequest];
             if (updatedResponse) {
                 [protocol invokeOnClientThread:^{
                     if (![protocol hasClientNotified]) {
@@ -1467,7 +1498,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
             }
         }
 
-        NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.request.URL
+        NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.frozenRequest.URL
                                                                       statusCode:protocol.currentResponse.statusCode
                                                                      HTTPVersion:protocol.currentResponse.httpVersion
                                                                     headerFields:protocol.currentResponse.headers];
@@ -1483,8 +1514,8 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                 }];
                 if (location) {
                     EMAS_LOG_DEBUG(@"EC-Response", @"Handling redirect to: %@", location);
-                    NSURL *locationURL = [NSURL URLWithString:location relativeToURL:protocol.request.URL];
-                    NSMutableURLRequest *redirectedRequest = [protocol.request mutableCopy];
+                    NSURL *locationURL = [NSURL URLWithString:location relativeToURL:protocol.frozenRequest.URL];
+                    NSMutableURLRequest *redirectedRequest = [protocol.frozenRequest mutableCopy];
                     [NSURLProtocol removePropertyForKey:kEMASCurlHandledKey inRequest:redirectedRequest];
                     [redirectedRequest setURL:locationURL];
                     [protocol invokeOnClientThread:^{
@@ -1510,7 +1541,7 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
             // 仅在最终响应首包前决定是否在内存中缓冲以用于缓存。
             // 复杂原因：若无上限，巨大GET响应会导致NSMutableData反复扩容，引发NSMallocException。
             if (protocol.resolvedConfiguration.cacheEnabled &&
-                [[protocol.request.HTTPMethod uppercaseString] isEqualToString:@"GET"] &&
+                [[protocol.frozenRequest.HTTPMethod uppercaseString] isEqualToString:@"GET"] &&
                 isPotentiallyCacheableStatusCode(statusCode)) {
                 // 检查Cache-Control: no-store，遇到则不缓冲
                 NSString *cacheCtl = protocol.currentResponse.headers[@"Cache-Control"] ?: protocol.currentResponse.headers[@"cache-control"];
@@ -1632,7 +1663,7 @@ static size_t read_cb(char *buffer, size_t size, size_t nitems, void *userp) {
     protocol.totalBytesSent += bytesRead;
 
     if (protocol.uploadProgressUpdateBlock) {
-        protocol.uploadProgressUpdateBlock(protocol.request,
+        protocol.uploadProgressUpdateBlock(protocol.frozenRequest,
                                            bytesRead,
                                            protocol.totalBytesSent,
                                            protocol.totalBytesExpected);

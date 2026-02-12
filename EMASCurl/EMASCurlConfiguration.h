@@ -122,7 +122,7 @@ typedef NS_ENUM(NSInteger, HTTPVersion) {
 
 /**
  * 请求使用的HTTP版本
- * 默认值: HTTP1
+ * 默认值: HTTP2
  */
 @property (nonatomic, assign) HTTPVersion httpVersion;
 

@@ -63,6 +63,7 @@ EMAS iOS网络解决方案是阿里云EMAS团队为iOS开发者提供的完整�
       - [与HTTPDNS配合使用](#与httpdns配合使用)
       - [选择HTTP版本](#选择http版本)
       - [设置全局拦截开关](#设置全局拦截开关)
+      - [设置单个请求拦截开关](#设置单个请求拦截开关)
       - [设置CA证书文件路径](#设置ca证书文件路径)
       - [设置Cookie存储](#设置cookie存储)
       - [设置连接超时](#设置连接超时)
@@ -129,7 +130,7 @@ target 'yourAppTarget' do
 end
 ```
 
-当前最新版本：1.5.2
+当前最新版本：1.5.3-beta.1
 
 **版本选择说明：**
 - `EMASCurl` 或 `EMASCurl/HTTP2`：默认HTTP/2版本
@@ -493,6 +494,20 @@ config.httpVersion = HTTP1;  // 使用HTTP/1.1
 
 // 查询当前状态
 BOOL enabled = [EMASCurlProtocol isRequestInterceptEnabled];
+```
+
+#### 设置单个请求拦截开关
+
+除了全局拦截开关外，EMASCurl还支持对单个请求设置是否被拦截。未设置时默认拦截。
+
+```objc
+NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+
+// 设置该请求不被EMASCurl拦截，直接走系统原生网络
+[EMASCurlProtocol setRequestInterceptEnabled:NO forRequest:request];
+
+// 查询单个请求的拦截状态（未设置时返回YES）
+BOOL interceptEnabled = [EMASCurlProtocol isRequestInterceptEnabledForRequest:request];
 ```
 
 #### 设置CA证书文件路径
