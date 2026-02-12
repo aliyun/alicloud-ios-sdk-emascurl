@@ -33,6 +33,7 @@ static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlM
 
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
 static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
+static NSString * _Nonnull const kEMASCurlRequestInterceptEnabledKey = @"kEMASCurlRequestInterceptEnabledKey";
 
 // Multi-instance configuration support
 static NSString * _Nonnull const kEMASCurlConfigurationIDKey = @"kEMASCurlConfigurationIDKey";
@@ -303,6 +304,15 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     [NSURLProtocol setProperty:@(timeoutInterval) forKey:kEMASCurlConnectTimeoutIntervalKey inRequest:request];
 }
 
++ (void)setRequestInterceptEnabled:(BOOL)enabled forRequest:(NSMutableURLRequest *)request {
+    [NSURLProtocol setProperty:@(enabled) forKey:kEMASCurlRequestInterceptEnabledKey inRequest:request];
+}
+
++ (BOOL)isRequestInterceptEnabledForRequest:(NSURLRequest *)request {
+    NSNumber *value = [NSURLProtocol propertyForKey:kEMASCurlRequestInterceptEnabledKey inRequest:request];
+    return value == nil || [value boolValue];
+}
+
 + (void)setConnectTimeoutInterval:(NSTimeInterval)timeoutInterval {
     EMASCurlConfiguration *defaultConfig = [[EMASCurlConfigurationManager sharedManager] defaultConfiguration];
     defaultConfig.connectTimeoutInterval = timeoutInterval;
@@ -425,6 +435,11 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
     // 全局拦截开关检查
     if (![self isRequestInterceptEnabled]) {
+        return NO;
+    }
+
+    // 检查单个请求的拦截设置
+    if (![self isRequestInterceptEnabledForRequest:request]) {
         return NO;
     }
 

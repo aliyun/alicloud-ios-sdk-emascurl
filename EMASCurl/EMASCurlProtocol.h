@@ -83,6 +83,13 @@ typedef void(^EMASCurlLogHandlerBlock)(EMASCurlLogLevel level, NSString * _Nonnu
 // 对于请求的整体超时时间，请直接配置`NSURLRequest`中的`timeoutInterval`进行设置，默认是60s
 + (void)setConnectTimeoutIntervalForRequest:(nonnull NSMutableURLRequest *)request connectTimeoutInterval:(NSTimeInterval)connectTimeoutInSeconds;
 
+// 设置单个请求是否被EMASCurl拦截
+// 不设置时默认拦截，设置NO则该请求不被拦截
++ (void)setRequestInterceptEnabled:(BOOL)enabled forRequest:(nonnull NSMutableURLRequest *)request;
+
+// 获取单个请求的拦截设置，未设置时返回YES（默认拦截）
++ (BOOL)isRequestInterceptEnabledForRequest:(nonnull NSURLRequest *)request;
+
 // 设置上传进度回调
 + (void)setUploadProgressUpdateBlockForRequest:(nonnull NSMutableURLRequest *)request uploadProgressUpdateBlock:(nonnull EMASCurlUploadProgressUpdateBlock)uploadProgressUpdateBlock;
 
