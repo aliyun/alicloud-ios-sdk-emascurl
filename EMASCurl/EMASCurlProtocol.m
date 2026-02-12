@@ -725,7 +725,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
                     EMAS_LOG_DEBUG(@"EC-Protocol", @"Request processing completed with status: %ld", (long)self.currentResponse.statusCode);
                     [self.client URLProtocolDidFinishLoading:self];
                 } else {
-                    EMAS_LOG_ERROR(@"EC-Protocol", @"Request failed: %@", error ? error.localizedDescription : @"Unknown error");
+                    EMAS_LOG_ERROR(@"EC-Protocol", @"Request failed: %@ (NSURLError=%ld, CURLcode=%@)",
+                                  error ? error.localizedDescription : @"Unknown error",
+                                  (long)error.code,
+                                  error.userInfo[@"EMASCurlErrorCodeKey"] ?: @"none");
                     [self.client URLProtocol:self didFailWithError:error];
                 }
             }
