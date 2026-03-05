@@ -130,7 +130,7 @@ target 'yourAppTarget' do
 end
 ```
 
-当前最新版本：1.5.3
+当前最新版本：1.5.4-beta
 
 **版本选择说明：**
 - `EMASCurl` 或 `EMASCurl/HTTP2`：默认HTTP/2版本
@@ -227,7 +227,7 @@ git submodule update --init --recursive --progress
 
 | 依赖仓库         | 版本        |
 |:-----------------|:------------|
-| curl             | curl-8_10_1 |
+| curl             | curl-8_17_0 |
 | nghttp2          | v1.64.0     |
 
 **HTTP/3 版本依赖：**
