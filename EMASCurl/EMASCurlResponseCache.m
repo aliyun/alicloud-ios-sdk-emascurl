@@ -45,6 +45,9 @@
                                                                                              originalRequest:request];
 
         if (emasCachedResponse) {
+            emasCachedResponse = [self sanitizedResponseForStorage:emasCachedResponse
+                                                             stage:@"cacheResponse.beforeStore"
+                                                           request:request];
             EMAS_LOG_DEBUG(@"EC-Cache", @"Storing response in cache for URL: %@", request.URL.absoluteString);
             [self.urlCache storeCachedResponse:emasCachedResponse forRequest:request];
         } else {
@@ -118,6 +121,12 @@
             return;
         }
 
+        if (![oldCachedResponse.response isKindOfClass:[NSHTTPURLResponse class]]) {
+            EMAS_LOG_INFO(@"EC-Cache", @"Invalid cached response type during 304 update for URL: %@", request.URL.absoluteString);
+            [self.urlCache removeCachedResponseForRequest:request];
+            return;
+        }
+
         // 使用类别方法更新响应头
         NSCachedURLResponse *updatedCachedResponse = [oldCachedResponse emas_updatedResponseWithHeadersFrom304Response:newResponseHeaders];
 
@@ -125,6 +134,9 @@
         // 实际上，emas_updatedResponseWithHeadersFrom304Response 已经创建了一个有效的NSCachedURLResponse
         // 我们只需存储它
         if (updatedCachedResponse) {
+            updatedCachedResponse = [self sanitizedResponseForStorage:updatedCachedResponse
+                                                               stage:@"updateCachedResponse.beforeStore"
+                                                             request:request];
             [self.urlCache storeCachedResponse:updatedCachedResponse forRequest:request];
             result = updatedCachedResponse;
         } else {
@@ -135,6 +147,39 @@
     });
 
     return result;
+}
+
+- (NSCachedURLResponse *)sanitizedResponseForStorage:(NSCachedURLResponse *)cachedResponse
+                                               stage:(NSString *)stage
+                                             request:(NSURLRequest *)request {
+    if (!cachedResponse) {
+        return nil;
+    }
+
+    NSDictionary *userInfo = cachedResponse.userInfo;
+    if (!userInfo) {
+        return cachedResponse;
+    }
+
+    NSError *error = nil;
+    NSData *data = [NSPropertyListSerialization dataWithPropertyList:userInfo
+                                                              format:NSPropertyListBinaryFormat_v1_0
+                                                             options:0
+                                                               error:&error];
+    if (data) {
+        return cachedResponse;
+    }
+
+    EMAS_LOG_INFO(@"EC-Cache",
+                  @"[%@] dropping invalid cachedResponse.userInfo before store. url=%@ error=%@",
+                  stage,
+                  request.URL.absoluteString ?: @"(null)",
+                  error.localizedDescription ?: @"(unknown)");
+
+    return [[NSCachedURLResponse alloc] initWithResponse:cachedResponse.response
+                                                    data:cachedResponse.data
+                                                userInfo:nil
+                                           storagePolicy:cachedResponse.storagePolicy];
 }
 
 @end
