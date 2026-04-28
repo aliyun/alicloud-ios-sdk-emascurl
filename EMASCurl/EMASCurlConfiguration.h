@@ -61,6 +61,10 @@ typedef void(^EMASCurlMetricsObserverBlock)(NSURLRequest * _Nonnull request,
 /// 综合性能指标数据结构（类似于URLSessionTaskTransactionMetrics）
 @interface EMASCurlTransactionMetrics : NSObject
 
+// 请求与响应信息
+@property (nonatomic, copy, nullable) NSURLRequest *request;
+@property (nonatomic, copy, nullable) NSURLResponse *response;
+
 // 时间戳信息
 @property (nonatomic, strong, nullable) NSDate *fetchStartDate;
 @property (nonatomic, strong, nullable) NSDate *domainLookupStartDate;

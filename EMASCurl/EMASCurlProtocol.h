@@ -98,6 +98,9 @@ typedef void(^EMASCurlLogHandlerBlock)(EMASCurlLogLevel level, NSString * _Nonnu
 /// @param transactionMetricsObserverBlock 综合性能指标回调，传入nil清除回调
 + (void)setGlobalTransactionMetricsObserverBlock:(nullable EMASCurlTransactionMetricsObserverBlock)transactionMetricsObserverBlock;
 
+/// 获取当前全局综合性能指标观察回调
++ (nullable EMASCurlTransactionMetricsObserverBlock)globalTransactionMetricsObserverBlock;
+
 /// 为指定请求设置性能指标观察回调（已废弃，请使用全局回调）
 /// @param request 请求对象
 /// @param metricsObserverBlock 性能指标回调
