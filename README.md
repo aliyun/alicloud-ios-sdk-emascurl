@@ -130,7 +130,7 @@ target 'yourAppTarget' do
 end
 ```
 
-当前最新版本：1.5.4-beta
+当前最新版本：1.5.4-beta.2
 
 **版本选择说明：**
 - `EMASCurl` 或 `EMASCurl/HTTP2`：默认HTTP/2版本

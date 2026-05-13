@@ -7,6 +7,8 @@
 
 #import "NSCachedURLResponse+EMASCurl.h"
 
+static NSString * const EMASMissingVaryHeaderSentinel = @"__EMASCURL_MISSING_VARY_HEADER__";
+
 @implementation NSCachedURLResponse (EMASCurl)
 
 #pragma mark - Private Helper Methods
@@ -208,7 +210,7 @@
             if (value) {
                 varyValues[trimmedField.lowercaseString] = value;
             } else {
-                varyValues[trimmedField.lowercaseString] = [NSNull null];
+                varyValues[trimmedField.lowercaseString] = EMASMissingVaryHeaderSentinel;
             }
         }
         userInfo[EMASUserInfoKeyVaryValues] = varyValues;
@@ -368,8 +370,8 @@
         id storedValue = storedVaryValues[trimmedField.lowercaseString];
         NSString *requestValue = [request valueForHTTPHeaderField:trimmedField];
 
-        // 比较值（考虑NSNull表示原始请求中该头不存在的情况）
-        if ([storedValue isKindOfClass:[NSNull class]]) {
+        if ([storedValue isKindOfClass:[NSString class]] &&
+            [storedValue isEqualToString:EMASMissingVaryHeaderSentinel]) {
             if (requestValue != nil) {
                 return NO;
             }
@@ -380,6 +382,8 @@
             if (![storedValue isEqualToString:requestValue]) {
                 return NO;
             }
+        } else {
+            return NO;
         }
     }
     return YES;
