@@ -32,6 +32,7 @@ static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMAS
 static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
 
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
+// 内部 APM 监控去重依赖该标记，谨慎修改！
 static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 static NSString * _Nonnull const kEMASCurlRequestInterceptEnabledKey = @"kEMASCurlRequestInterceptEnabledKey";
 
