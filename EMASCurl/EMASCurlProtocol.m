@@ -32,6 +32,7 @@ static NSString * _Nonnull const kEMASCurlUploadProgressUpdateBlockKey = @"kEMAS
 static NSString * _Nonnull const kEMASCurlMetricsObserverBlockKey = @"kEMASCurlMetricsObserverBlockKey";
 
 static NSString * _Nonnull const kEMASCurlConnectTimeoutIntervalKey = @"kEMASCurlConnectTimeoutIntervalKey";
+// 内部 APM 监控去重依赖该标记，谨慎修改！
 static NSString * _Nonnull const kEMASCurlHandledKey = @"kEMASCurlHandledKey";
 static NSString * _Nonnull const kEMASCurlRequestInterceptEnabledKey = @"kEMASCurlRequestInterceptEnabledKey";
 
@@ -196,6 +197,8 @@ static BOOL emas_pathMatchesPattern(NSString *requestPath, NSString *pattern) {
 @property (atomic, assign) BOOL cancelled;        // 是否已触发取消
 @property (atomic, assign) BOOL cleanedUp;        // 资源是否已清理
 
+@property (nonatomic, strong, nullable) NSHTTPURLResponse *transactionMetricsResponse;
+
 @end
 
 @interface EMASCurlProtocol (ClientThreading)
@@ -293,6 +296,12 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 + (void)setGlobalTransactionMetricsObserverBlock:(nullable EMASCurlTransactionMetricsObserverBlock)transactionMetricsObserverBlock {
     @synchronized (self) {
         globalTransactionMetricsObserverBlock = [transactionMetricsObserverBlock copy];
+    }
+}
+
++ (nullable EMASCurlTransactionMetricsObserverBlock)globalTransactionMetricsObserverBlock {
+    @synchronized (self) {
+        return [globalTransactionMetricsObserverBlock copy];
     }
 }
 
@@ -616,7 +625,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 如果使用了缓存，则直接返回
     if (useCache) {
-        [self reportCacheHitMetrics];
+        [self reportCacheHitMetricsWithCachedResponse:hitCachedResponse];
         [self invokeOnClientThread:^{
             if (![self markClientNotifiedIfNeeded]) {
                 return;
@@ -766,6 +775,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 创建空的 metrics 对象，fetchStartDate 复用请求开始时间
     EMASCurlTransactionMetrics *emptyMetrics = [[EMASCurlTransactionMetrics alloc] init];
+    emptyMetrics.request = self.frozenRequest;
     emptyMetrics.fetchStartDate = self.fetchStartDate ?: [NSDate date];
 
     if (globalCallback) {
@@ -780,7 +790,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 }
 
 // 缓存命中时通知 observer，所有网络时间为 0
-- (void)reportCacheHitMetrics {
+- (void)reportCacheHitMetricsWithCachedResponse:(NSCachedURLResponse *)cachedResponse {
     EMASCurlTransactionMetricsObserverBlock globalCallback = nil;
     @synchronized ([EMASCurlProtocol class]) {
         globalCallback = globalTransactionMetricsObserverBlock;
@@ -789,6 +799,8 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 创建缓存命中的 metrics 对象
     EMASCurlTransactionMetrics *cacheMetrics = [[EMASCurlTransactionMetrics alloc] init];
+    cacheMetrics.request = self.frozenRequest;
+    cacheMetrics.response = cachedResponse.response;
     cacheMetrics.fetchStartDate = self.fetchStartDate ?: [NSDate date];
     cacheMetrics.responseEndDate = [NSDate date];
     // 所有网络时间保持nil/0，表示无网络活动
@@ -834,7 +846,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     // 记录性能指标
     EMAS_LOG_INFO(@"EC-Performance", @"Request completed in %.0fms (DNS: %.0fms, Connect: %.0fms, Transfer: %.0fms) for URL: %@ (HTTP %ld)",
                   totalTime * 1000, nameLookupTime * 1000, connectTime * 1000, startTransferTime * 1000, 
-                  self.frozenRequest.URL.absoluteString, (long)self.currentResponse.statusCode);
+                  self.frozenRequest.URL.absoluteString, (long)self.transactionMetricsResponse.statusCode);
 
     // 检查是否有全局综合性能指标回调
     EMASCurlTransactionMetricsObserverBlock globalTransactionCallback = nil;
@@ -876,6 +888,21 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 - (EMASCurlTransactionMetrics *)createTransactionMetricsWithData:(EMASCurlMetricsData *)metricsData
                                                   nameLookupTime:(double)nameLookupTime {
     EMASCurlTransactionMetrics *metrics = [[EMASCurlTransactionMetrics alloc] init];
+
+    metrics.request = self.frozenRequest;
+
+    metrics.response = self.transactionMetricsResponse;
+    // curl 内部重定向后 URL 可能变化
+    if (metricsData.redirectCount > 0 && metricsData.effectiveURL.length > 0) {
+        NSURL *effectiveURL = [NSURL URLWithString:metricsData.effectiveURL];
+        NSHTTPURLResponse *storedResponse = self.transactionMetricsResponse;
+        if (effectiveURL && storedResponse) {
+            metrics.response = [[NSHTTPURLResponse alloc] initWithURL:effectiveURL
+                                                           statusCode:storedResponse.statusCode
+                                                          HTTPVersion:self.currentResponse.httpVersion
+                                                         headerFields:storedResponse.allHeaderFields];
+        }
+    }
 
     double connectTime = metricsData.connectTime;
     double appConnectTime = metricsData.appConnectTime;
@@ -1482,6 +1509,23 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
         NSInteger statusCode = protocol.currentResponse.statusCode;
         NSString *reasonPhrase = protocol.currentResponse.reasonPhrase;
 
+        NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.frozenRequest.URL
+                                                                      statusCode:statusCode
+                                                                     HTTPVersion:protocol.currentResponse.httpVersion
+                                                                    headerFields:protocol.currentResponse.headers];
+
+        // 1xx/CONNECT 为中间态，不保存到 metrics
+        if (isInformationalStatusCode(statusCode)) {
+            [protocol.currentResponse reset];
+            return totalSize;
+        }
+        if (isConnectEstablishedStatusCode(statusCode, reasonPhrase)) {
+            [protocol.currentResponse reset];
+            return totalSize;
+        }
+
+        protocol.transactionMetricsResponse = httpResponse;
+
         // 处理304 Not Modified响应
         if (statusCode == 304 && protocol.resolvedConfiguration.cacheEnabled) {
             // 更新缓存并获取更新后的响应
@@ -1498,10 +1542,6 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
             }
         }
 
-        NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:protocol.frozenRequest.URL
-                                                                      statusCode:protocol.currentResponse.statusCode
-                                                                     HTTPVersion:protocol.currentResponse.httpVersion
-                                                                    headerFields:protocol.currentResponse.headers];
         if (isRedirectionStatusCode(statusCode)) {
             if (!protocol.resolvedConfiguration.enableBuiltInRedirection) {
                 // 关闭了重定向支持，则把重定向信息往外传递
@@ -1525,10 +1565,6 @@ size_t header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
                     }];
                 }
             }
-            [protocol.currentResponse reset];
-        } else if (isInformationalStatusCode(statusCode)) {
-            [protocol.currentResponse reset];
-        } else if (isConnectEstablishedStatusCode(statusCode, reasonPhrase)) {
             [protocol.currentResponse reset];
         } else {
             [protocol invokeOnClientThread:^{

@@ -11,7 +11,7 @@
 #import <Foundation/Foundation.h>
 #import <EMASCurl/EMASCurlConfiguration.h>
 
-#define EMASCURL_SDK_VERSION @"1.5.4-beta.2"
+#define EMASCURL_SDK_VERSION @"1.5.4"
 
 
 // 日志级别枚举
@@ -97,6 +97,9 @@ typedef void(^EMASCurlLogHandlerBlock)(EMASCurlLogLevel level, NSString * _Nonnu
 /// 提供等价于URLSessionTaskTransactionMetrics的完整性能指标
 /// @param transactionMetricsObserverBlock 综合性能指标回调，传入nil清除回调
 + (void)setGlobalTransactionMetricsObserverBlock:(nullable EMASCurlTransactionMetricsObserverBlock)transactionMetricsObserverBlock;
+
+/// 获取当前全局综合性能指标观察回调
++ (nullable EMASCurlTransactionMetricsObserverBlock)globalTransactionMetricsObserverBlock;
 
 /// 为指定请求设置性能指标观察回调（已废弃，请使用全局回调）
 /// @param request 请求对象
