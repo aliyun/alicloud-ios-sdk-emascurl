@@ -579,6 +579,8 @@ NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 
 #### 设置性能指标回调
 
+如需对 EMASCurl 请求链路进行更完整的性能与稳定性监控，可以接入 [阿里云 EMAS 应用监控](https://www.aliyun.com/product/emascrash/apm)。
+
 ##### 综合性能指标回调
 
 EMASCurl提供基本等价于`URLSessionTaskTransactionMetrics`的完整性能指标：
