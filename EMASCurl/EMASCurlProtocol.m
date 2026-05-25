@@ -40,6 +40,10 @@ static NSString * _Nonnull const kEMASCurlRequestInterceptEnabledKey = @"kEMASCu
 static NSString * _Nonnull const kEMASCurlConfigurationIDKey = @"kEMASCurlConfigurationIDKey";
 static NSString * _Nonnull const kEMASCurlConfigurationHeaderKey = @"X-EMASCurl-Config-ID";
 
+static const long kEMASCurlTCPKeepIdleSeconds = 30L;
+static const long kEMASCurlTCPKeepIntervalSeconds = 15L;
+static const long kEMASCurlMaxConnectionIdleAgeSeconds = 30L;
+
 // RFC 7234 可能可缓存的状态码（实际可缓存性由 emas_cachedResponseWithHTTPURLResponse 决定）
 static BOOL isPotentiallyCacheableStatusCode(NSInteger statusCode) {
     switch (statusCode) {
@@ -847,6 +851,7 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     EMAS_LOG_INFO(@"EC-Performance", @"Request completed in %.0fms (DNS: %.0fms, Connect: %.0fms, Transfer: %.0fms) for URL: %@ (HTTP %ld)",
                   totalTime * 1000, nameLookupTime * 1000, connectTime * 1000, startTransferTime * 1000, 
                   self.frozenRequest.URL.absoluteString, (long)self.transactionMetricsResponse.statusCode);
+    [self logConnectionReuseSuspectIfNeededWithMetricsData:metricsData success:success error:error];
 
     // 检查是否有全局综合性能指标回调
     EMASCurlTransactionMetricsObserverBlock globalTransactionCallback = nil;
@@ -882,6 +887,69 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
                       startTransferTime * 1000,
                       totalTime * 1000);
     }
+}
+
+- (void)logConnectionReuseSuspectIfNeededWithMetricsData:(EMASCurlMetricsData *)metricsData success:(BOOL)success error:(NSError *)error {
+    if (success || !metricsData || !error) {
+        return;
+    }
+
+    BOOL reusedConnection = (metricsData.numConnects == 0);
+    if (!reusedConnection) {
+        return;
+    }
+
+    BOOL hasConnectionInfo = (metricsData.localPort > 0 || metricsData.primaryIP.length > 0);
+    if (!hasConnectionInfo) {
+        return;
+    }
+
+    BOOL noResponse = (self.transactionMetricsResponse.statusCode <= 0 &&
+                       metricsData.downloadBytes == 0);
+    if (!noResponse) {
+        return;
+    }
+
+    NSNumber *curlCode = error.userInfo[@"EMASCurlErrorCodeKey"];
+    NSInteger curlCodeValue = curlCode ? curlCode.integerValue : NSNotFound;
+    NSTimeInterval requestTimeout = self.frozenRequest.timeoutInterval;
+    BOOL isTimeout = (error.code == NSURLErrorTimedOut ||
+                      error.code == CURLE_OPERATION_TIMEDOUT ||
+                      curlCodeValue == CURLE_OPERATION_TIMEDOUT);
+    BOOL isNearRequestTimeout = (requestTimeout > 0 &&
+                                 metricsData.totalTime >= MAX(0, requestTimeout - 1.0));
+    BOOL isTimeoutCancel = ((error.code == CURLE_ABORTED_BY_CALLBACK ||
+                             curlCodeValue == CURLE_ABORTED_BY_CALLBACK) &&
+                            isNearRequestTimeout);
+    if (!isTimeout && !isTimeoutCancel) {
+        return;
+    }
+
+    NSString *host = self.frozenRequest.URL.host ?: @"unknown";
+    NSString *path = self.frozenRequest.URL.path.length > 0 ? self.frozenRequest.URL.path : @"/";
+    NSString *remoteAddress = metricsData.primaryIP.length > 0 ? metricsData.primaryIP : @"unknown";
+    NSString *localAddress = metricsData.localIP.length > 0 ? metricsData.localIP : @"unknown";
+
+    EMAS_LOG_ERROR(@"EC-Performance",
+                   @"Connection reuse suspect timeout: host=%@ path=%@ err=%@/%ld curl=%ld reused=YES numConnects=%ld httpVersion=%ld remote=%@:%ld local=%@:%ld total=%.0fms connect=%.0fms startTransfer=%.0fms respHeaderBytes=%ld respBodyBytes=%lld timeout=%.0fs customDNS=%@",
+                   host,
+                   path,
+                   error.domain ?: @"unknown",
+                   (long)error.code,
+                   (long)curlCodeValue,
+                   metricsData.numConnects,
+                   metricsData.httpVersion,
+                   remoteAddress,
+                   metricsData.primaryPort,
+                   localAddress,
+                   metricsData.localPort,
+                   metricsData.totalTime * 1000,
+                   metricsData.connectTime * 1000,
+                   metricsData.startTransferTime * 1000,
+                   metricsData.headerSize,
+                   metricsData.downloadBytes,
+                   requestTimeout,
+                   self.usedCustomDNSResolverResult ? @"YES" : @"NO");
 }
 
 // 使用 Manager 传入的 metrics 数据创建 TransactionMetrics，避免访问已释放的 easyHandle
@@ -1268,6 +1336,9 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 开启TCP keep alive
     curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPALIVE, 1L);
+    curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPIDLE, kEMASCurlTCPKeepIdleSeconds);
+    curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPINTVL, kEMASCurlTCPKeepIntervalSeconds);
+    curl_easy_setopt(easyHandle, CURLOPT_MAXAGE_CONN, kEMASCurlMaxConnectionIdleAgeSeconds);
 
     // 设置连接超时时间
     NSNumber *connectTimeoutInterval = [NSURLProtocol propertyForKey:(NSString *)kEMASCurlConnectTimeoutIntervalKey inRequest:self.request];
