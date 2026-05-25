@@ -18,6 +18,40 @@
 
 @implementation EMASCurlResponseCache
 
+static NSDictionary<NSString *, NSString *> *EMASCacheImmutableHTTPHeaderFields(NSDictionary *headers) {
+    if (headers.count == 0) {
+        return @{};
+    }
+
+    NSMutableDictionary<NSString *, NSString *> *immutableHeaders = [NSMutableDictionary dictionaryWithCapacity:headers.count];
+    [headers enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        if (![key isKindOfClass:[NSString class]] || ![obj isKindOfClass:[NSString class]]) {
+            return;
+        }
+        immutableHeaders[[key copy]] = [obj copy];
+    }];
+    return [immutableHeaders copy];
+}
+
+static NSURLResponse *EMASCacheImmutableResponse(NSURLResponse *response, NSDictionary *userInfo) {
+    if (![response isKindOfClass:[NSHTTPURLResponse class]]) {
+        return response;
+    }
+    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+    NSString *httpVersion = [userInfo[EMASUserInfoKeyOriginalHTTPVersion] isKindOfClass:[NSString class]] ? userInfo[EMASUserInfoKeyOriginalHTTPVersion] : @"HTTP/1.1";
+    return [[NSHTTPURLResponse alloc] initWithURL:httpResponse.URL
+                                      statusCode:httpResponse.statusCode
+                                     HTTPVersion:httpVersion
+                                    headerFields:EMASCacheImmutableHTTPHeaderFields(httpResponse.allHeaderFields)] ?: response;
+}
+
+static NSData *EMASCacheImmutableData(NSData *data) {
+    if (!data) {
+        return [NSData data];
+    }
+    return [data isKindOfClass:[NSMutableData class]] ? [data copy] : data;
+}
+
 - (instancetype)init {
     if (self = [super init]) {
         _urlCache = [NSURLCache sharedURLCache];
@@ -156,29 +190,46 @@
         return nil;
     }
 
+    NSData *immutableData = EMASCacheImmutableData(cachedResponse.data);
     NSDictionary *userInfo = cachedResponse.userInfo;
-    if (!userInfo) {
-        return cachedResponse;
+    NSDictionary *immutableUserInfo = nil;
+
+    if (userInfo) {
+        NSError *error = nil;
+        NSData *plistData = nil;
+        @try {
+            plistData = [NSPropertyListSerialization dataWithPropertyList:userInfo
+                                                                   format:NSPropertyListBinaryFormat_v1_0
+                                                                  options:0
+                                                                    error:&error];
+            if (plistData) {
+                id plist = [NSPropertyListSerialization propertyListWithData:plistData
+                                                                     options:NSPropertyListImmutable
+                                                                      format:nil
+                                                                       error:&error];
+                if ([plist isKindOfClass:[NSDictionary class]]) {
+                    immutableUserInfo = plist;
+                }
+            }
+        } @catch (NSException *exception) {
+            error = [NSError errorWithDomain:@"EMASCurlResponseCache"
+                                        code:-1
+                                    userInfo:@{NSLocalizedDescriptionKey: exception.reason ?: exception.name ?: @"property list exception"}];
+        }
+
+        if (!immutableUserInfo) {
+            EMAS_LOG_INFO(@"EC-Cache",
+                          @"[%@] dropping invalid cachedResponse.userInfo before store. url=%@ error=%@",
+                          stage,
+                          request.URL.absoluteString ?: @"(null)",
+                          error.localizedDescription ?: @"(unknown)");
+        }
     }
 
-    NSError *error = nil;
-    NSData *data = [NSPropertyListSerialization dataWithPropertyList:userInfo
-                                                              format:NSPropertyListBinaryFormat_v1_0
-                                                             options:0
-                                                               error:&error];
-    if (data) {
-        return cachedResponse;
-    }
-
-    EMAS_LOG_INFO(@"EC-Cache",
-                  @"[%@] dropping invalid cachedResponse.userInfo before store. url=%@ error=%@",
-                  stage,
-                  request.URL.absoluteString ?: @"(null)",
-                  error.localizedDescription ?: @"(unknown)");
-
-    return [[NSCachedURLResponse alloc] initWithResponse:cachedResponse.response
-                                                    data:cachedResponse.data
-                                                userInfo:nil
+    NSURLResponse *immutableResponse = EMASCacheImmutableResponse(cachedResponse.response, immutableUserInfo ?: userInfo);
+    return [[NSCachedURLResponse alloc] initWithResponse:immutableResponse
+                                                    data:immutableData
+                                                userInfo:immutableUserInfo
                                            storagePolicy:cachedResponse.storagePolicy];
 }
 

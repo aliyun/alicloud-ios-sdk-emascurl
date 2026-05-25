@@ -9,6 +9,65 @@
 
 static NSString * const EMASMissingVaryHeaderSentinel = @"__EMASCURL_MISSING_VARY_HEADER__";
 
+static NSDictionary<NSString *, NSString *> *EMASImmutableHTTPHeaderFields(NSDictionary *headers) {
+    if (headers.count == 0) {
+        return @{};
+    }
+
+    NSMutableDictionary<NSString *, NSString *> *immutableHeaders = [NSMutableDictionary dictionaryWithCapacity:headers.count];
+    [headers enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        if (![key isKindOfClass:[NSString class]] || ![obj isKindOfClass:[NSString class]]) {
+            return;
+        }
+        immutableHeaders[[key copy]] = [obj copy];
+    }];
+    return [immutableHeaders copy];
+}
+
+static NSHTTPURLResponse *EMASImmutableHTTPURLResponse(NSHTTPURLResponse *response, NSString *httpVersion) {
+    if (!response) {
+        return nil;
+    }
+    NSString *version = [httpVersion isKindOfClass:[NSString class]] && httpVersion.length > 0 ? httpVersion : @"HTTP/1.1";
+    return [[NSHTTPURLResponse alloc] initWithURL:response.URL
+                                      statusCode:response.statusCode
+                                     HTTPVersion:version
+                                    headerFields:EMASImmutableHTTPHeaderFields(response.allHeaderFields)];
+}
+
+static NSData *EMASImmutableDataForCache(NSData *data) {
+    if (!data) {
+        return [NSData data];
+    }
+    return [data isKindOfClass:[NSMutableData class]] ? [data copy] : data;
+}
+
+static NSDictionary *EMASImmutablePropertyListDictionary(NSDictionary *dictionary) {
+    if (!dictionary) {
+        return nil;
+    }
+
+    NSError *error = nil;
+    NSData *plistData = nil;
+    @try {
+        plistData = [NSPropertyListSerialization dataWithPropertyList:dictionary
+                                                               format:NSPropertyListBinaryFormat_v1_0
+                                                              options:0
+                                                                error:&error];
+        if (!plistData) {
+            return nil;
+        }
+
+        id plist = [NSPropertyListSerialization propertyListWithData:plistData
+                                                             options:NSPropertyListImmutable
+                                                              format:nil
+                                                               error:&error];
+        return [plist isKindOfClass:[NSDictionary class]] ? plist : nil;
+    } @catch (__unused NSException *exception) {
+        return nil;
+    }
+}
+
 @implementation NSCachedURLResponse (EMASCurl)
 
 #pragma mark - Private Helper Methods
@@ -213,14 +272,16 @@ static NSString * const EMASMissingVaryHeaderSentinel = @"__EMASCURL_MISSING_VAR
                 varyValues[trimmedField.lowercaseString] = EMASMissingVaryHeaderSentinel;
             }
         }
-        userInfo[EMASUserInfoKeyVaryValues] = varyValues;
+        userInfo[EMASUserInfoKeyVaryValues] = [varyValues copy];
     }
 
     // NSURLCacheStorageAllowed意味着允许缓存，但最终是否缓存以及如何缓存仍由NSURLCache决定
     // (如果它有自己的更严格的规则)。
-    return [[NSCachedURLResponse alloc] initWithResponse:response
-                                                    data:data
-                                                userInfo:userInfo
+    NSHTTPURLResponse *immutableResponse = EMASImmutableHTTPURLResponse(response, httpVersion);
+    NSDictionary *immutableUserInfo = EMASImmutablePropertyListDictionary(userInfo);
+    return [[NSCachedURLResponse alloc] initWithResponse:immutableResponse ?: response
+                                                    data:EMASImmutableDataForCache(data)
+                                                userInfo:immutableUserInfo
                                            storagePolicy:NSURLCacheStorageAllowed];
 }
 
@@ -331,7 +392,7 @@ static NSString * const EMASMissingVaryHeaderSentinel = @"__EMASCURL_MISSING_VAR
     NSHTTPURLResponse *newSynthesizedResponse = [[NSHTTPURLResponse alloc] initWithURL:originalResponse.URL
                                                                           statusCode:statusCode
                                                                          HTTPVersion:httpVersion
-                                                                        headerFields:[updatedHeaders copy]];
+                                                                        headerFields:EMASImmutableHTTPHeaderFields(updatedHeaders)];
 
     // 更新userInfo中的时间戳和可能的Date/Expires头
     NSMutableDictionary *updatedUserInfo = [self.userInfo mutableCopy];
@@ -344,8 +405,8 @@ static NSString * const EMASMissingVaryHeaderSentinel = @"__EMASCURL_MISSING_VAR
     }
 
     return [[NSCachedURLResponse alloc] initWithResponse:newSynthesizedResponse
-                                                    data:self.data // 304响应不包含数据，重用旧数据
-                                                userInfo:updatedUserInfo
+                                                    data:EMASImmutableDataForCache(self.data) // 304响应不包含数据，重用旧数据
+                                                userInfo:EMASImmutablePropertyListDictionary(updatedUserInfo)
                                            storagePolicy:self.storagePolicy]; // 重用旧存储策略
 }
 
