@@ -40,8 +40,6 @@ static NSString * _Nonnull const kEMASCurlRequestInterceptEnabledKey = @"kEMASCu
 static NSString * _Nonnull const kEMASCurlConfigurationIDKey = @"kEMASCurlConfigurationIDKey";
 static NSString * _Nonnull const kEMASCurlConfigurationHeaderKey = @"X-EMASCurl-Config-ID";
 
-static const long kEMASCurlTCPKeepIdleSeconds = 30L;
-static const long kEMASCurlTCPKeepIntervalSeconds = 15L;
 static const long kEMASCurlMaxConnectionIdleAgeSeconds = 30L;
 
 // RFC 7234 可能可缓存的状态码（实际可缓存性由 emas_cachedResponseWithHTTPURLResponse 决定）
@@ -1336,8 +1334,6 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 开启TCP keep alive
     curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPALIVE, 1L);
-    curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPIDLE, kEMASCurlTCPKeepIdleSeconds);
-    curl_easy_setopt(easyHandle, CURLOPT_TCP_KEEPINTVL, kEMASCurlTCPKeepIntervalSeconds);
     curl_easy_setopt(easyHandle, CURLOPT_MAXAGE_CONN, kEMASCurlMaxConnectionIdleAgeSeconds);
 
     // 设置连接超时时间
