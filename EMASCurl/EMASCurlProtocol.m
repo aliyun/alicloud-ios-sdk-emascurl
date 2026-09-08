@@ -42,6 +42,10 @@ static NSString * _Nonnull const kEMASCurlConfigurationHeaderKey = @"X-EMASCurl-
 
 static const long kEMASCurlMaxConnectionIdleAgeSeconds = 30L;
 
+// 下发给 libcurl 的空闲超时上限。libcurl 判定低速超时时会计算 low_speed_time * 1000
+// 换算成毫秒，秒数过大会让该乘法溢出成负值，导致任意等待时长都满足超时条件。
+static const long kEMASCurlMaxIdleTimeoutSeconds = 86400L;
+
 // RFC 7234 可能可缓存的状态码（实际可缓存性由 emas_cachedResponseWithHTTPURLResponse 决定）
 static BOOL isPotentiallyCacheableStatusCode(NSInteger statusCode) {
     switch (statusCode) {
@@ -1234,6 +1238,28 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
     curl_easy_setopt(easyHandle, CURLOPT_POSTFIELDSIZE_LARGE, length);
 }
 
+// 把 NSURLRequest.timeoutInterval 归一化成 libcurl 可安全使用的空闲超时秒数，返回 0 表示不设置空闲超时。
+// timeoutInterval 是业务可任意赋值的 double，实践中出现过 INFINITY（用来表达"不限超时"）。
+// 直接强转成 long 会饱和成 LONG_MAX，libcurl 在 low_speed_time * 1000 换算毫秒时溢出为负值，
+// 任意等待时长都会满足超时条件，请求会在毫秒级被误判为 CURLE_OPERATION_TIMEDOUT。
+- (long)idleTimeoutSecondsForTimeoutInterval:(NSTimeInterval)timeoutInterval {
+    if (isnan(timeoutInterval) || timeoutInterval <= 0) {
+        EMAS_LOG_INFO(@"EC-Timeout", @"Request timeout interval %.1f is unusable, idle timeout disabled for URL: %@",
+                      timeoutInterval, self.frozenRequest.URL.absoluteString);
+        return 0;
+    }
+
+    // 不足 1 秒的取值向上取整，避免被截断成 0 而静默失去超时保护
+    double seconds = ceil(timeoutInterval);
+    if (seconds > (double)kEMASCurlMaxIdleTimeoutSeconds) {
+        EMAS_LOG_INFO(@"EC-Timeout", @"Request timeout interval %.1f exceeds supported maximum, clamped to %ld seconds for URL: %@",
+                      timeoutInterval, kEMASCurlMaxIdleTimeoutSeconds, self.frozenRequest.URL.absoluteString);
+        return kEMASCurlMaxIdleTimeoutSeconds;
+    }
+
+    return (long)seconds;
+}
+
 - (void)configEasyHandle:(CURL *)easyHandle error:(NSError **)error {
     // 假如是quic这个framework，由于使用的boringssl无法访问苹果native CA，需要从Bundle中读取CA
     if (curlFeatureHttp3) {
@@ -1351,10 +1377,10 @@ static EMASCurlTransactionMetricsObserverBlock globalTransactionMetricsObserverB
 
     // 设置请求超时时间（空闲超时模式）
     // 使用 LOW_SPEED_LIMIT + LOW_SPEED_TIME 模拟空闲超时
-    NSTimeInterval requestTimeoutInterval = self.frozenRequest.timeoutInterval;
-    if (requestTimeoutInterval > 0) {
+    long idleTimeoutSeconds = [self idleTimeoutSecondsForTimeoutInterval:self.frozenRequest.timeoutInterval];
+    if (idleTimeoutSeconds > 0) {
         curl_easy_setopt(easyHandle, CURLOPT_LOW_SPEED_LIMIT, 1L);
-        curl_easy_setopt(easyHandle, CURLOPT_LOW_SPEED_TIME, (long)requestTimeoutInterval);
+        curl_easy_setopt(easyHandle, CURLOPT_LOW_SPEED_TIME, idleTimeoutSeconds);
     }
 
     // 开启重定向
