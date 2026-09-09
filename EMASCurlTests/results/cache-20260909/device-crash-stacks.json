@@ -1,0 +1,713 @@
+[
+  {
+    "variant": "head",
+    "method": "testTwoReadersWithCallbackHandoff",
+    "round": 1,
+    "report": "94C9E56A-31F8-4222-A0D3-C5367763D007.ips",
+    "captureTime": "2026-09-09 17:20:40.7529 +0800",
+    "exception": {
+      "codes": "0x0000000000000001, 0xb592da5df32c0578",
+      "rawCodes": [
+        1,
+        -5362984109198277256
+      ],
+      "type": "EXC_BAD_ACCESS",
+      "signal": "SIGSEGV",
+      "subtype": "KERN_INVALID_ADDRESS at 0xb592da5df32c0578 -> 0xffffda5df32c0578 (possible pointer authentication failure)"
+    },
+    "queue": "cache.validation.client",
+    "frames": [
+      {
+        "symbol": "std::__1::pair<std::__1::__hash_iterator<std::__1::__hash_node<std::__1::__hash_value_type<long, qos_info_t>, void*>*>, bool> std::__1::__hash_table<std::__1::__hash_value_type<long, qos_info_t>, std::__1::__unordered_map_hasher<long, std::__1::__hash_value_type<long, qos_info_t>, std::__1::hash<long>, std::__1::equal_to<long>, true>, std::__1::__unordered_map_equal<long, std::__1::__hash_value_type<long, qos_info_t>, std::__1::equal_to<long>, std::__1::hash<long>, true>, std::__1::allocator<std::__1::__hash_value_type<long, qos_info_t>>>::__emplace_unique_key_args<long, std::__1::piecewise_construct_t const&, std::__1::tuple<long const&>, std::__1::tuple<>>(long const&, std::__1::piecewise_construct_t const&, std::__1::tuple<long const&>&&, std::__1::tuple<>&&)",
+        "imageIndex": 1,
+        "symbolLocation": 128,
+        "imageOffset": 586372,
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "symbolLocation": 1100,
+        "symbol": "qosWaiterSignallerInvariantCheck",
+        "imageIndex": 1,
+        "imageOffset": 585048,
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "imageOffset": 561904,
+        "imageIndex": 1,
+        "symbolLocation": 236,
+        "symbol": "interposed_dispatch_semaphore_wait",
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "imageOffset": 349024,
+        "imageIndex": 10,
+        "symbol": "__EMASRunCacheStress_block_invoke_2",
+        "symbolLocation": 60,
+        "sourceFile": "EMASCurlCacheStressScenario.h",
+        "sourceLine": 57,
+        "imageName": "EMASCurlTests",
+        "imageUUID": "a477e28e-6716-3b43-8e3d-d82301195098"
+      },
+      {
+        "symbolLocation": 32,
+        "imageIndex": 17,
+        "symbol": "_dispatch_call_block_and_release",
+        "imageOffset": 6828,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageOffset": 112004,
+        "symbolLocation": 16,
+        "imageIndex": 17,
+        "symbol": "_dispatch_client_callout",
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageIndex": 17,
+        "symbol": "_dispatch_lane_serial_drain",
+        "symbolLocation": 944,
+        "imageOffset": 41884,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbol": "_dispatch_lane_invoke",
+        "imageIndex": 17,
+        "imageOffset": 44460,
+        "symbolLocation": 388,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbolLocation": 292,
+        "imageOffset": 86492,
+        "imageIndex": 17,
+        "symbol": "_dispatch_root_queue_drain_deferred_wlh",
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageIndex": 17,
+        "symbol": "_dispatch_workloop_worker_thread",
+        "symbolLocation": 540,
+        "imageOffset": 84576,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      }
+    ]
+  },
+  {
+    "variant": "baseline",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 1,
+    "report": "B264977A-8D9E-4A30-82F9-E2E5A569052C.ips",
+    "captureTime": "2026-09-09 17:20:45.5649 +0800",
+    "exception": {
+      "codes": "0x0000000000000001, 0x00000000007adbf0",
+      "rawCodes": [
+        1,
+        8051696
+      ],
+      "type": "EXC_BAD_ACCESS",
+      "signal": "SIGSEGV",
+      "subtype": "KERN_INVALID_ADDRESS at 0x00000000007adbf0"
+    },
+    "queue": "com.alicloud.emascurl.cacheQueue",
+    "frames": [
+      {
+        "imageIndex": 24,
+        "symbol": "objc_retain",
+        "symbolLocation": 8,
+        "imageOffset": 31632,
+        "imageName": "libobjc.A.dylib",
+        "imageUUID": "ed7c5fc7-ddc7-3424-9c44-db56f51b8be2"
+      },
+      {
+        "imageIndex": 13,
+        "symbol": "-[NSCachedURLResponse(EMASCurl) emas_cacheControlDirectives]",
+        "symbolLocation": 200,
+        "imageOffset": 109196,
+        "imageName": "EMASCurl",
+        "imageUUID": "2e3bf32a-1795-3a02-9e12-9e6e0bea05b0"
+      },
+      {
+        "imageIndex": 13,
+        "symbolLocation": 656,
+        "symbol": "-[NSCachedURLResponse(EMASCurl) emas_isResponseStillFreshForRequest:]",
+        "imageOffset": 121732,
+        "imageName": "EMASCurl",
+        "imageUUID": "2e3bf32a-1795-3a02-9e12-9e6e0bea05b0"
+      },
+      {
+        "symbolLocation": 648,
+        "imageIndex": 13,
+        "imageOffset": 147532,
+        "symbol": "__50-[EMASCurlResponseCache cachedResponseForRequest:]_block_invoke",
+        "imageName": "EMASCurl",
+        "imageUUID": "2e3bf32a-1795-3a02-9e12-9e6e0bea05b0"
+      },
+      {
+        "symbolLocation": 16,
+        "imageOffset": 112004,
+        "imageIndex": 17,
+        "symbol": "_dispatch_client_callout",
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbol": "_dispatch_sync_invoke_and_complete_recurse",
+        "symbolLocation": 64,
+        "imageIndex": 17,
+        "imageOffset": 72524,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbolLocation": 176,
+        "imageIndex": 17,
+        "imageOffset": 71132,
+        "symbol": "_dispatch_sync_f_slow",
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageIndex": 13,
+        "symbol": "-[EMASCurlResponseCache cachedResponseForRequest:]",
+        "imageOffset": 146580,
+        "symbolLocation": 364,
+        "imageName": "EMASCurl",
+        "imageUUID": "2e3bf32a-1795-3a02-9e12-9e6e0bea05b0"
+      },
+      {
+        "imageIndex": 10,
+        "symbol": "__EMASRunCacheStress_block_invoke",
+        "imageOffset": 348392,
+        "sourceLine": 54,
+        "sourceFile": "EMASCurlCacheStressScenario.h",
+        "symbolLocation": 244,
+        "imageName": "EMASCurlTests",
+        "imageUUID": "051f3a78-a17e-30f4-97f7-29937f2f7f76"
+      },
+      {
+        "imageIndex": 17,
+        "imageOffset": 6828,
+        "symbol": "_dispatch_call_block_and_release",
+        "symbolLocation": 32,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      }
+    ]
+  },
+  {
+    "variant": "head",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 1,
+    "report": "0831A8EA-7061-4A54-861C-0841C9CD22A5.ips",
+    "captureTime": "2026-09-09 17:20:50.3117 +0800",
+    "exception": {
+      "codes": "0x0000000000000001, 0x540f389bd2dc5c08",
+      "rawCodes": [
+        1,
+        6057122265745349640
+      ],
+      "type": "EXC_BAD_ACCESS",
+      "signal": "SIGSEGV",
+      "subtype": "KERN_INVALID_ADDRESS at 0x540f389bd2dc5c08 -> 0x0000389bd2dc5c08 (possible pointer authentication failure)"
+    },
+    "queue": "cache.validation.client",
+    "frames": [
+      {
+        "imageIndex": 1,
+        "imageOffset": 586372,
+        "symbol": "std::__1::pair<std::__1::__hash_iterator<std::__1::__hash_node<std::__1::__hash_value_type<long, qos_info_t>, void*>*>, bool> std::__1::__hash_table<std::__1::__hash_value_type<long, qos_info_t>, std::__1::__unordered_map_hasher<long, std::__1::__hash_value_type<long, qos_info_t>, std::__1::hash<long>, std::__1::equal_to<long>, true>, std::__1::__unordered_map_equal<long, std::__1::__hash_value_type<long, qos_info_t>, std::__1::equal_to<long>, std::__1::hash<long>, true>, std::__1::allocator<std::__1::__hash_value_type<long, qos_info_t>>>::__emplace_unique_key_args<long, std::__1::piecewise_construct_t const&, std::__1::tuple<long const&>, std::__1::tuple<>>(long const&, std::__1::piecewise_construct_t const&, std::__1::tuple<long const&>&&, std::__1::tuple<>&&)",
+        "symbolLocation": 128,
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "symbol": "qosWaiterSignallerInvariantCheck",
+        "imageOffset": 585244,
+        "symbolLocation": 1296,
+        "imageIndex": 1,
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "imageIndex": 1,
+        "symbol": "interposed_dispatch_semaphore_wait",
+        "symbolLocation": 236,
+        "imageOffset": 561904,
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "imageIndex": 10,
+        "imageOffset": 349024,
+        "symbol": "__EMASRunCacheStress_block_invoke_2",
+        "sourceFile": "EMASCurlCacheStressScenario.h",
+        "sourceLine": 57,
+        "symbolLocation": 60,
+        "imageName": "EMASCurlTests",
+        "imageUUID": "a477e28e-6716-3b43-8e3d-d82301195098"
+      },
+      {
+        "imageIndex": 17,
+        "symbolLocation": 32,
+        "imageOffset": 6828,
+        "symbol": "_dispatch_call_block_and_release",
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbol": "_dispatch_client_callout",
+        "imageIndex": 17,
+        "symbolLocation": 16,
+        "imageOffset": 112004,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbolLocation": 944,
+        "imageIndex": 17,
+        "symbol": "_dispatch_lane_serial_drain",
+        "imageOffset": 41884,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageIndex": 17,
+        "symbol": "_dispatch_lane_invoke",
+        "symbolLocation": 388,
+        "imageOffset": 44460,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageIndex": 17,
+        "symbol": "_dispatch_root_queue_drain_deferred_wlh",
+        "imageOffset": 86492,
+        "symbolLocation": 292,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageIndex": 17,
+        "symbolLocation": 540,
+        "imageOffset": 84576,
+        "symbol": "_dispatch_workloop_worker_thread",
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      }
+    ]
+  },
+  {
+    "variant": "baseline",
+    "method": "testTwoReadersWithCallbackHandoff",
+    "round": 2,
+    "report": "03B12C86-B4A5-44E6-8721-A7403CA26B5C.ips",
+    "captureTime": "2026-09-09 17:20:59.9691 +0800",
+    "exception": {
+      "codes": "0x0000000000000001, 0xf86c9cbd1ed86152",
+      "rawCodes": [
+        1,
+        -545889118738423470
+      ],
+      "type": "EXC_BAD_ACCESS",
+      "signal": "SIGSEGV",
+      "subtype": "KERN_INVALID_ADDRESS at 0xf86c9cbd1ed86152 -> 0x00001cbd1ed86152 (possible pointer authentication failure)"
+    },
+    "queue": "cache.validation.client",
+    "frames": [
+      {
+        "symbolLocation": 128,
+        "imageIndex": 1,
+        "imageOffset": 586372,
+        "symbol": "std::__1::pair<std::__1::__hash_iterator<std::__1::__hash_node<std::__1::__hash_value_type<long, qos_info_t>, void*>*>, bool> std::__1::__hash_table<std::__1::__hash_value_type<long, qos_info_t>, std::__1::__unordered_map_hasher<long, std::__1::__hash_value_type<long, qos_info_t>, std::__1::hash<long>, std::__1::equal_to<long>, true>, std::__1::__unordered_map_equal<long, std::__1::__hash_value_type<long, qos_info_t>, std::__1::equal_to<long>, std::__1::hash<long>, true>, std::__1::allocator<std::__1::__hash_value_type<long, qos_info_t>>>::__emplace_unique_key_args<long, std::__1::piecewise_construct_t const&, std::__1::tuple<long const&>, std::__1::tuple<>>(long const&, std::__1::piecewise_construct_t const&, std::__1::tuple<long const&>&&, std::__1::tuple<>&&)",
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "imageOffset": 585276,
+        "symbolLocation": 1328,
+        "imageIndex": 1,
+        "symbol": "qosWaiterSignallerInvariantCheck",
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "imageIndex": 1,
+        "imageOffset": 561904,
+        "symbol": "interposed_dispatch_semaphore_wait",
+        "symbolLocation": 236,
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "sourceFile": "EMASCurlCacheStressScenario.h",
+        "imageOffset": 349024,
+        "sourceLine": 57,
+        "symbolLocation": 60,
+        "imageIndex": 10,
+        "symbol": "__EMASRunCacheStress_block_invoke_2",
+        "imageName": "EMASCurlTests",
+        "imageUUID": "051f3a78-a17e-30f4-97f7-29937f2f7f76"
+      },
+      {
+        "imageIndex": 17,
+        "symbolLocation": 32,
+        "imageOffset": 6828,
+        "symbol": "_dispatch_call_block_and_release",
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbolLocation": 16,
+        "imageOffset": 112004,
+        "imageIndex": 17,
+        "symbol": "_dispatch_client_callout",
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbol": "_dispatch_lane_serial_drain",
+        "imageIndex": 17,
+        "symbolLocation": 944,
+        "imageOffset": 41884,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageOffset": 44460,
+        "symbol": "_dispatch_lane_invoke",
+        "imageIndex": 17,
+        "symbolLocation": 388,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbolLocation": 292,
+        "imageIndex": 17,
+        "symbol": "_dispatch_root_queue_drain_deferred_wlh",
+        "imageOffset": 86492,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageOffset": 84576,
+        "symbol": "_dispatch_workloop_worker_thread",
+        "symbolLocation": 540,
+        "imageIndex": 17,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      }
+    ]
+  },
+  {
+    "variant": "head",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 2,
+    "report": "5FA0D284-F1F3-4554-98B3-A30061DCC60D.ips",
+    "captureTime": "2026-09-09 17:21:04.5043 +0800",
+    "exception": {
+      "codes": "0x0000000000000001, 0x0043721438b05f90",
+      "rawCodes": [
+        1,
+        18984254615609232
+      ],
+      "type": "EXC_BAD_ACCESS",
+      "signal": "SIGSEGV",
+      "subtype": "KERN_INVALID_ADDRESS at 0x0043721438b05f90 -> 0x0000721438b05f90 (possible pointer authentication failure)"
+    },
+    "queue": "com.alicloud.emascurl.cacheQueue",
+    "frames": [
+      {
+        "symbolLocation": 32,
+        "imageOffset": 7200,
+        "symbol": "objc_msgSend",
+        "imageIndex": 24,
+        "imageName": "libobjc.A.dylib",
+        "imageUUID": "ed7c5fc7-ddc7-3424-9c44-db56f51b8be2"
+      },
+      {
+        "imageOffset": 147572,
+        "imageIndex": 13,
+        "symbolLocation": 664,
+        "symbol": "__50-[EMASCurlResponseCache cachedResponseForRequest:]_block_invoke",
+        "imageName": "EMASCurl",
+        "imageUUID": "dd894410-b8c2-3885-82a8-b0504879ab7b"
+      },
+      {
+        "imageOffset": 112004,
+        "symbol": "_dispatch_client_callout",
+        "symbolLocation": 16,
+        "imageIndex": 17,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbolLocation": 64,
+        "symbol": "_dispatch_sync_invoke_and_complete_recurse",
+        "imageIndex": 17,
+        "imageOffset": 72524,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageIndex": 17,
+        "symbol": "_dispatch_sync_f_slow",
+        "imageOffset": 71132,
+        "symbolLocation": 176,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbol": "-[EMASCurlResponseCache cachedResponseForRequest:]",
+        "imageOffset": 146604,
+        "symbolLocation": 364,
+        "imageIndex": 13,
+        "imageName": "EMASCurl",
+        "imageUUID": "dd894410-b8c2-3885-82a8-b0504879ab7b"
+      },
+      {
+        "sourceFile": "EMASCurlCacheStressScenario.h",
+        "imageOffset": 348392,
+        "sourceLine": 54,
+        "symbolLocation": 244,
+        "imageIndex": 10,
+        "symbol": "__EMASRunCacheStress_block_invoke",
+        "imageName": "EMASCurlTests",
+        "imageUUID": "a477e28e-6716-3b43-8e3d-d82301195098"
+      },
+      {
+        "symbol": "_dispatch_call_block_and_release",
+        "imageOffset": 6828,
+        "symbolLocation": 32,
+        "imageIndex": 17,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageOffset": 112004,
+        "symbol": "_dispatch_client_callout",
+        "symbolLocation": 16,
+        "imageIndex": 17,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbolLocation": 728,
+        "imageOffset": 26084,
+        "imageIndex": 17,
+        "symbol": "_dispatch_continuation_pop",
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      }
+    ]
+  },
+  {
+    "variant": "baseline",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 2,
+    "report": "9A12042B-128A-453D-A5B8-CF9E4D45B931.ips",
+    "captureTime": "2026-09-09 17:21:38.7354 +0800",
+    "exception": {
+      "codes": "0x0000000000000000, 0x0000000000000000",
+      "rawCodes": [
+        0,
+        0
+      ],
+      "type": "EXC_CRASH",
+      "signal": "SIGABRT"
+    },
+    "queue": "cache.validation.client",
+    "frames": [
+      {
+        "imageOffset": 45532,
+        "imageIndex": 16,
+        "symbolLocation": 8,
+        "symbol": "__pthread_kill",
+        "imageName": "libsystem_kernel.dylib",
+        "imageUUID": "9e195be1-1733-345e-a9bf-50d0d7059647"
+      },
+      {
+        "imageOffset": 31840,
+        "imageIndex": 23,
+        "symbolLocation": 268,
+        "symbol": "pthread_kill",
+        "imageName": "libsystem_pthread.dylib",
+        "imageUUID": "b37430d8-e3af-33e4-81e1-faed9ee26e8a"
+      },
+      {
+        "symbol": "abort",
+        "imageOffset": 488144,
+        "imageIndex": 24,
+        "symbolLocation": 124,
+        "imageName": "libsystem_c.dylib",
+        "imageUUID": "93f93d7c-245f-3395-822d-ec61ffae79cf"
+      },
+      {
+        "symbol": "abort_message",
+        "imageIndex": 25,
+        "imageOffset": 91552,
+        "symbolLocation": 132,
+        "imageName": "libc++abi.dylib",
+        "imageUUID": "a360ea66-d985-3893-94b9-6bba7bd8a6df"
+      },
+      {
+        "imageOffset": 20240,
+        "imageIndex": 25,
+        "symbol": "demangling_terminate_handler()",
+        "symbolLocation": 344,
+        "imageName": "libc++abi.dylib",
+        "imageUUID": "a360ea66-d985-3893-94b9-6bba7bd8a6df"
+      },
+      {
+        "imageIndex": 26,
+        "imageOffset": 211960,
+        "symbolLocation": 156,
+        "symbol": "_objc_terminate()",
+        "imageName": "libobjc.A.dylib",
+        "imageUUID": "ed7c5fc7-ddc7-3424-9c44-db56f51b8be2"
+      },
+      {
+        "imageIndex": 4,
+        "imageOffset": 210148,
+        "symbolLocation": 96,
+        "symbol": "_XCTTerminateHandler()",
+        "imageName": "XCTestCore",
+        "imageUUID": "efa99b03-7594-3898-a7c5-8ec0a6d85b9a"
+      },
+      {
+        "imageOffset": 88244,
+        "symbol": "std::__terminate(void (*)())",
+        "imageIndex": 25,
+        "symbolLocation": 16,
+        "imageName": "libc++abi.dylib",
+        "imageUUID": "a360ea66-d985-3893-94b9-6bba7bd8a6df"
+      },
+      {
+        "imageOffset": 101916,
+        "imageIndex": 25,
+        "symbolLocation": 88,
+        "symbol": "__cxxabiv1::failed_throw(__cxxabiv1::__cxa_exception*)",
+        "imageName": "libc++abi.dylib",
+        "imageUUID": "a360ea66-d985-3893-94b9-6bba7bd8a6df"
+      },
+      {
+        "symbol": "__cxa_throw",
+        "imageIndex": 25,
+        "imageOffset": 101828,
+        "symbolLocation": 92,
+        "imageName": "libc++abi.dylib",
+        "imageUUID": "a360ea66-d985-3893-94b9-6bba7bd8a6df"
+      }
+    ]
+  },
+  {
+    "variant": "baseline",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 3,
+    "report": "2761D1FB-CE5A-4E95-ABCF-87E371B26BE5.ips",
+    "captureTime": "2026-09-09 17:21:53.3218 +0800",
+    "exception": {
+      "codes": "0x0000000000000001, 0xaa785b34b2939b9b",
+      "rawCodes": [
+        1,
+        -6163075808164078693
+      ],
+      "type": "EXC_BAD_ACCESS",
+      "signal": "SIGSEGV",
+      "subtype": "KERN_INVALID_ADDRESS at 0xaa785b34b2939b9b -> 0x00005b34b2939b9b (possible pointer authentication failure)"
+    },
+    "queue": "cache.validation.client",
+    "frames": [
+      {
+        "symbolLocation": 128,
+        "imageOffset": 586372,
+        "symbol": "std::__1::pair<std::__1::__hash_iterator<std::__1::__hash_node<std::__1::__hash_value_type<long, qos_info_t>, void*>*>, bool> std::__1::__hash_table<std::__1::__hash_value_type<long, qos_info_t>, std::__1::__unordered_map_hasher<long, std::__1::__hash_value_type<long, qos_info_t>, std::__1::hash<long>, std::__1::equal_to<long>, true>, std::__1::__unordered_map_equal<long, std::__1::__hash_value_type<long, qos_info_t>, std::__1::equal_to<long>, std::__1::hash<long>, true>, std::__1::allocator<std::__1::__hash_value_type<long, qos_info_t>>>::__emplace_unique_key_args<long, std::__1::piecewise_construct_t const&, std::__1::tuple<long const&>, std::__1::tuple<>>(long const&, std::__1::piecewise_construct_t const&, std::__1::tuple<long const&>&&, std::__1::tuple<>&&)",
+        "imageIndex": 1,
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "symbol": "qosWaiterSignallerInvariantCheck",
+        "symbolLocation": 1296,
+        "imageOffset": 585244,
+        "imageIndex": 1,
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "symbol": "interposed_dispatch_semaphore_wait",
+        "imageIndex": 1,
+        "symbolLocation": 236,
+        "imageOffset": 561904,
+        "imageName": "libRPAC.dylib",
+        "imageUUID": "9b38c7c0-72c5-38e8-8ffc-8d177fd80591"
+      },
+      {
+        "imageIndex": 10,
+        "sourceLine": 57,
+        "imageOffset": 349024,
+        "sourceFile": "EMASCurlCacheStressScenario.h",
+        "symbolLocation": 60,
+        "symbol": "__EMASRunCacheStress_block_invoke_2",
+        "imageName": "EMASCurlTests",
+        "imageUUID": "051f3a78-a17e-30f4-97f7-29937f2f7f76"
+      },
+      {
+        "imageIndex": 17,
+        "symbol": "_dispatch_call_block_and_release",
+        "symbolLocation": 32,
+        "imageOffset": 6828,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageIndex": 17,
+        "symbol": "_dispatch_client_callout",
+        "symbolLocation": 16,
+        "imageOffset": 112004,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageIndex": 17,
+        "symbol": "_dispatch_lane_serial_drain",
+        "symbolLocation": 944,
+        "imageOffset": 41884,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbol": "_dispatch_lane_invoke",
+        "imageIndex": 17,
+        "symbolLocation": 388,
+        "imageOffset": 44460,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "imageIndex": 17,
+        "symbol": "_dispatch_root_queue_drain_deferred_wlh",
+        "symbolLocation": 292,
+        "imageOffset": 86492,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      },
+      {
+        "symbol": "_dispatch_workloop_worker_thread",
+        "imageOffset": 84576,
+        "symbolLocation": 540,
+        "imageIndex": 17,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "395da84f-715d-334e-8d41-a16cd93fc83c"
+      }
+    ]
+  }
+]

@@ -13,14 +13,19 @@
 //    wrapper 的最后一次 release 已使其进入 dealloc，但 dealloc 尚未取得锁清除反向指针，
 //    此时另一线程经反向指针取出该对象并 objc_retain，从而拿到正在析构/已失效的对象。
 //
+//  本次落地的是 cacheQueue 内的局部 autoreleasepool，只修复部分临时对象释放竞态。
+//  lookup / 304 返回对象在调用方释放，以及外部组件访问 sharedURLCache 的窗口仍未覆盖。
+//  独占缓存与返回脱钩副本属于不同的候选方案；外部共写下副本仍崩，不能否定它对返回路径的作用。
+//  分组参数、实际结果和环境见 README.md 及 CacheValidationResults.md；无崩溃不等于消除窗口。
+//  自动功能回归在 EMASCurlCacheRegressionTest；可选择运行的正常并发场景在 EMASCurlCacheStressTest。
+//
 //  证明力分级（不要混用）：
 //    A. 证据组 uafGroupN_*   —— 唯一变量对照，用于支撑因果结论
 //    B. 诊断组 uafDiagnose*  —— 仅提供运行时观测量，不单独构成证明
 //    C. 注入组 uafFault*     —— 故障注入，仅演示寄存器/指令关系，不代表真实触发路径
 //
-//  方法名一律以 uaf 而非 test 开头：这些用例单次数万次迭代、且期望结果是「进程崩溃」，
-//  不适合进入 xcodebuild test / CI。改回 test 前缀会让 CI 每次都跑并随机挂掉。
-//  需要复现时在 Xcode 里临时改名或直接调用。
+//  本文件保留 uaf 前缀的历史诊断实验，默认不进入 xcodebuild test / CI。
+//  它们用于记录特定负载下是否发生崩溃；不要求旧版必须崩溃，也不以新版无崩证明完整修复。
 //
 //  并发输入一律使用不可变对象（NSURLRequest / NSArray），每次操作取 request 副本，
 //  避免可变对象成为干扰变量。
@@ -29,7 +34,9 @@
 #import <XCTest/XCTest.h>
 #import <objc/runtime.h>
 #import <objc/message.h>
+#import <stdatomic.h>
 #import "EMASCurlResponseCache.h"
+#import "EMASCurlCacheConstants.h"
 
 #pragma mark - 压力参数
 
@@ -171,7 +178,7 @@ static void EMASUAFStoreLoop(NSURLCache *cache, NSArray<NSURLRequest *> *request
             NSCachedURLResponse *wrapper =
                 [[NSCachedURLResponse alloc] initWithResponse:EMASUAFResponse(request.URL, body.length)
                                                         data:body
-                                                    userInfo:nil
+                                                    userInfo:@{EMASUserInfoKeyStorageTimestamp: @([NSDate date].timeIntervalSince1970)}
                                                storagePolicy:NSURLCacheStorageAllowed];
             [cache storeCachedResponse:wrapper forRequest:request];
         }
@@ -179,8 +186,7 @@ static void EMASUAFStoreLoop(NSURLCache *cache, NSArray<NSURLRequest *> *request
 }
 
 /// 从指定 NSURLCache 持续读取。必须真实触碰返回对象，否则拿到悬空指针也不会解引用。
-/// 返回命中次数：各组的崩溃概率必须以命中次数为归一基准，
-/// 否则不同缓存容量会成为隐蔽的第二个变量。
+/// 返回 Foundation 命中次数。它与下方 SDK 返回计数的统计层不同，不能混作同一种命中率。
 static int EMASUAFLookupLoop(NSURLCache *cache, NSArray<NSURLRequest *> *requests, int iterations) {
     int hits = 0;
     for (int n = 0; n < iterations; n++) {
@@ -197,7 +203,7 @@ static int EMASUAFLookupLoop(NSURLCache *cache, NSArray<NSURLRequest *> *request
     return hits;
 }
 
-/// 经 EMASCurlResponseCache 读取（内部 dispatch_sync 到 com.alicloud.emascurl.cacheQueue）。
+/// 经 EMASCurlResponseCache 读取，返回 SDK 可用响应数，不代表底层 Foundation 命中次数。
 static int EMASUAFEMASLookupLoop(EMASCurlResponseCache *cache, NSArray<NSURLRequest *> *requests, int iterations) {
     int hits = 0;
     for (int n = 0; n < iterations; n++) {
@@ -361,7 +367,7 @@ static double EMASUAFMin(NSArray<NSNumber *> *samples) {
 
 /// 第一组：sharedURLCache + 纯 EMASCurl。
 /// EMASCurlResponseCache 的 store 与 lookup 都经由自身的 DISPATCH_QUEUE_SERIAL，
-/// 进程内不存在其他访问方。用于确认 SDK 自身的并发不足以触发。
+/// 进程内不存在其他访问方，用于观察单写单读模型；不覆盖多 reader 交错释放返回对象。
 - (void)uafGroup1_SharedCache_EMASCurlOnly {
     EMASCurlResponseCache *responseCache = [EMASCurlResponseCache new];
     NSArray<NSURLRequest *> *requests = EMASUAFRequests(@"g1");
@@ -386,7 +392,7 @@ static double EMASUAFMin(NSArray<NSNumber *> *samples) {
 
 /// 第一组变体 b：EMASCurl 使用独占 NSURLCache，且进程内无任何外部访问方。
 /// 用于判定竞态是否内生于「store 后释放 wrapper，随后 lookup」这一自身序列。
-/// 若本组崩溃，则独占实例不构成修复，必须改为延长 wrapper 生命周期。
+/// 若本组崩溃，只能说明独占实例本身不足以消除所测内部窗口。
 - (void)uafGroup1b_DedicatedCache_EMASCurlOnly {
     EMASCurlResponseCache *responseCache = [EMASCurlResponseCache new];
     NSURLCache *dedicated = EMASUAFDedicatedCache();
@@ -424,7 +430,7 @@ static double EMASUAFMin(NSArray<NSNumber *> *samples) {
 
     dispatch_queue_t queue = dispatch_queue_create("uaf.g1c", DISPATCH_QUEUE_CONCURRENT);
     dispatch_group_t group = dispatch_group_create();
-    __block volatile BOOL stopPressure = NO;
+    __block atomic_bool stopPressure = false;
 
     dispatch_group_async(group, queue, ^{
         EMASUAFEMASStoreLoop(responseCache, requests, kEMASUAFIterations);
@@ -432,13 +438,13 @@ static double EMASUAFMin(NSArray<NSNumber *> *samples) {
     dispatch_group_async(group, queue, ^{
         int hits = EMASUAFEMASLookupLoop(responseCache, requests, kEMASUAFIterations);
         EMASUAFLog(@"G1c reader hits=%d/%d", hits, kEMASUAFIterations);
-        stopPressure = YES;
+        atomic_store_explicit(&stopPressure, true, memory_order_relaxed);
     });
 
     // 与缓存无关的 16 字节 size class 分配churn，仅制造分配器与调度扰动
     for (int e = 0; e < kEMASUAFExternalThreads; e++) {
         dispatch_group_async(group, queue, ^{
-            while (!stopPressure) {
+            while (!atomic_load_explicit(&stopPressure, memory_order_relaxed)) {
                 @autoreleasepool {
                     for (int i = 0; i < 2048; i++) {
                         EMASUAFFiller *filler = [EMASUAFFiller new];
@@ -484,7 +490,8 @@ static double EMASUAFMin(NSArray<NSNumber *> *samples) {
     for (int r = 0; r < 2; r++) {
         dispatch_group_async(group, readerQueue, ^{
             int hits = EMASUAFEMASLookupLoop(responseCache, requests, kEMASUAFIterations);
-            EMASUAFLog(@"G2 reader hits=%d/%d", hits, kEMASUAFIterations);
+            EMASUAFLog(@"G2 SDK returned responses=%d/%d (not Foundation hits)", hits, kEMASUAFIterations);
+            XCTAssertGreaterThan(hits, 0, @"夹具必须产生 SDK 可用响应，零返回不能作为有效命中对照");
         });
     }
 
@@ -524,8 +531,8 @@ static double EMASUAFMin(NSArray<NSNumber *> *samples) {
 }
 
 /// 第三组：EMASCurl 使用独占 NSURLCache（独立目录），外部线程持续写 sharedURLCache。
-/// 这是修复方案的直接验证：与第二组相比，唯一变量是 EMASCurl 所用的缓存实例。
-/// 通过 KVC 注入私有属性 urlCache，使本测试无需改动 SDK 源码即可验证方案有效性。
+/// 这是独占缓存候选方案的实验，不是本版最终方案；它与 G2 的 SDK 读写线程模型也不同。
+/// 通过 KVC 注入 SDK 自身属性 urlCache；不能将两组结果称为唯一变量对照。
 - (void)uafGroup3_DedicatedCache_ExternalWritesShared {
     EMASCurlResponseCache *responseCache = [EMASCurlResponseCache new];
     NSURLCache *dedicated = EMASUAFDedicatedCache();

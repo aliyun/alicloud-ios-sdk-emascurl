@@ -1,0 +1,235 @@
+{
+  "date": "2026-09-09",
+  "head": "9e5581b240c59091f5feee98a27a3311f6bf559b",
+  "baseline": "head plus EMASCurl/EMASCurlResponseCache.m from 5b733cb",
+  "source_sha256": {
+    "EMASCurlTests/EMASCurlCacheStressScenario.h": "9f410cb04bb29ecfe04a5b246a270c6debe1d1b4fc148f20650c8189fb0bfde9",
+    "EMASCurlTests/EMASCurlCacheStressTest.m": "0e04d36a98387c1acced43331bd234cce619106d1f12c1d92f67678caa2761f4",
+    "EMASCurlTests/EMASCurlCacheRegressionTest.m": "3092cd395f84b298f1a9342831de6c2fbabe73ec7f0d46e06a2b52ddf6e9adda"
+  },
+  "head_cache_sha256": "7df498c6f9039910b806af79d5d6abee05aea17ed94a78c24dcc43ccaa1266f7",
+  "baseline_cache_sha256": "bae6ff6506d6c33d3a69f3c37bf112391b6683dd9cd11d2c56129f4b3d51d05f",
+  "sanitizers": "ASan/TSan/Zombies disabled",
+  "configuration": "Debug",
+  "iterations_per_worker": 20000,
+  "rounds_per_variant_per_scenario": 3,
+  "validation_status": "closed_using_existing_evidence_no_further_runs",
+  "publication_status": "review_supplement_branch",
+  "supplement_branch": "codex/cr29868292-cache-tests",
+  "xcode": {
+    "version": "26.6",
+    "build": "17F113"
+  },
+  "environments": {
+    "simulator": {
+      "model": "iPhone 17 Pro",
+      "os_version": "26.5",
+      "os_build": "23F77",
+      "architecture": "arm64"
+    },
+    "device": {
+      "model": "iPhone 15 Pro Max",
+      "os_version": "18.5",
+      "os_build": "22F76",
+      "architecture": "arm64e"
+    }
+  },
+  "device_instrumentation": {
+    "initial_xctestrun_injected_library": "libRPAC.dylib",
+    "comparison_with_library_disabled_performed": false,
+    "checker_defect_uniquely_established": false
+  },
+  "functional_results": {
+    "simulator_final": {
+      "passed": 5,
+      "failed": 0,
+      "stress_tests_skipped_by_default": 2,
+      "evidence": "functional-simulator-final-summary.json"
+    },
+    "device": {
+      "passed": 5,
+      "failed": 0,
+      "stress_tests_skipped_by_default": 2,
+      "evidence": "functional-device-summary.json"
+    }
+  },
+  "stress_results": {
+    "simulator": {
+      "recorded_rounds": 12,
+      "completed_rounds": 10,
+      "abnormal_rounds": 2,
+      "evidence": "simulator-stress.json",
+      "by_variant_and_scenario": [
+        {
+          "variant": "baseline",
+          "scenario": "store_two_readers",
+          "rounds": 3,
+          "completed_rounds": 3
+        },
+        {
+          "variant": "baseline",
+          "scenario": "304_two_readers",
+          "rounds": 3,
+          "completed_rounds": 2
+        },
+        {
+          "variant": "head",
+          "scenario": "store_two_readers",
+          "rounds": 3,
+          "completed_rounds": 3
+        },
+        {
+          "variant": "head",
+          "scenario": "304_two_readers",
+          "rounds": 3,
+          "completed_rounds": 2
+        }
+      ]
+    },
+    "device": {
+      "recorded_rounds": 12,
+      "completed_rounds": 4,
+      "abnormal_rounds": 8,
+      "evidence": "device-stress.json",
+      "by_variant_and_scenario": [
+        {
+          "variant": "baseline",
+          "scenario": "store_two_readers",
+          "rounds": 3,
+          "completed_rounds": 2
+        },
+        {
+          "variant": "baseline",
+          "scenario": "304_two_readers",
+          "rounds": 3,
+          "completed_rounds": 0
+        },
+        {
+          "variant": "head",
+          "scenario": "store_two_readers",
+          "rounds": 3,
+          "completed_rounds": 2
+        },
+        {
+          "variant": "head",
+          "scenario": "304_two_readers",
+          "rounds": 3,
+          "completed_rounds": 0
+        }
+      ]
+    }
+  },
+  "device_failure_classification": {
+    "classification_basis": "crash stack location, not a uniquely proven root cause",
+    "libRPAC_stack": {
+      "count": 4,
+      "symbols": [
+        "qosWaiterSignallerInvariantCheck",
+        "interposed_dispatch_semaphore_wait"
+      ],
+      "cases": [
+        {
+          "variant": "head",
+          "scenario": "store_two_readers",
+          "round": 1
+        },
+        {
+          "variant": "baseline",
+          "scenario": "store_two_readers",
+          "round": 2
+        },
+        {
+          "variant": "head",
+          "scenario": "304_two_readers",
+          "round": 1
+        },
+        {
+          "variant": "baseline",
+          "scenario": "304_two_readers",
+          "round": 3
+        }
+      ]
+    },
+    "sdk_lookup_stack": {
+      "count": 2,
+      "queue": "com.alicloud.emascurl.cacheQueue",
+      "cases": [
+        {
+          "variant": "baseline",
+          "scenario": "304_two_readers",
+          "round": 1,
+          "stack_summary": "objc_retain -> emas_cacheControlDirectives -> freshness -> lookup"
+        },
+        {
+          "variant": "head",
+          "scenario": "304_two_readers",
+          "round": 2,
+          "stack_summary": "objc_msgSend -> lookup"
+        }
+      ]
+    },
+    "unattributed_abort": {
+      "count": 1,
+      "cases": [
+        {
+          "variant": "baseline",
+          "scenario": "304_two_readers",
+          "round": 2
+        }
+      ]
+    },
+    "missing_crash_attachment": {
+      "count": 1,
+      "cases": [
+        {
+          "variant": "head",
+          "scenario": "304_two_readers",
+          "round": 3
+        }
+      ]
+    },
+    "summary_evidence": "device-failure-summaries.json",
+    "stack_evidence": "device-crash-stacks.json"
+  },
+  "evidence_limits": [
+    "The eight abnormal device rounds are not eight established SDK crashes and must not be used as an SDK crash rate.",
+    "No device comparison with libRPAC disabled was performed; the checker is an unexcluded factor, not a uniquely established root cause.",
+    "SDK lookup stack locations do not uniquely prove the CFNetwork back-pointer mechanism.",
+    "Abnormal rounds have no complete operation counts; missing reports must not be counted as zero cache hits.",
+    "Few rounds and differing failure classes do not support a crash-probability comparison, a regression claim, or a production reduction promise.",
+    "Historical CR figures such as 3/36 -> 0/72 were not revalidated or merged into this dataset."
+  ],
+  "evidence_files": [
+    "functional-simulator-summary.json",
+    "functional-simulator-final-summary.json",
+    "functional-device-summary.json",
+    "simulator-stress.json",
+    "simulator-crash-stacks.json",
+    "head-304-round1-summary.json",
+    "baseline-304-round3-summary.json",
+    "device-stress.json",
+    "device-failure-summaries.json",
+    "device-crash-stacks.json"
+  ],
+  "remote_artifact_root": "bliss@10.88.88.2:/tmp/emascurl-tests-20260909.VsMxlL",
+  "release_notes": "../../../ReleaseNotes/1.5.7.md",
+  "simulator_failure_classification": {
+    "sdk_lookup_stack": {
+      "count": 2,
+      "queue": "com.alicloud.emascurl.cacheQueue",
+      "cases": [
+        {
+          "variant": "baseline",
+          "scenario": "304_two_readers",
+          "round": 3
+        },
+        {
+          "variant": "head",
+          "scenario": "304_two_readers",
+          "round": 1
+        }
+      ]
+    },
+    "stack_evidence": "simulator-crash-stacks.json"
+  }
+}

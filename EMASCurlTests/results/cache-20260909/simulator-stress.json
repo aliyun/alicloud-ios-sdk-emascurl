@@ -1,0 +1,294 @@
+[
+  {
+    "variant": "baseline",
+    "method": "testTwoReadersWithCallbackHandoff",
+    "round": 1,
+    "returncode": 0,
+    "timed_out": false,
+    "reports": [
+      {
+        "304_client_deliveries": 0,
+        "304_returned_responses": 0,
+        "client_deliveries": 40000,
+        "content_mismatches": 0,
+        "disk_capacity": 0,
+        "elapsed_seconds": 1.312141583301127,
+        "iterations_per_worker": 20000,
+        "keys": 8,
+        "memory_capacity": 4194304,
+        "passed": true,
+        "readers": 2,
+        "scenario": "store_two_readers",
+        "sdk_returned_responses": 40000
+      }
+    ],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-testTwoReadersWithCallbackHandoff-1.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-testTwoReadersWithCallbackHandoff-1.xcresult",
+    "status": "passed"
+  },
+  {
+    "variant": "head",
+    "method": "testTwoReadersWithCallbackHandoff",
+    "round": 1,
+    "returncode": 0,
+    "timed_out": false,
+    "reports": [
+      {
+        "304_client_deliveries": 0,
+        "304_returned_responses": 0,
+        "client_deliveries": 40000,
+        "content_mismatches": 0,
+        "disk_capacity": 0,
+        "elapsed_seconds": 1.350528166629374,
+        "iterations_per_worker": 20000,
+        "keys": 8,
+        "memory_capacity": 4194304,
+        "passed": true,
+        "readers": 2,
+        "scenario": "store_two_readers",
+        "sdk_returned_responses": 40000
+      }
+    ],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-testTwoReadersWithCallbackHandoff-1.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-testTwoReadersWithCallbackHandoff-1.xcresult",
+    "status": "passed"
+  },
+  {
+    "variant": "baseline",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 1,
+    "returncode": 0,
+    "timed_out": false,
+    "reports": [
+      {
+        "304_client_deliveries": 20000,
+        "304_returned_responses": 20000,
+        "client_deliveries": 40000,
+        "content_mismatches": 0,
+        "disk_capacity": 0,
+        "elapsed_seconds": 1.3152427915483713,
+        "iterations_per_worker": 20000,
+        "keys": 8,
+        "memory_capacity": 4194304,
+        "passed": true,
+        "readers": 2,
+        "scenario": "304_two_readers",
+        "sdk_returned_responses": 40000
+      }
+    ],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-test304UpdatesWithTwoReadersAndCallbackHandoff-1.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-test304UpdatesWithTwoReadersAndCallbackHandoff-1.xcresult",
+    "status": "passed"
+  },
+  {
+    "variant": "head",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 1,
+    "returncode": 65,
+    "timed_out": false,
+    "reports": [],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-test304UpdatesWithTwoReadersAndCallbackHandoff-1.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-test304UpdatesWithTwoReadersAndCallbackHandoff-1.xcresult",
+    "status": "needs_inspection"
+  },
+  {
+    "variant": "head",
+    "method": "testTwoReadersWithCallbackHandoff",
+    "round": 2,
+    "returncode": 0,
+    "timed_out": false,
+    "reports": [
+      {
+        "304_client_deliveries": 0,
+        "304_returned_responses": 0,
+        "client_deliveries": 40000,
+        "content_mismatches": 0,
+        "disk_capacity": 0,
+        "elapsed_seconds": 1.3364742081612349,
+        "iterations_per_worker": 20000,
+        "keys": 8,
+        "memory_capacity": 4194304,
+        "passed": true,
+        "readers": 2,
+        "scenario": "store_two_readers",
+        "sdk_returned_responses": 40000
+      }
+    ],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-testTwoReadersWithCallbackHandoff-2.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-testTwoReadersWithCallbackHandoff-2.xcresult",
+    "status": "passed"
+  },
+  {
+    "variant": "baseline",
+    "method": "testTwoReadersWithCallbackHandoff",
+    "round": 2,
+    "returncode": 0,
+    "timed_out": false,
+    "reports": [
+      {
+        "304_client_deliveries": 0,
+        "304_returned_responses": 0,
+        "client_deliveries": 40000,
+        "content_mismatches": 0,
+        "disk_capacity": 0,
+        "elapsed_seconds": 1.350525625050068,
+        "iterations_per_worker": 20000,
+        "keys": 8,
+        "memory_capacity": 4194304,
+        "passed": true,
+        "readers": 2,
+        "scenario": "store_two_readers",
+        "sdk_returned_responses": 40000
+      }
+    ],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-testTwoReadersWithCallbackHandoff-2.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-testTwoReadersWithCallbackHandoff-2.xcresult",
+    "status": "passed"
+  },
+  {
+    "variant": "head",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 2,
+    "returncode": 0,
+    "timed_out": false,
+    "reports": [
+      {
+        "304_client_deliveries": 20000,
+        "304_returned_responses": 20000,
+        "client_deliveries": 40000,
+        "content_mismatches": 0,
+        "disk_capacity": 0,
+        "elapsed_seconds": 1.3156363749876618,
+        "iterations_per_worker": 20000,
+        "keys": 8,
+        "memory_capacity": 4194304,
+        "passed": true,
+        "readers": 2,
+        "scenario": "304_two_readers",
+        "sdk_returned_responses": 40000
+      }
+    ],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-test304UpdatesWithTwoReadersAndCallbackHandoff-2.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-test304UpdatesWithTwoReadersAndCallbackHandoff-2.xcresult",
+    "status": "passed"
+  },
+  {
+    "variant": "baseline",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 2,
+    "returncode": 0,
+    "timed_out": false,
+    "reports": [
+      {
+        "304_client_deliveries": 20000,
+        "304_returned_responses": 20000,
+        "client_deliveries": 40000,
+        "content_mismatches": 0,
+        "disk_capacity": 0,
+        "elapsed_seconds": 1.3312915829010308,
+        "iterations_per_worker": 20000,
+        "keys": 8,
+        "memory_capacity": 4194304,
+        "passed": true,
+        "readers": 2,
+        "scenario": "304_two_readers",
+        "sdk_returned_responses": 40000
+      }
+    ],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-test304UpdatesWithTwoReadersAndCallbackHandoff-2.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-test304UpdatesWithTwoReadersAndCallbackHandoff-2.xcresult",
+    "status": "passed"
+  },
+  {
+    "variant": "baseline",
+    "method": "testTwoReadersWithCallbackHandoff",
+    "round": 3,
+    "returncode": 0,
+    "timed_out": false,
+    "reports": [
+      {
+        "304_client_deliveries": 0,
+        "304_returned_responses": 0,
+        "client_deliveries": 40000,
+        "content_mismatches": 0,
+        "disk_capacity": 0,
+        "elapsed_seconds": 1.3510248335078359,
+        "iterations_per_worker": 20000,
+        "keys": 8,
+        "memory_capacity": 4194304,
+        "passed": true,
+        "readers": 2,
+        "scenario": "store_two_readers",
+        "sdk_returned_responses": 40000
+      }
+    ],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-testTwoReadersWithCallbackHandoff-3.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-testTwoReadersWithCallbackHandoff-3.xcresult",
+    "status": "passed"
+  },
+  {
+    "variant": "head",
+    "method": "testTwoReadersWithCallbackHandoff",
+    "round": 3,
+    "returncode": 0,
+    "timed_out": false,
+    "reports": [
+      {
+        "304_client_deliveries": 0,
+        "304_returned_responses": 0,
+        "client_deliveries": 40000,
+        "content_mismatches": 0,
+        "disk_capacity": 0,
+        "elapsed_seconds": 1.3720028335228562,
+        "iterations_per_worker": 20000,
+        "keys": 8,
+        "memory_capacity": 4194304,
+        "passed": true,
+        "readers": 2,
+        "scenario": "store_two_readers",
+        "sdk_returned_responses": 40000
+      }
+    ],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-testTwoReadersWithCallbackHandoff-3.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-testTwoReadersWithCallbackHandoff-3.xcresult",
+    "status": "passed"
+  },
+  {
+    "variant": "baseline",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 3,
+    "returncode": 65,
+    "timed_out": false,
+    "reports": [],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-test304UpdatesWithTwoReadersAndCallbackHandoff-3.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/baseline-test304UpdatesWithTwoReadersAndCallbackHandoff-3.xcresult",
+    "status": "needs_inspection"
+  },
+  {
+    "variant": "head",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 3,
+    "returncode": 0,
+    "timed_out": false,
+    "reports": [
+      {
+        "304_client_deliveries": 20000,
+        "304_returned_responses": 20000,
+        "client_deliveries": 40000,
+        "content_mismatches": 0,
+        "disk_capacity": 0,
+        "elapsed_seconds": 1.3161004586145282,
+        "iterations_per_worker": 20000,
+        "keys": 8,
+        "memory_capacity": 4194304,
+        "passed": true,
+        "readers": 2,
+        "scenario": "304_two_readers",
+        "sdk_returned_responses": 40000
+      }
+    ],
+    "log": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-test304UpdatesWithTwoReadersAndCallbackHandoff-3.log",
+    "xcresult": "/tmp/emascurl-tests-20260909.VsMxlL/stress-paired-simulator/head-test304UpdatesWithTwoReadersAndCallbackHandoff-3.xcresult",
+    "status": "passed"
+  }
+]

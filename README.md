@@ -128,7 +128,7 @@ target 'yourAppTarget' do
 end
 ```
 
-当前最新版本：1.5.7
+当前最新版本：1.5.7，参见 [发布说明](ReleaseNotes/1.5.7.md) 了解修复范围及超时配置兼容性变化。
 
 **版本选择说明：**
 - `EMASCurl` 或 `EMASCurl/HTTP2`：默认HTTP/2版本

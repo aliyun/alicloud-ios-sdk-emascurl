@@ -1,0 +1,214 @@
+[
+  {
+    "variant": "head",
+    "report": "xctest-2026-09-09-162317.ips",
+    "captureTime": "2026-09-09 16:23:14.4625 +0800",
+    "pid": 99755,
+    "exception": {
+      "codes": "0x0000000000000001, 0x007da1a481303e08",
+      "rawCodes": [
+        1,
+        35362100002962952
+      ],
+      "type": "EXC_BAD_ACCESS",
+      "signal": "SIGSEGV",
+      "subtype": "KERN_INVALID_ADDRESS at 0x007da1a481303e08"
+    },
+    "queue": "com.alicloud.emascurl.cacheQueue",
+    "frames": [
+      {
+        "imageOffset": 11284,
+        "symbol": "objc_msgSend",
+        "symbolLocation": 20,
+        "imageIndex": 30,
+        "imageName": "libobjc.A.dylib",
+        "imageUUID": "727c4040-5e6d-3dae-b22c-9a337d46c34f"
+      },
+      {
+        "imageOffset": 109948,
+        "sourceLine": 309,
+        "sourceFile": "NSCachedURLResponse+EMASCurl.m",
+        "symbol": "-[NSCachedURLResponse(EMASCurl) emas_isResponseStillFreshForRequest:]",
+        "imageIndex": 24,
+        "symbolLocation": 656,
+        "imageName": "EMASCurl",
+        "imageUUID": "143266fd-72bb-3333-8356-19fdca541205"
+      },
+      {
+        "imageOffset": 135788,
+        "sourceLine": 125,
+        "sourceFile": "EMASCurlResponseCache.m",
+        "symbol": "__50-[EMASCurlResponseCache cachedResponseForRequest:]_block_invoke",
+        "imageIndex": 24,
+        "symbolLocation": 664,
+        "imageName": "EMASCurl",
+        "imageUUID": "143266fd-72bb-3333-8356-19fdca541205"
+      },
+      {
+        "imageOffset": 114328,
+        "symbol": "_dispatch_client_callout",
+        "symbolLocation": 12,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      },
+      {
+        "imageOffset": 73516,
+        "symbol": "_dispatch_sync_invoke_and_complete_recurse",
+        "symbolLocation": 96,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      },
+      {
+        "imageOffset": 71744,
+        "symbol": "_dispatch_sync_f_slow",
+        "symbolLocation": 184,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      },
+      {
+        "imageOffset": 134820,
+        "sourceLine": 101,
+        "sourceFile": "EMASCurlResponseCache.m",
+        "symbol": "-[EMASCurlResponseCache cachedResponseForRequest:]",
+        "imageIndex": 24,
+        "symbolLocation": 364,
+        "imageName": "EMASCurl",
+        "imageUUID": "143266fd-72bb-3333-8356-19fdca541205"
+      },
+      {
+        "imageOffset": 336976,
+        "sourceLine": 54,
+        "sourceFile": "EMASCurlCacheStressScenario.h",
+        "symbol": "__EMASRunCacheStress_block_invoke",
+        "imageIndex": 21,
+        "symbolLocation": 244,
+        "imageName": "EMASCurlTests",
+        "imageUUID": "36f46b0c-296b-3ea0-bbe2-ea998813dd94"
+      },
+      {
+        "imageOffset": 5792,
+        "symbol": "_dispatch_call_block_and_release",
+        "symbolLocation": 24,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      },
+      {
+        "imageOffset": 114328,
+        "symbol": "_dispatch_client_callout",
+        "symbolLocation": 12,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      }
+    ]
+  },
+  {
+    "variant": "baseline",
+    "report": "xctest-2026-09-09-162356.ips",
+    "captureTime": "2026-09-09 16:23:53.7865 +0800",
+    "pid": 184,
+    "exception": {
+      "codes": "0x0000000000000001, 0x001a52ccae7b1790",
+      "rawCodes": [
+        1,
+        7409388448585616
+      ],
+      "type": "EXC_BAD_ACCESS",
+      "signal": "SIGSEGV",
+      "subtype": "KERN_INVALID_ADDRESS at 0x001a52ccae7b1790"
+    },
+    "queue": "com.alicloud.emascurl.cacheQueue",
+    "frames": [
+      {
+        "imageOffset": 11284,
+        "symbol": "objc_msgSend",
+        "symbolLocation": 20,
+        "imageIndex": 30,
+        "imageName": "libobjc.A.dylib",
+        "imageUUID": "727c4040-5e6d-3dae-b22c-9a337d46c34f"
+      },
+      {
+        "imageOffset": 135576,
+        "sourceLine": 114,
+        "sourceFile": "EMASCurlResponseCache.m",
+        "symbol": "__50-[EMASCurlResponseCache cachedResponseForRequest:]_block_invoke",
+        "imageIndex": 24,
+        "symbolLocation": 476,
+        "imageName": "EMASCurl",
+        "imageUUID": "383e893d-66b5-3bed-9408-68629949ec69"
+      },
+      {
+        "imageOffset": 114328,
+        "symbol": "_dispatch_client_callout",
+        "symbolLocation": 12,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      },
+      {
+        "imageOffset": 73516,
+        "symbol": "_dispatch_sync_invoke_and_complete_recurse",
+        "symbolLocation": 96,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      },
+      {
+        "imageOffset": 71744,
+        "symbol": "_dispatch_sync_f_slow",
+        "symbolLocation": 184,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      },
+      {
+        "imageOffset": 134796,
+        "sourceLine": 99,
+        "sourceFile": "EMASCurlResponseCache.m",
+        "symbol": "-[EMASCurlResponseCache cachedResponseForRequest:]",
+        "imageIndex": 24,
+        "symbolLocation": 364,
+        "imageName": "EMASCurl",
+        "imageUUID": "383e893d-66b5-3bed-9408-68629949ec69"
+      },
+      {
+        "imageOffset": 336976,
+        "sourceLine": 54,
+        "sourceFile": "EMASCurlCacheStressScenario.h",
+        "symbol": "__EMASRunCacheStress_block_invoke",
+        "imageIndex": 21,
+        "symbolLocation": 244,
+        "imageName": "EMASCurlTests",
+        "imageUUID": "57a9176f-cfb3-3ec3-a555-a21b0fcdbc67"
+      },
+      {
+        "imageOffset": 5792,
+        "symbol": "_dispatch_call_block_and_release",
+        "symbolLocation": 24,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      },
+      {
+        "imageOffset": 114328,
+        "symbol": "_dispatch_client_callout",
+        "symbolLocation": 12,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      },
+      {
+        "imageOffset": 24772,
+        "symbol": "_dispatch_continuation_pop",
+        "symbolLocation": 868,
+        "imageIndex": 27,
+        "imageName": "libdispatch.dylib",
+        "imageUUID": "42b50931-38d5-3a5d-90ef-0fd7239c408d"
+      }
+    ]
+  }
+]
