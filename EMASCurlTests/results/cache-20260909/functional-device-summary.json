@@ -1,0 +1,42 @@
+{
+  "devicesAndConfigurations" : [
+    {
+      "device" : {
+        "architecture" : "arm64e",
+        "deviceId" : "00008130-001839D02EF0001C",
+        "deviceName" : "iPhone15 pro  max 17.1.1  50530",
+        "modelName" : "iPhone 15 Pro Max",
+        "osBuildNumber" : "22F76",
+        "osVersion" : "18.5",
+        "platform" : "iOS"
+      },
+      "expectedFailures" : 0,
+      "failedTests" : 0,
+      "passedTests" : 5,
+      "skippedTests" : 2,
+      "testPlanConfiguration" : {
+        "configurationId" : "1",
+        "configurationName" : "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription" : "EMASCurlTests · Built with macOS 26.3.2",
+  "expectedFailures" : 0,
+  "failedTests" : 0,
+  "finishTime" : 1788944884.028,
+  "passedTests" : 5,
+  "result" : "Passed",
+  "skippedTests" : 2,
+  "startTime" : 1788944879.893,
+  "statistics" : [
+
+  ],
+  "testFailures" : [
+
+  ],
+  "title" : "Test - EMASCurlTests",
+  "topInsights" : [
+
+  ],
+  "totalTestCount" : 7
+}

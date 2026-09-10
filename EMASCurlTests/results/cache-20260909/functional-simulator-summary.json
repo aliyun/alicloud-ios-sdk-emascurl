@@ -1,0 +1,42 @@
+{
+  "devicesAndConfigurations" : [
+    {
+      "device" : {
+        "architecture" : "arm64",
+        "deviceId" : "1E01B6D9-9D28-4B74-A4D7-B9AE21878099",
+        "deviceName" : "Codex cache validation 20260909",
+        "modelName" : "iPhone 17 Pro",
+        "osBuildNumber" : "23F77",
+        "osVersion" : "26.5",
+        "platform" : "iOS Simulator"
+      },
+      "expectedFailures" : 0,
+      "failedTests" : 0,
+      "passedTests" : 5,
+      "skippedTests" : 2,
+      "testPlanConfiguration" : {
+        "configurationId" : "1",
+        "configurationName" : "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription" : "EMASCurlTests · Built with macOS 26.3.2",
+  "expectedFailures" : 0,
+  "failedTests" : 0,
+  "finishTime" : 1788941093.167,
+  "passedTests" : 5,
+  "result" : "Passed",
+  "skippedTests" : 2,
+  "startTime" : 1788941081.355,
+  "statistics" : [
+
+  ],
+  "testFailures" : [
+
+  ],
+  "title" : "Test - EMASCurlTests",
+  "topInsights" : [
+
+  ],
+  "totalTestCount" : 7
+}

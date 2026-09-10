@@ -1,0 +1,402 @@
+[
+  {
+    "variant": "head",
+    "method": "testTwoReadersWithCallbackHandoff",
+    "round": 1,
+    "summary": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64e",
+            "deviceId": "00008130-001839D02EF0001C",
+            "deviceName": "iPhone15 pro  max 17.1.1  50530",
+            "modelName": "iPhone 15 Pro Max",
+            "osBuildNumber": "22F76",
+            "osVersion": "18.5",
+            "platform": "iOS"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "EMASCurlTests · Built with macOS 26.3.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1788945642.626,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1788945637.711,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "Crash: EMASCurlTestHost at __EMASRunCacheStress_block_invoke_2",
+          "targetName": "EMASCurlTests",
+          "testIdentifier": 1,
+          "testIdentifierString": "EMASCurlCacheStressTest/testTwoReadersWithCallbackHandoff",
+          "testIdentifierURL": "test://com.apple.xcode/EMASCurl/EMASCurlTests/EMASCurlCacheStressTest/testTwoReadersWithCallbackHandoff",
+          "testName": "testTwoReadersWithCallbackHandoff"
+        }
+      ],
+      "title": "Test - EMASCurlTests",
+      "topInsights": [],
+      "totalTestCount": 1
+    }
+  },
+  {
+    "variant": "baseline",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 1,
+    "summary": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64e",
+            "deviceId": "00008130-001839D02EF0001C",
+            "deviceName": "iPhone15 pro  max 17.1.1  50530",
+            "modelName": "iPhone 15 Pro Max",
+            "osBuildNumber": "22F76",
+            "osVersion": "18.5",
+            "platform": "iOS"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "EMASCurlTests · Built with macOS 26.3.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1788945647.039,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1788945643.48,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "Crash: EMASCurlTestHost at __EMASRunCacheStress_block_invoke",
+          "targetName": "EMASCurlTests",
+          "testIdentifier": 1,
+          "testIdentifierString": "EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testIdentifierURL": "test://com.apple.xcode/EMASCurl/EMASCurlTests/EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testName": "test304UpdatesWithTwoReadersAndCallbackHandoff"
+        }
+      ],
+      "title": "Test - EMASCurlTests",
+      "topInsights": [],
+      "totalTestCount": 1
+    }
+  },
+  {
+    "variant": "head",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 1,
+    "summary": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64e",
+            "deviceId": "00008130-001839D02EF0001C",
+            "deviceName": "iPhone15 pro  max 17.1.1  50530",
+            "modelName": "iPhone 15 Pro Max",
+            "osBuildNumber": "22F76",
+            "osVersion": "18.5",
+            "platform": "iOS"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "EMASCurlTests · Built with macOS 26.3.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1788945651.822,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1788945647.949,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "Crash: EMASCurlTestHost at __EMASRunCacheStress_block_invoke_2",
+          "targetName": "EMASCurlTests",
+          "testIdentifier": 1,
+          "testIdentifierString": "EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testIdentifierURL": "test://com.apple.xcode/EMASCurl/EMASCurlTests/EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testName": "test304UpdatesWithTwoReadersAndCallbackHandoff"
+        }
+      ],
+      "title": "Test - EMASCurlTests",
+      "topInsights": [],
+      "totalTestCount": 1
+    }
+  },
+  {
+    "variant": "baseline",
+    "method": "testTwoReadersWithCallbackHandoff",
+    "round": 2,
+    "summary": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64e",
+            "deviceId": "00008130-001839D02EF0001C",
+            "deviceName": "iPhone15 pro  max 17.1.1  50530",
+            "modelName": "iPhone 15 Pro Max",
+            "osBuildNumber": "22F76",
+            "osVersion": "18.5",
+            "platform": "iOS"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "EMASCurlTests · Built with macOS 26.3.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1788945661.509,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1788945657.562,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "Crash: EMASCurlTestHost at __EMASRunCacheStress_block_invoke_2",
+          "targetName": "EMASCurlTests",
+          "testIdentifier": 1,
+          "testIdentifierString": "EMASCurlCacheStressTest/testTwoReadersWithCallbackHandoff",
+          "testIdentifierURL": "test://com.apple.xcode/EMASCurl/EMASCurlTests/EMASCurlCacheStressTest/testTwoReadersWithCallbackHandoff",
+          "testName": "testTwoReadersWithCallbackHandoff"
+        }
+      ],
+      "title": "Test - EMASCurlTests",
+      "topInsights": [],
+      "totalTestCount": 1
+    }
+  },
+  {
+    "variant": "head",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 2,
+    "summary": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64e",
+            "deviceId": "00008130-001839D02EF0001C",
+            "deviceName": "iPhone15 pro  max 17.1.1  50530",
+            "modelName": "iPhone 15 Pro Max",
+            "osBuildNumber": "22F76",
+            "osVersion": "18.5",
+            "platform": "iOS"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "EMASCurlTests · Built with macOS 26.3.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1788945665.946,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1788945662.513,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "Crash: EMASCurlTestHost at __EMASRunCacheStress_block_invoke",
+          "targetName": "EMASCurlTests",
+          "testIdentifier": 1,
+          "testIdentifierString": "EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testIdentifierURL": "test://com.apple.xcode/EMASCurl/EMASCurlTests/EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testName": "test304UpdatesWithTwoReadersAndCallbackHandoff"
+        }
+      ],
+      "title": "Test - EMASCurlTests",
+      "topInsights": [],
+      "totalTestCount": 1
+    }
+  },
+  {
+    "variant": "baseline",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 2,
+    "summary": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64e",
+            "deviceId": "00008130-001839D02EF0001C",
+            "deviceName": "iPhone15 pro  max 17.1.1  50530",
+            "modelName": "iPhone 15 Pro Max",
+            "osBuildNumber": "22F76",
+            "osVersion": "18.5",
+            "platform": "iOS"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "EMASCurlTests · Built with macOS 26.3.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1788945700.214,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1788945666.772,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "Crash: EMASCurlTestHost at __EMASRunCacheStress_block_invoke_2. libsystem_c.dylib: abort() called",
+          "targetName": "EMASCurlTests",
+          "testIdentifier": 1,
+          "testIdentifierString": "EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testIdentifierURL": "test://com.apple.xcode/EMASCurl/EMASCurlTests/EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testName": "test304UpdatesWithTwoReadersAndCallbackHandoff"
+        }
+      ],
+      "title": "Test - EMASCurlTests",
+      "topInsights": [],
+      "totalTestCount": 1
+    }
+  },
+  {
+    "variant": "baseline",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 3,
+    "summary": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64e",
+            "deviceId": "00008130-001839D02EF0001C",
+            "deviceName": "iPhone15 pro  max 17.1.1  50530",
+            "modelName": "iPhone 15 Pro Max",
+            "osBuildNumber": "22F76",
+            "osVersion": "18.5",
+            "platform": "iOS"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "EMASCurlTests · Built with macOS 26.3.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1788945714.845,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1788945710.862,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "Crash: EMASCurlTestHost at __EMASRunCacheStress_block_invoke_2",
+          "targetName": "EMASCurlTests",
+          "testIdentifier": 1,
+          "testIdentifierString": "EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testIdentifierURL": "test://com.apple.xcode/EMASCurl/EMASCurlTests/EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testName": "test304UpdatesWithTwoReadersAndCallbackHandoff"
+        }
+      ],
+      "title": "Test - EMASCurlTests",
+      "topInsights": [],
+      "totalTestCount": 1
+    }
+  },
+  {
+    "variant": "head",
+    "method": "test304UpdatesWithTwoReadersAndCallbackHandoff",
+    "round": 3,
+    "summary": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64e",
+            "deviceId": "00008130-001839D02EF0001C",
+            "deviceName": "iPhone15 pro  max 17.1.1  50530",
+            "modelName": "iPhone 15 Pro Max",
+            "osBuildNumber": "22F76",
+            "osVersion": "18.5",
+            "platform": "iOS"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "EMASCurlTests · Built with macOS 26.3.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1788945740.68,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1788945715.679,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "Test crashed with signal segv.",
+          "targetName": "EMASCurlTests",
+          "testIdentifier": 1,
+          "testIdentifierString": "EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testIdentifierURL": "test://com.apple.xcode/EMASCurl/EMASCurlTests/EMASCurlCacheStressTest/test304UpdatesWithTwoReadersAndCallbackHandoff",
+          "testName": "test304UpdatesWithTwoReadersAndCallbackHandoff"
+        }
+      ],
+      "title": "Test - EMASCurlTests",
+      "topInsights": [],
+      "totalTestCount": 1
+    }
+  }
+]
